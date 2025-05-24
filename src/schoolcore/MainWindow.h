@@ -61,6 +61,9 @@ private:
   void createMenu();
   void createMainWindow();
   void createDockWidgets();
+  void createLeftDockWidget();
+  void createRightDockWidget();
+  void createCanvas();
   QMenuBar *mpMenuBar;
   QStackedWidget *mpStackedWidget;
   QWebEngineView *mpWebView;
