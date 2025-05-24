@@ -63,7 +63,6 @@ private:
   void createDockWidgets();
   QMenuBar *mpMenuBar;
   QStackedWidget *mpStackedWidget;
-  MyOpenGLWidget *mpOpenGLWidget;
   QWebEngineView *mpWebView;
   QTreeWidget *mpFileTreeWidget;
   QPushButton *mpBtnReset;
@@ -75,8 +74,10 @@ private:
   QList<QString> mTexturePaths;
   void onSelectDirectoryClicked();
   void loadDirectoryFiles(const QString &path);
-  RoutePlanner *mpRoutePlanner;
+  std::unique_ptr<RoutePlanner> mpRoutePlanner;
+  std::unique_ptr<MyOpenGLWidget> mpOpenGLWidget;
   void resetView();
+  void initWindowStatus();
 
 private slots:
   void queryFlightParameters();

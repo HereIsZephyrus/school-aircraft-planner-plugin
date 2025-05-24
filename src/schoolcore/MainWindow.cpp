@@ -1,6 +1,7 @@
 ﻿#include "MainWindow.h"
 #include "StyleManager.h"
 #include "qgsmessagelog.h"
+#include <memory>
 #include <QAction>
 #include <QApplication>
 #include <QComboBox>
@@ -25,8 +26,28 @@
 #include <QDateTime>
 #include <QDir>
 
+MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent) {
+    logMessage("Application started", Qgis::MessageLevel::Info);
+    initWindowStatus();
+    logMessage("MainWindow constructor called", Qgis::MessageLevel::Success);
+
+    mpRoutePlanner = std::make_unique<RoutePlanner>(this);
+    mpOpenGLWidget = std::make_unique<MyOpenGLWidget>(this);
+    logMessage("function class initialized", Qgis::MessageLevel::Success);
+    
+    createMenu();
+    createMainWindow();
+    connect(mpRoutePlanner.get(), &RoutePlanner::dataUpdated, mpOpenGLWidget.get(),
+            QOverload<>::of(&QOpenGLWidget::update));
+    logMessage("connect route planner signal to update mapcanvas", Qgis::MessageLevel::Success);
+    createDockWidgets();
+    logMessage("create dock widgets", Qgis::MessageLevel::Success);
+}
+
+MainWindow::~MainWindow() {}
+
 void MainWindow::logMessage(const QString &message, Qgis::MessageLevel level) {
-    QgsMessageLog::logMessage(message, "3Dschool", level);
+    QgsMessageLog::logMessage(message, "SchoolPlugin3D", level);
     
     QString logDir = QDir::homePath() + "/.3Dschool/logs";
     QDir().mkpath(logDir);
@@ -63,54 +84,31 @@ void MainWindow::logMessage(const QString &message, Qgis::MessageLevel level) {
         file.close();
     }
 }
-
-MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent) {
-    logMessage("Application started", Qgis::MessageLevel::Info);
-
-    StyleManager::initializeStyle(); // initialize global style
-    // get current screen size
-    QScreen *screen = QApplication::primaryScreen();
-    QRect screenGeometry = screen->geometry();
-
+static QSize setWindowSize(QRect screenGeometry, int maxWidth, int maxHeight, int minWidth, int minHeight){
     // calc current screen size
     double width_d = screenGeometry.width() * 0.8;
     double height_d = screenGeometry.height() * 0.8;
 
-    int width = qMin(2700, static_cast<int>(width_d));
-    int height = qMin(1500, static_cast<int>(height_d));
-
-    // ensure minimum size
-    width = qMax(width, 800);
-    height = qMax(height, 600);
-
-    // set window size
-    setMinimumSize(QSize(width, height));
-
-    // set window position (center)
-    int x = (screenGeometry.width() - width) / 2;
-    int y = (screenGeometry.height() - height) / 2;
+    int width = qMin(maxWidth, static_cast<int>(width_d));
+    int height = qMin(maxHeight, static_cast<int>(height_d));
+    width = qMax(minWidth, width);
+    height = qMax(minHeight, height);
+    return QSize(width, height);
+}
+void MainWindow::initWindowStatus(){
+    StyleManager::initializeStyle(); // initialize global style
+    QScreen *screen = QApplication::primaryScreen();
+    QRect screenGeometry = screen->geometry();
+    QSize windowSize = setWindowSize(screenGeometry, 2700, 1500, 800, 600);
+    setMinimumSize(windowSize);
+    int x = (screenGeometry.width() - windowSize.width()) / 2, y = (screenGeometry.height() - windowSize.height()) / 2;
     move(x, y);
 
-    // set window flags
-    setWindowFlags(Qt::Window | Qt::WindowStaysOnTopHint);
-
-    logMessage("MainWindow constructor called", Qgis::MessageLevel::Success);
-    mpRoutePlanner = new RoutePlanner(this);
-    mpOpenGLWidget = new MyOpenGLWidget(this);
-    createMenu();
-    createMainWindow();
-    connect(mpRoutePlanner, &RoutePlanner::dataUpdated, mpOpenGLWidget,
-            QOverload<>::of(&QOpenGLWidget::update));
-    logMessage("connect route planner signal to update mapcanvas", Qgis::MessageLevel::Success);
-    createDockWidgets();
-    logMessage("create dock widgets", Qgis::MessageLevel::Success);
+    setWindowFlags(Qt::Window);
 }
 
-MainWindow::~MainWindow() {}
-
-//还未实现的函数o
 void MainWindow::Unrealized() {}
-//打开多个3d文件
+
 void MainWindow::open3D() {
     logMessage("Start loading 3D models", Qgis::MessageLevel::Info);
 
@@ -131,31 +129,31 @@ void MainWindow::open3D() {
     QStringList folders = dir.entryList(QDir::Dirs | QDir::NoDotAndDotDot);
     // iterate over each subfolder
     for (const QString &folder : folders) {
-    QString folderPath = dir.filePath(folder); // subfolder full path
-    logMessage("processing folder: " + folderPath, Qgis::MessageLevel::NoLevel);
-    QDir subDir(folderPath);
-    QStringList objFiles =
-        subDir.entryList(QStringList() << "*.obj", QDir::Files);
-    QStringList jpgFiles =
-        subDir.entryList(QStringList() << "*.jpg", QDir::Files);
-    if (!objFiles.isEmpty() && !jpgFiles.isEmpty()) {
-        QString objPath = folderPath + "/" + objFiles.first(); // get the first .obj
-        QString texPath = folderPath + "/" + jpgFiles.first(); // get the first .jpg
-        mObjPaths.append(objPath);
-        mTexturePaths.append(texPath);
-        logMessage("load model: " + objPath, Qgis::MessageLevel::Info);
-        static_cast<MyOpenGLWidget *>(mpOpenGLWidget)
-            ->loadObjModel(objPath, texPath);
-        static_cast<MyOpenGLWidget*>(mpOpenGLWidget)->applyGlobalCentering();
-    } else {
-        logMessage("Missing .obj or .jpg in folder: " + folderPath, Qgis::MessageLevel::Critical);
-    }
+        QString folderPath = dir.filePath(folder); // subfolder full path
+        logMessage("processing folder: " + folderPath, Qgis::MessageLevel::NoLevel);
+        QDir subDir(folderPath);
+        QStringList objFiles =
+            subDir.entryList(QStringList() << "*.obj", QDir::Files);
+        QStringList jpgFiles =
+            subDir.entryList(QStringList() << "*.jpg", QDir::Files);
+        if (!objFiles.isEmpty() && !jpgFiles.isEmpty()) {
+            QString objPath = folderPath + "/" + objFiles.first(); // get the first .obj
+            QString texPath = folderPath + "/" + jpgFiles.first(); // get the first .jpg
+            mObjPaths.append(objPath);
+            mTexturePaths.append(texPath);
+            logMessage("load model: " + objPath, Qgis::MessageLevel::Info);
+            static_cast<MyOpenGLWidget *>(mpOpenGLWidget.get())
+                ->loadObjModel(objPath, texPath);
+            static_cast<MyOpenGLWidget*>(mpOpenGLWidget.get())->applyGlobalCentering();
+        } else {
+            logMessage("Missing .obj or .jpg in folder: " + folderPath, Qgis::MessageLevel::Critical);
+        }
     }
 
     // apply global centering after all models loaded
     logMessage("All models loaded. Applying global centering...", Qgis::MessageLevel::Info);
-    static_cast<MyOpenGLWidget *>(mpOpenGLWidget)
-        ->applyGlobalCentering(); // 新增这行
+    static_cast<MyOpenGLWidget *>(mpOpenGLWidget.get())
+        ->applyGlobalCentering();
     update();
     logMessage("Global centering applied", Qgis::MessageLevel::Success);
 }
@@ -196,7 +194,7 @@ void MainWindow::createMenu() {
     QMenu *pRouteMenu = mpMenuBar->addMenu(tr("Route Planning"));
     QAction *pCreateRouteAction = pRouteMenu->addAction(tr("Create route"));
     if (mpRoutePlanner) {
-        connect(pCreateRouteAction, &QAction::triggered, mpRoutePlanner,
+        connect(pCreateRouteAction, &QAction::triggered, mpRoutePlanner.get(),
                 &RoutePlanner::enterRoutePlanningMode);
     } else {
         logMessage("RoutePlanner not initialized", Qgis::MessageLevel::Critical);
@@ -206,16 +204,22 @@ void MainWindow::createMenu() {
     //  ================ Simulation menu ================
     QMenu *pSimulationMenu = mpMenuBar->addMenu(tr("Simulation"));
     if (mpOpenGLWidget) {
-        pSimulationMenu->addAction(tr("Start Simulation"), mpOpenGLWidget,
-                                  &MyOpenGLWidget::startSimulation);
-        pSimulationMenu->addAction(tr("Pause Simulation"), mpOpenGLWidget,
-                                  &MyOpenGLWidget::pauseSimulation);
-        pSimulationMenu->addAction(tr("Resume Simulation"), mpOpenGLWidget,
-                                  &MyOpenGLWidget::resumeSimulation);
-        pSimulationMenu->addAction(tr("Return Home"), mpOpenGLWidget,
-                                  &MyOpenGLWidget::returnToHome);
-        pSimulationMenu->addAction(tr("Stop Simulation"), mpOpenGLWidget,
-                                  &MyOpenGLWidget::stopSimulation);
+        QAction* startAction = pSimulationMenu->addAction(tr("Start Simulation"));
+        QAction* pauseAction = pSimulationMenu->addAction(tr("Pause Simulation"));
+        QAction* resumeAction = pSimulationMenu->addAction(tr("Resume Simulation"));
+        QAction* returnAction = pSimulationMenu->addAction(tr("Return Home"));
+        QAction* stopAction = pSimulationMenu->addAction(tr("Stop Simulation"));
+
+        connect(startAction, &QAction::triggered, mpOpenGLWidget.get(),
+                &MyOpenGLWidget::startSimulation);
+        connect(pauseAction, &QAction::triggered, mpOpenGLWidget.get(),
+                &MyOpenGLWidget::pauseSimulation);
+        connect(resumeAction, &QAction::triggered, mpOpenGLWidget.get(),
+                &MyOpenGLWidget::resumeSimulation);
+        connect(returnAction, &QAction::triggered, mpOpenGLWidget.get(),
+                &MyOpenGLWidget::returnToHome);
+        connect(stopAction, &QAction::triggered, mpOpenGLWidget.get(),
+                &MyOpenGLWidget::stopSimulation);
     } else {
         logMessage("OpenGLWidget not initialized", Qgis::MessageLevel::Critical);
     }
@@ -548,7 +552,7 @@ void MainWindow::createMainWindow() {
     mpOpenGLWidget->show();
     mpOpenGLWidget->update();
 
-    connect(mpOpenGLWidget, &MyOpenGLWidget::glInitialized, this,
+    connect(mpOpenGLWidget.get(), &MyOpenGLWidget::glInitialized, this,
             &MainWindow::open3D);
     logMessage("connect open 3D to glInitialized", Qgis::MessageLevel::Info);
     // create QLabel to display local image
@@ -564,9 +568,9 @@ void MainWindow::createMainWindow() {
         logMessage("failed to load local map image", Qgis::MessageLevel::Critical);
     }
 
-    mpStackedWidget->addWidget(mpOpenGLWidget);
+    mpStackedWidget->addWidget(mpOpenGLWidget.get());
     mpStackedWidget->addWidget(mpImageLabel);
-    mpStackedWidget->setCurrentWidget(mpOpenGLWidget);
+    mpStackedWidget->setCurrentWidget(mpOpenGLWidget.get());
     logMessage("create stacked widget", Qgis::MessageLevel::Success);
     // connect signal in main window constructor
     connect(mpStackedWidget, &QStackedWidget::currentChanged, this,
@@ -579,7 +583,7 @@ void MainWindow::createMainWindow() {
     // ================= signal and slot connection =================
 
     // pass RoutePlanner instance to OpenGLWidget
-    mpOpenGLWidget->setRoutePlanner(mpRoutePlanner);
+    mpOpenGLWidget->setRoutePlanner(mpRoutePlanner.get());
     connect(mpBtnReset, &QPushButton::clicked, this, &MainWindow::resetView);
     logMessage("connect reset view button to reset view", Qgis::MessageLevel::Info);
     connect(mpBtnSwitchTo3D, &QPushButton::clicked, this,
@@ -589,7 +593,7 @@ void MainWindow::createMainWindow() {
             &MainWindow::switchTo2D);
     logMessage("connect switch to 2D button to switch to 2D", Qgis::MessageLevel::Info);
 
-    connect(pBtnCreateRoute, &QPushButton::clicked, mpRoutePlanner,
+    connect(pBtnCreateRoute, &QPushButton::clicked, mpRoutePlanner.get(),
             &RoutePlanner::enterRoutePlanningMode); // start route planning
     logMessage("connect create route button to enter route planning mode", Qgis::MessageLevel::Info);
     connect(pBtnAddControlPoint, &QPushButton::clicked, [this]() {
@@ -611,25 +615,25 @@ void MainWindow::createMainWindow() {
     });
     logMessage("connect generate flight route button to generate flight route", Qgis::MessageLevel::Info);
 
-    connect(pHeightSpin, SIGNAL(valueChanged(double)), mpOpenGLWidget,
+    connect(pHeightSpin, SIGNAL(valueChanged(double)), mpOpenGLWidget.get(),
             SLOT(updateFlightHeight(double))); //传递行高到MyOpenGLWidget类中
     logMessage("connect height spin box to update flight height", Qgis::MessageLevel::Info);
-    connect(pWidthSpin, SIGNAL(valueChanged(double)), mpRoutePlanner,
+    connect(pWidthSpin, SIGNAL(valueChanged(double)), mpRoutePlanner.get(),
             SLOT(setScanSpacing(double))); //传递航带宽度到RoutePlanner类中
     logMessage("connect width spin box to set scan spacing", Qgis::MessageLevel::Info);
 
     // flight simulation related connections
     connect(pBtnStart, &QPushButton::clicked,
             [=]() { mpOpenGLWidget->startSimulation(pSpeedSpin->value()); });
-    connect(pBtnPause, &QPushButton::clicked, mpOpenGLWidget,
+    connect(pBtnPause, &QPushButton::clicked, mpOpenGLWidget.get(),
             &MyOpenGLWidget::pauseSimulation);
-    connect(pBtnResume, &QPushButton::clicked, mpOpenGLWidget,
+    connect(pBtnResume, &QPushButton::clicked, mpOpenGLWidget.get(),
             &MyOpenGLWidget::resumeSimulation);
-    connect(pBtnReturn, &QPushButton::clicked, mpOpenGLWidget,
+    connect(pBtnReturn, &QPushButton::clicked, mpOpenGLWidget.get(),
             &MyOpenGLWidget::returnToHome);
-    connect(pBtnStop, &QPushButton::clicked, mpOpenGLWidget,
+    connect(pBtnStop, &QPushButton::clicked, mpOpenGLWidget.get(),
             &MyOpenGLWidget::stopSimulation);
-    connect(pBaseHeightSpin, SIGNAL(valueChanged(double)), mpOpenGLWidget,
+    connect(pBaseHeightSpin, SIGNAL(valueChanged(double)), mpOpenGLWidget.get(),
             SLOT(setBaseHeight(double)));
     logMessage("connect base height spin box to set base height", Qgis::MessageLevel::Success);
 }
@@ -691,7 +695,7 @@ void MainWindow::loadDirectoryFiles(const QString &path) {
 // switch to 3D
 void MainWindow::switchTo3D() {
     logMessage("switch to 3D model view", Qgis::MessageLevel::Info);
-    mpStackedWidget->setCurrentWidget(mpOpenGLWidget); // switch to 3D model view
+    mpStackedWidget->setCurrentWidget(mpOpenGLWidget.get()); // switch to 3D model view
     logMessage("switch to 3D model view", Qgis::MessageLevel::Success);
 }
 // switch to 2D
