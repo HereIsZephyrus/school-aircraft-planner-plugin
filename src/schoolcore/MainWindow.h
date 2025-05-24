@@ -13,6 +13,7 @@ Date:2025.1.6
 #include "qgsvectorlayer.h"
 #include "qopengl.h"
 #include "ui_MainWindow.h"
+#include "qgis_debug.h"
 #include <QAction>
 #include <QApplication>
 #include <QKeyEvent>
@@ -124,7 +125,4 @@ private:
   //   QGamepad *m_gamepad = nullptr;
   //   JoystickWidget *m_leftJoystick = nullptr;
   //   JoystickWidget *m_rightJoystick = nullptr;
-
-  void logMessage(const QString &message,
-                  Qgis::MessageLevel level = Qgis::MessageLevel::Info);
 };

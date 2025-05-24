@@ -49,44 +49,6 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent) {
 
 MainWindow::~MainWindow() {}
 
-void MainWindow::logMessage(const QString &message, Qgis::MessageLevel level) {
-    QgsMessageLog::logMessage(message, "SchoolPlugin3D", level);
-    
-    QString logDir = QDir::homePath() + "/.3Dschool/logs";
-    QDir().mkpath(logDir);
-    
-    QString logFile = logDir + "/3Dschool_" + QDateTime::currentDateTime().toString("yyyy-MM-dd-hh-mm-ss") + ".log";
-    QFile file(logFile);
-    
-    if (file.open(QIODevice::WriteOnly | QIODevice::Append | QIODevice::Text)) {
-        QTextStream stream(&file);
-        QString timestamp = QDateTime::currentDateTime().toString("yyyy-MM-dd hh:mm:ss");
-        QString levelStr;
-        
-        switch (level) {
-            case Qgis::MessageLevel::Info:
-                levelStr = "INFO";
-                break;
-            case Qgis::MessageLevel::Warning:
-                levelStr = "WARNING";
-                break;
-            case Qgis::MessageLevel::Success:
-                levelStr = "SUCCESS";
-                break;
-            case Qgis::MessageLevel::Critical:
-                levelStr = "CRITICAL";
-                break;
-            case Qgis::MessageLevel::NoLevel:
-                levelStr = "NO LEVEL";
-                break;
-            default:
-                levelStr = "INFO";
-        }
-        
-        stream << timestamp << " [" << levelStr << "] " << message << "\n";
-        file.close();
-    }
-}
 static QSize setWindowSize(QRect screenGeometry, int maxWidth, int maxHeight, int minWidth, int minHeight){
     // calc current screen size
     double width_d = screenGeometry.width() * 0.8;
@@ -116,47 +78,47 @@ void MainWindow::open3D() {
     logMessage("Start loading 3D models", Qgis::MessageLevel::Info);
 
     // 设置根目录路径
-    QString rootDir = "C:/20250109/Data5/test";
+    QString rootDir = "/mnt/repo/comprehensive3S/";
     //   通过对话框选择文件夹路径
     /* rootDir = QFileDialog::getExistingDirectory(this,
         tr("选择obj格式3D文件根目录"), QString(), QFileDialog::ShowDirsOnly |
         QFileDialog::DontResolveSymlinks);*/
 
+    logMessage("rootDir: " + rootDir, Qgis::MessageLevel::NoLevel);
     if (rootDir.isEmpty()) {
         logMessage("No valid path selected", Qgis::MessageLevel::Warning);
         return;
     }
 
     QDir dir(rootDir);
+    logMessage("dir: " + dir.path(), Qgis::MessageLevel::NoLevel);
     // retrive all subfolders
     QStringList folders = dir.entryList(QDir::Dirs | QDir::NoDotAndDotDot);
+    logMessage("folders: " + folders.first(), Qgis::MessageLevel::NoLevel);
     // iterate over each subfolder
     for (const QString &folder : folders) {
         QString folderPath = dir.filePath(folder); // subfolder full path
         logMessage("processing folder: " + folderPath, Qgis::MessageLevel::NoLevel);
         QDir subDir(folderPath);
-        QStringList objFiles =
-            subDir.entryList(QStringList() << "*.obj", QDir::Files);
-        QStringList jpgFiles =
-            subDir.entryList(QStringList() << "*.jpg", QDir::Files);
-        if (!objFiles.isEmpty() && !jpgFiles.isEmpty()) {
-            QString objPath = folderPath + "/" + objFiles.first(); // get the first .obj
-            QString texPath = folderPath + "/" + jpgFiles.first(); // get the first .jpg
-            mObjPaths.append(objPath);
-            mTexturePaths.append(texPath);
-            logMessage("load model: " + objPath, Qgis::MessageLevel::Info);
-            static_cast<MyOpenGLWidget *>(mpOpenGLWidget.get())
-                ->loadObjModel(objPath, texPath);
-            static_cast<MyOpenGLWidget*>(mpOpenGLWidget.get())->applyGlobalCentering();
-        } else {
+        QStringList objFiles = subDir.entryList(QStringList() << "*.obj", QDir::Files);
+        QStringList jpgFiles = subDir.entryList(QStringList() << "*.jpg", QDir::Files);
+        if (objFiles.isEmpty() || jpgFiles.isEmpty()) {
             logMessage("Missing .obj or .jpg in folder: " + folderPath, Qgis::MessageLevel::Critical);
+            continue;
         }
+        QString objPath = folderPath + "/" + objFiles.first(); // get the first .obj
+        QString texPath = folderPath + "/" + jpgFiles.first(); // get the first .jpg
+        logMessage("objPath: " + objPath, Qgis::MessageLevel::NoLevel);
+        logMessage("texPath: " + texPath, Qgis::MessageLevel::NoLevel);
+        mObjPaths.append(objPath);
+        mTexturePaths.append(texPath);
+        logMessage("load model: " + objPath, Qgis::MessageLevel::Info);
+        static_cast<MyOpenGLWidget *>(mpOpenGLWidget.get())->loadObjModel(objPath, texPath);
+        static_cast<MyOpenGLWidget*>(mpOpenGLWidget.get())->applyGlobalCentering();
+        logMessage("All models loaded. Applying global centering...", Qgis::MessageLevel::Info);
     }
 
-    // apply global centering after all models loaded
-    logMessage("All models loaded. Applying global centering...", Qgis::MessageLevel::Info);
-    static_cast<MyOpenGLWidget *>(mpOpenGLWidget.get())
-        ->applyGlobalCentering();
+    static_cast<MyOpenGLWidget *>(mpOpenGLWidget.get())->applyGlobalCentering();
     update();
     logMessage("Global centering applied", Qgis::MessageLevel::Success);
 }

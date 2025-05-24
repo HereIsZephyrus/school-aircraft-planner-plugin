@@ -1,6 +1,7 @@
 # Prerequisites
 /20250106
 /build
+/.cache
 *.d
 
 # Compiled Object files

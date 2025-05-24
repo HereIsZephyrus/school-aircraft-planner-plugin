@@ -1,4 +1,5 @@
 ﻿#include "MyOpenGLWidget.h"
+#include "qgis_debug.h"
 #include <QDebug>
 #include <QFile>
 #include <QFileInfo>
@@ -8,23 +9,22 @@
 #include <QTransform>
 #include <QWheelEvent>
 #include <qtimer.h>
+#include <qgsapplication.h>
+#include <qgis.h>
 
 MyOpenGLWidget::MyOpenGLWidget(QWidget *parent)
     : QOpenGLWidget(parent), m_routePlanner(new RoutePlanner(this)),
       m_animationProgress(0.0f), m_isAnimating(false),
       m_cameraFollowAircraft(false), m_viewTranslation(0, 0, 0) {
-  QSurfaceFormat format;
-  format.setDepthBufferSize(24);
-  format.setStencilBufferSize(8);
-  format.setVersion(3, 3);
-  format.setProfile(QSurfaceFormat::CoreProfile);
-  setFormat(format);
+  logMessage("MyOpenGLWidget constructor", Qgis::MessageLevel::Info);
+  
   mfDistance = -1100.0f; // 增大距离确保模型可见
   RoutePlanner *routePlanner = new RoutePlanner(this);
 
   m_animationTimer = new QTimer(this);
   connect(m_animationTimer, &QTimer::timeout, this,
           &MyOpenGLWidget::updateAnimation);
+  logMessage("m_animationTimer connected", Qgis::MessageLevel::Info);
   setFocusPolicy(Qt::StrongFocus); // 设置为强焦点模式
   setFocus();                      // 主动获取焦点
 }
@@ -39,27 +39,67 @@ MyOpenGLWidget::~MyOpenGLWidget() {
 }
 
 void MyOpenGLWidget::initializeGL() {
+  // 检查QGIS环境
+  if (!QgsApplication::instance()) {
+    qWarning() << "QGIS application not initialized";
+    return;
+  }
+  
+  // 设置QGIS OpenGL格式
+  QgsApplication::setAttribute(Qt::AA_UseDesktopOpenGL);
+  QgsApplication::setAttribute(Qt::AA_ShareOpenGLContexts);
+  
+  // 设置OpenGL格式
+  QSurfaceFormat format;
+  format.setVersion(3, 3);
+  format.setProfile(QSurfaceFormat::CoreProfile);
+  format.setDepthBufferSize(24);
+  format.setStencilBufferSize(8);
+  format.setSamples(4);  // 多重采样
+  QSurfaceFormat::setDefaultFormat(format);
+  setFormat(format);
+  
+  // 确保当前上下文
+  makeCurrent();
+  
+  // 检查上下文有效性
+  if (!isValid()) {
+    logMessage("OpenGL context is not valid", Qgis::MessageLevel::Critical);
+    return;
+  }
   initializeOpenGLFunctions();
-  // qDebug() << "OpenGL initialized successfully.";
+  
+  // 检查OpenGL版本
+  QString version = QString::fromUtf8((const char*)glGetString(GL_VERSION));
+  logMessage("OpenGL Version: " + version, Qgis::MessageLevel::Info);
+  
+  // 继续其他初始化
   glEnable(GL_DEPTH_TEST);
-
+  logMessage("depth test enabled", Qgis::MessageLevel::Info);
   initShaders();
+  logMessage("shader initialized", Qgis::MessageLevel::Info);
   initBuffers();
+  logMessage("buffers initialized", Qgis::MessageLevel::Info);
 
   mProjection.perspective(45.0f, width() / (float)height(), 0.1f, 1000.0f);
-
+  logMessage("projection initialized", Qgis::MessageLevel::Info);
   // 线框着色器
   if (!m_lineShader.addShaderFromSourceFile(QOpenGLShader::Vertex,
                                             ":/shaders/line_vshader.glsl")) {
-    qDebug() << "m_lineShader Line Vertex Shader Error:" << m_lineShader.log();
+    logMessage("m_lineShader Line Vertex Shader Error:" + m_lineShader.log(), Qgis::MessageLevel::Critical);
+  }else{
+    logMessage("m_lineShader Line Vertex Shader initialized", Qgis::MessageLevel::Info);
   }
   if (!m_lineShader.addShaderFromSourceFile(QOpenGLShader::Fragment,
                                             ":/shaders/line_fshader.glsl")) {
-    qDebug() << "m_lineShader Line Fragment Shader Error:"
-             << m_lineShader.log();
+    logMessage("m_lineShader Line Fragment Shader Error:" + m_lineShader.log(), Qgis::MessageLevel::Critical);
+  }else{
+    logMessage("m_lineShader Line Fragment Shader initialized", Qgis::MessageLevel::Info);
   }
   if (!m_lineShader.link()) {
-    qDebug() << "m_lineShader Line Shader Link Error:" << m_lineShader.log();
+    logMessage("m_lineShader Line Shader Link Error:" + m_lineShader.log(), Qgis::MessageLevel::Critical);
+  }else{
+    logMessage("m_lineShader Line Shader initialized", Qgis::MessageLevel::Info);
   }
   m_pointVAO.create();
   m_hullVAO.create();
@@ -95,6 +135,7 @@ void MyOpenGLWidget::initializeGL() {
   m_basePlaneVBO.release();
 
   emit glInitialized(); // 添加在函数末尾
+  doneCurrent();
 }
 
 void MyOpenGLWidget::paintGL() {
@@ -189,14 +230,14 @@ void MyOpenGLWidget::initShaders() {
 
   if (!mShaderProgram.addShaderFromSourceFile(QOpenGLShader::Vertex,
                                               ":/shaders/vshader.glsl")) {
-    qDebug() << "Vertex Shader Error:" << mShaderProgram.log();
+    logMessage("Vertex Shader Error:" + mShaderProgram.log(), Qgis::MessageLevel::Critical);
   }
   if (!mShaderProgram.addShaderFromSourceFile(QOpenGLShader::Fragment,
                                               ":/shaders/fshader.glsl")) {
-    qDebug() << "Fragment Shader Error:" << mShaderProgram.log();
+    logMessage("Fragment Shader Error:" + mShaderProgram.log(), Qgis::MessageLevel::Critical);
   }
   if (!mShaderProgram.link()) {
-    qDebug() << "Shader Link Error:" << mShaderProgram.log();
+    logMessage("Shader Link Error:" + mShaderProgram.log(), Qgis::MessageLevel::Critical);
   }
   QFile vshaderFile(":/shaders/vshader.glsl");
   vshaderFile.open(QIODevice::ReadOnly);
@@ -315,6 +356,8 @@ void MyOpenGLWidget::loadObjModel(const QString &filePath,
   // }
   //  [4] 计算模型原始包围盒（不要修改顶点）
   ModelBounds bounds;
+  QString bound_range = QString("bound_range: %1-%2-%3+%4-%5-%6").arg(bounds.min.x()).arg(bounds.min.y()).arg(bounds.min.z()).arg(bounds.max.x()).arg(bounds.max.y()).arg(bounds.max.z());
+  logMessage(bound_range, Qgis::MessageLevel::Info);
   calculateModelBounds(modelData, bounds);
 
   // 存储原始数据
@@ -330,6 +373,7 @@ void MyOpenGLWidget::loadObjModel(const QString &filePath,
   modelData->vao.bind();
   modelData->vbo.bind();
   modelData->vbo.allocate(nullptr, 0); // 先分配空缓冲
+  logMessage("initBuffers", Qgis::MessageLevel::Info);
 
   glEnableVertexAttribArray(0);
   glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex),
@@ -340,10 +384,11 @@ void MyOpenGLWidget::loadObjModel(const QString &filePath,
 
   modelData->vbo.release();
   modelData->vao.release();
-
+  logMessage("releaseBuffers", Qgis::MessageLevel::Info);
   m_models.append(modelData);
   doneCurrent();
   update();
+  logMessage("loadObjModel", Qgis::MessageLevel::Info);
 }
 
 // 辅助函数：计算模型中心
