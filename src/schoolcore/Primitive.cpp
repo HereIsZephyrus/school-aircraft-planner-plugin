@@ -93,7 +93,9 @@ std::shared_ptr<QOpenGLShaderProgram> constructShader(const QString& vertexShade
     return shader;
 }
 ModelData::ModelData(pMaterialVector materials, pTextureMap textures, pMaterialGroupMap materialGroups):
-    materials(materials), textures(textures), materialGroups(materialGroups){}
+    materials(materials), textures(textures), materialGroups(materialGroups){
+        calculateModelBounds(this, mBounds);
+    }
 ModelData::~ModelData(){
     this->materials->clear();
     this->textures->clear();
@@ -323,7 +325,6 @@ void ModelData::applyGlobalCentering() {
   qDebug() << "omggggggggggggggg";
 }
 
-// 辅助函数：计算模型中心
 QVector3D ModelData::calculateModelCenter() {
   float minX = FLT_MAX, maxX = -FLT_MAX;
   float minY = FLT_MAX, maxY = -FLT_MAX;

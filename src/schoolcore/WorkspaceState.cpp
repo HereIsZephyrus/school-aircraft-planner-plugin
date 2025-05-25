@@ -52,3 +52,10 @@ ws::WindowManager::WindowManager() {
 ws::WindowManager::~WindowManager() {
     delete pDefaultObject;
 }
+
+void ws::AnimationManager::stopSimulation() {
+  m_animationTimer->stop();
+  m_isAnimating = false;
+  m_animationProgress = 0.0f;
+  update();
+}

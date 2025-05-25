@@ -200,33 +200,6 @@ void MyOpenGLWidget::resizeGL(int w, int h) {
   mProjection.setToIdentity();
   mProjection.perspective(45.0f, w / (float)h, 1.0f, 100000.0f);
 }
-
-void MyOpenGLWidget::initBuffers() {
-  m_pointVAO.create();
-  m_hullVAO.create();
-  m_routeVAO.create();
-
-  m_pointVBO.create();
-  m_hullVBO.create();
-  m_routeVBO.create();
-
-  const float size = 1000.0f;
-  const float step = 50.0f;
-  QVector<float> vertices;
-  for (float x = -size; x <= size; x += step) {
-    vertices << x << -size << 0.0f << x << size << 0.0f;
-  }
-  for (float y = -size; y <= size; y += step) {
-    vertices << -size << y << 0.0f << size << y << 0.0f;
-  }
-
-  mVAO.create();
-  QOpenGLVertexArrayObject::Binder vaoBinder(&mVAO);
-  mVBO.create();
-  mVBO.bind();
-  mVAO.release();
-  mVBO.release();
-}
 */
 void MyOpenGLWidget::paintGL(){
   glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
@@ -234,26 +207,6 @@ void MyOpenGLWidget::paintGL(){
   basePlaneWidget->draw();
 }
 
-// 辅助函数：计算模型中心
-QVector3D MyOpenGLWidget::calculateModelCenter(ModelData *modelData) {
-  float minX = FLT_MAX, maxX = -FLT_MAX;
-  float minY = FLT_MAX, maxY = -FLT_MAX;
-  float minZ = FLT_MAX, maxZ = -FLT_MAX;
-
-  for (const auto &group : modelData->materialGroups) {
-    for (const Vertex &v : group) {
-      minX = qMin(minX, v.position.x());
-      maxX = qMax(maxX, v.position.x());
-      minY = qMin(minY, v.position.y());
-      maxY = qMax(maxY, v.position.y());
-      minZ = qMin(minZ, v.position.z());
-      maxZ = qMax(maxZ, v.position.z());
-    }
-  }
-
-  return QVector3D((minX + maxX) / 2.0f, (minY + maxY) / 2.0f,
-                   (minZ + maxZ) / 2.0f);
-}
 void MyOpenGLWidget::mousePressEvent(QMouseEvent *event) {
 
   if (m_routePlanner && m_routePlanner->mCreateRoute) {
@@ -320,7 +273,7 @@ void MyOpenGLWidget::mousePressEvent(QMouseEvent *event) {
   }
 
   // 默认处理：视图旋转
-  m_lastMousePos = event->pos();
+  mLastMousePos = event->pos();
 }
 
 void MyOpenGLWidget::mouseMoveEvent(QMouseEvent *event) {
@@ -345,8 +298,8 @@ void MyOpenGLWidget::mouseMoveEvent(QMouseEvent *event) {
       handleMouseMove(event);
     } else {
       // 默认处理：视图旋转
-      float dx = event->x() - m_lastMousePos.x();
-      float dy = event->y() - m_lastMousePos.y();
+      float dx = event->x() - mLastMousePos.x();
+      float dy = event->y() - mLastMousePos.y();
       if (event->buttons() & Qt::LeftButton) {
         QMatrix4x4 rotation;
         rotation.rotate(dx, QVector3D(0, 1, 0));
@@ -354,7 +307,7 @@ void MyOpenGLWidget::mouseMoveEvent(QMouseEvent *event) {
         mModelView = rotation * mModelView;
         update();
       }
-      m_lastMousePos = event->pos();
+      mLastMousePos = event->pos();
     }
   }
 }
@@ -822,112 +775,4 @@ void MyOpenGLWidget::keyPressEvent(QKeyEvent *event) {
       return;
     }
   }
-}
-
-void MyOpenGLWidget::stopSimulation() {
-  m_animationTimer->stop();
-  m_isAnimating = false;
-  m_animationProgress = 0.0f;
-  update();
-}
-// 计算单个模型包围盒
-void MyOpenGLWidget::calculateModelBounds(ModelData *modelData,
-                                          ModelBounds &bounds) {
-  bounds.min = QVector3D(FLT_MAX, FLT_MAX, FLT_MAX);
-  bounds.max = QVector3D(-FLT_MAX, -FLT_MAX, -FLT_MAX);
-
-  for (const auto &group : modelData->materialGroups) {
-    for (const Vertex &v : group) {
-      bounds.min.setX(qMin(bounds.min.x(), v.position.x()));
-      bounds.min.setY(qMin(bounds.min.y(), v.position.y()));
-      bounds.min.setZ(qMin(bounds.min.z(), v.position.z()));
-
-      bounds.max.setX(qMax(bounds.max.x(), v.position.x()));
-      bounds.max.setY(qMax(bounds.max.y(), v.position.y()));
-      bounds.max.setZ(qMax(bounds.max.z(), v.position.z()));
-    }
-  }
-
-  bounds.originalCenter = QVector3D((bounds.min.x() + bounds.max.x()) / 2.0f,
-                                    (bounds.min.y() + bounds.max.y()) / 2.0f,
-                                    (bounds.min.z() + bounds.max.z()) / 2.0f);
-}
-
-// 更新全局包围盒
-void MyOpenGLWidget::updateGlobalBounds(const ModelBounds &modelBounds) {
-  m_globalBounds.sceneMin.setX(
-      qMin(m_globalBounds.sceneMin.x(), modelBounds.min.x()));
-  m_globalBounds.sceneMin.setY(
-      qMin(m_globalBounds.sceneMin.y(), modelBounds.min.y()));
-  m_globalBounds.sceneMin.setZ(
-      qMin(m_globalBounds.sceneMin.z(), modelBounds.min.z()));
-
-  m_globalBounds.sceneMax.setX(
-      qMax(m_globalBounds.sceneMax.x(), modelBounds.max.x()));
-  m_globalBounds.sceneMax.setY(
-      qMax(m_globalBounds.sceneMax.y(), modelBounds.max.y()));
-  m_globalBounds.sceneMax.setZ(
-      qMax(m_globalBounds.sceneMax.z(), modelBounds.max.z()));
-
-  m_globalBounds.sceneCenter = QVector3D(
-      (m_globalBounds.sceneMin.x() + m_globalBounds.sceneMax.x()) / 2.0f,
-      (m_globalBounds.sceneMin.y() + m_globalBounds.sceneMax.y()) / 2.0f,
-      (m_globalBounds.sceneMin.z() + m_globalBounds.sceneMax.z()) / 2.0f);
-  qDebug() << "x"
-           << (m_globalBounds.sceneMin.x() + m_globalBounds.sceneMax.x()) / 2.0f
-           << "y"
-           << (m_globalBounds.sceneMin.y() + m_globalBounds.sceneMax.y()) / 2.0f
-           << "z"
-           << (m_globalBounds.sceneMin.z() + m_globalBounds.sceneMax.z()) /
-                  2.0f;
-}
-
-void MyOpenGLWidget::applyGlobalCentering() {
-  makeCurrent();
-
-  // 重置全局包围盒
-  m_globalBounds = GlobalBounds();
-
-  // 重新计算所有模型的全局包围盒
-  for (ModelData *model : m_models) {
-    ModelBounds modelBounds;
-    calculateModelBounds(model, modelBounds);
-    updateGlobalBounds(modelBounds);
-  }
-
-  // 计算全局中心
-  QVector3D globalCenter = m_globalBounds.sceneCenter;
-  qDebug() << "x:" << m_globalBounds.sceneCenter.x()
-           << ",y:" << m_globalBounds.sceneCenter.y()
-           << ",z:" << m_globalBounds.sceneCenter.z();
-  // 调整每个模型的顶点位置
-  for (ModelData *model : m_models) {
-    ModelBounds &bounds = m_modelBoundsMap[model];
-    QVector3D modelOffset = globalCenter;
-
-    // 修改顶点数据
-    for (auto &group : model->materialGroups) {
-      for (Vertex &v : group) {
-        v.position -= modelOffset;
-      }
-    }
-
-    // 更新VBO
-    model->vao.bind();
-    model->vbo.bind();
-    int offset = 0;
-    for (auto it = model->materialGroups.begin();
-         it != model->materialGroups.end(); ++it) {
-      const QVector<Vertex> &vertices = it.value();
-      model->vbo.write(offset, vertices.constData(),
-                       vertices.size() * sizeof(Vertex));
-      offset += vertices.size() * sizeof(Vertex);
-    }
-    model->vbo.release();
-    model->vao.release();
-  }
-
-  doneCurrent();
-  update();
-  qDebug() << "omggggggggggggggg";
 }

@@ -42,15 +42,12 @@ public:
     bool get2DMapInited() const {return is2DMapInited;}
     void set3DMapInited() {is3DMapInited = true;}
     void set2DMapInited() {is2DMapInited = true;}
-    void setProjection(double fov, double width, double height, double near, double far) {mProjection.perspective(fov, width, height, near, far);}
-    QMatrix4x4 getProjection() const {return mProjection;}
     const Bounds& getBounds() const {return mBounds;}
     void setBounds(const Bounds& bounds) {mBounds = bounds;}
 private:
     CanvasType mCurrentCanvas;
     static QObject *pDefaultObject;
     bool is3DMapInited,is2DMapInited;
-    QMatrix4x4 mProjection;
     Bounds mBounds;
 };
 class PathManager {
@@ -140,9 +137,41 @@ public:
     static constexpr int minBaseHeight = 0;
     static constexpr int maxBaseHeight = 100;
 private:
-    double mFlightSpeed;
-    double mFlightAltitude;
-    double mFlightBattery;
-    double mBaseHeight;
+    double mFlightSpeed,mFlightAltitude,mFlightBattery,mBaseHeight;
+    QVector3D mAircraftPosition;
+    QQuaternion mAircraftOrientation;
+    QVector<QVector3D> mFlightPath;
+    QVector3D mHomePosition;
+};
+
+class AnimationManager{
+private:
+    AnimationManager();
+    ~AnimationManager();
+public:
+    static AnimationManager& getInstance() {
+        static AnimationManager instance;
+        return instance;
+    }
+    AnimationManager(const AnimationManager&) = delete;
+    AnimationManager& operator=(const AnimationManager&) = delete;
+    void setAnimationSpeed(double speed) {mAnimationSpeed = speed;}
+    double getAnimationSpeed() const {return mAnimationSpeed;}
+    void setAnimationDirection(AnimationDirection direction) {mAnimationDirection = direction;}
+    AnimationDirection getAnimationDirection() const {return mAnimationDirection;}
+private:
+    double mAnimationSpeed;
+    AnimationDirection mAnimationDirection;
+    QTimer *m_animationTimer;
+    float m_animationProgress; // 0~1之间的进度值
+    bool m_isAnimating;
+    void updateAnimation();
+    void drawAircraft(const QVector3D &position, const QQuaternion &orientation);
+    QVector<Vertex> createAircraftModel();
+    bool m_cameraFollowAircraft; // 跟随摄像机
+    void keyPressEvent(QKeyEvent *event);
+    QVector3D m_viewTranslation; // 图平移
+public slots:
+    void stopSimulation();
 };
 }

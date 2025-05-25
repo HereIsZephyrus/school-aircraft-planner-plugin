@@ -52,6 +52,11 @@ public:
   ControlPoints(GLfloat* vertices, GLuint vertexNum=1, const QVector4D& color=QVector4D(1.0f, 1.0f, 1.0f, 1.0f));
 };
 
+class ConvexHull : public ColorPrimitive{
+public:
+  ConvexHull(GLfloat* vertices, GLuint vertexNum, const QVector4D& color=QVector4D(1.0f, 1.0f, 1.0f, 1.0f));
+};
+
 class ModelData{
 public:
     struct Material;
