@@ -5,6 +5,27 @@
 typedef std::pair<QString, QString> ObjTexturePair; // the first is the obj path, the second is the texture path
 namespace ws{
 void initializeWorkspaceState();
+
+enum class CanvasType : unsigned char{
+    ThreeD,
+    TwoD
+};
+class WindowManager {
+private:
+    WindowManager();
+    ~WindowManager();
+public:
+    static WindowManager& getInstance() {
+        static WindowManager instance;
+        return instance;
+    }
+    WindowManager(const WindowManager&) = delete;
+    WindowManager& operator=(const WindowManager&) = delete;
+    void setCurrentCanvas(CanvasType canvas) {mCurrentCanvas = canvas;}
+    CanvasType getCurrentCanvas() const {return mCurrentCanvas;}
+private:
+    CanvasType mCurrentCanvas;
+};
 class PathManager {
 private:
     PathManager();

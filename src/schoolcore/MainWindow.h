@@ -61,9 +61,10 @@ private slots:
 private:
   void createMenu();
   void createMainWindow();
-  void createDockWidgets();
+  void createJoyDockWidgets();
   void createLeftDockWidget();
   void createRightDockWidget();
+  void createSlots();
   void createCanvas();
   QMenuBar *mpMenuBar;
   QStackedWidget *mpStackedWidget;
@@ -81,6 +82,15 @@ private:
   std::unique_ptr<MyOpenGLWidget> mpOpenGLWidget;
   void resetView();
   void initWindowStatus();
+  void init3DWidget();
+  void init2DWidget();
+  template <typename Tp> // Tp is the pointer type
+  Tp safeFindChild(const QString &name) {
+    Tp pWidget = this->findChild<Tp>(name);
+    if (pWidget == nullptr)
+      logMessage("findChild: " + name + " not found", Qgis::MessageLevel::Critical);
+    return pWidget;
+  }
 
 private slots:
   void queryFlightParameters();

@@ -30,14 +30,41 @@
 #include <QDir>
 #include <QScrollArea>
 
+void MainWindow::init3DWidget(){
+    mpRoutePlanner = std::make_unique<RoutePlanner>(this);
+    mpOpenGLWidget = std::make_unique<MyOpenGLWidget>(this);
+
+    //mpOpenGLWidget->show();
+    //mpOpenGLWidget->update();
+
+    connect(mpOpenGLWidget.get(), &MyOpenGLWidget::glInitialized, this, &MainWindow::open3D);
+
+    // pass RoutePlanner instance to OpenGLWidget
+    mpOpenGLWidget->setRoutePlanner(mpRoutePlanner.get());
+}
+void MainWindow::init2DWidget(){
+    // create QLabel to display local image
+    mpImageLabel = new QLabel(this);
+    QPixmap mapImage(":/map/capture.png"); // use resource path to load image
+    if (mapImage.isNull()) {
+        logMessage("failed to load local map image", Qgis::MessageLevel::Critical);
+        return;
+    }
+    mpImageLabel->setPixmap(mapImage);
+    mpImageLabel->setScaledContents(true); // let image adapt to label size, keep ratio
+    mpImageLabel->setSizePolicy(QSizePolicy::Ignored,
+                                    QSizePolicy::Ignored); // set size policy
+    logMessage("create QLabel to display local map image", Qgis::MessageLevel::Success);
+}
 MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent) {
     logMessage("Application started", Qgis::MessageLevel::Info);
     initWindowStatus();
     ws::initializeWorkspaceState();
     logMessage("MainWindow constructor called", Qgis::MessageLevel::Success);
 
-    mpRoutePlanner = std::make_unique<RoutePlanner>(this);
-    mpOpenGLWidget = std::make_unique<MyOpenGLWidget>(this);
+    init3DWidget();
+    init2DWidget();
+    
     logMessage("function class initialized", Qgis::MessageLevel::Success);
     
     createMenu();
@@ -45,7 +72,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent) {
     connect(mpRoutePlanner.get(), &RoutePlanner::dataUpdated, mpOpenGLWidget.get(),
             QOverload<>::of(&QOpenGLWidget::update));
     logMessage("connect route planner signal to update mapcanvas", Qgis::MessageLevel::Success);
-    createDockWidgets();
+    createJoyDockWidgets();
     logMessage("create dock widgets", Qgis::MessageLevel::Success);
 }
 
@@ -203,17 +230,20 @@ void MainWindow::createMenu() {
 void MainWindow::createLeftDockWidget() {
     // initialize left dock widget
     QDockWidget *pLeftDockWidget = new QDockWidget(tr("Control Panel"), this);
+    pLeftDockWidget->setObjectName("pLeftDockWidget");
     pLeftDockWidget->setAllowedAreas(Qt::LeftDockWidgetArea);
     pLeftDockWidget->setFeatures(QDockWidget::DockWidgetMovable |
                                 QDockWidget::DockWidgetFloatable);
     pLeftDockWidget->setMinimumWidth(200);
 
     QScrollArea *scrollArea = new QScrollArea(pLeftDockWidget);
+    scrollArea->setObjectName("scrollArea");
     scrollArea->setWidgetResizable(true);
     scrollArea->setHorizontalScrollBarPolicy(Qt::ScrollBarAsNeeded);
     scrollArea->setVerticalScrollBarPolicy(Qt::ScrollBarAsNeeded);
     
     QWidget *pDockContent = new QWidget(pLeftDockWidget);
+    pDockContent->setObjectName("pDockContent");
     pDockContent->setMinimumWidth(175);
     QVBoxLayout *pMainLayout = new QVBoxLayout(pDockContent);
     pMainLayout->setContentsMargins(10, 10, 10, 10);
@@ -221,7 +251,9 @@ void MainWindow::createLeftDockWidget() {
 
     // ===== view switch group =====
     QGroupBox *pViewGroup = new QGroupBox("View Switch", pDockContent);
+    pViewGroup->setObjectName("pViewGroup");
     QVBoxLayout *pViewLayout = new QVBoxLayout(pViewGroup);
+    pViewLayout->setObjectName("pViewLayout");
     pViewLayout->addWidget(mpBtnReset = new QPushButton("Reset", pViewGroup));
     pViewLayout->addWidget(mpBtnSwitchTo3D = new QPushButton("3D View", pViewGroup));
     pViewLayout->addWidget(mpBtnSwitchTo2D = new QPushButton("2D Map", pViewGroup));
@@ -230,11 +262,14 @@ void MainWindow::createLeftDockWidget() {
 
     // ===== route planning group =====
     QGroupBox *pRouteGroup = new QGroupBox("Route Planning", pDockContent);
+    pRouteGroup->setObjectName("pRouteGroup");
     QFormLayout *pRouteLayout = new QFormLayout(pRouteGroup);
+    pRouteLayout->setObjectName("pRouteLayout");
     logMessage("create route planning group", Qgis::MessageLevel::Success);
 
     // add base height control widget to route planning group
     QDoubleSpinBox *pBaseHeightSpin = new QDoubleSpinBox(pRouteGroup);
+    pBaseHeightSpin->setObjectName("pBaseHeightSpin");
     pBaseHeightSpin->setRange(-1000.0, 1000.0);
     pBaseHeightSpin->setValue(0.0);
     pBaseHeightSpin->setSuffix(" m");
@@ -242,6 +277,7 @@ void MainWindow::createLeftDockWidget() {
 
     // set height selection box
     QDoubleSpinBox *pHeightSpin = new QDoubleSpinBox(pRouteGroup);
+    pHeightSpin->setObjectName("pHeightSpin");
     pHeightSpin->setRange(1.0, 300.0);
     pHeightSpin->setValue(75.0);
     pHeightSpin->setSuffix(" m");
@@ -249,6 +285,7 @@ void MainWindow::createLeftDockWidget() {
 
     // set height selection box
     QDoubleSpinBox *pWidthSpin = new QDoubleSpinBox(pRouteGroup);
+    pWidthSpin->setObjectName("pWidthSpin");
     pWidthSpin->setRange(1.0, 300.0);
     pWidthSpin->setValue(10.0);
     pWidthSpin->setSuffix(" m");
@@ -257,15 +294,22 @@ void MainWindow::createLeftDockWidget() {
     // set operation buttons: create route, add, move, clear control points, generate route
     QPushButton *pBtnCreateRoute =
         new QPushButton("Create Route", pRouteGroup); // start creating route
+    pBtnCreateRoute->setObjectName("pBtnCreateRoute");
     QPushButton *pBtnSetHome = new QPushButton("Set Home Point", pRouteGroup);
+    pBtnSetHome->setObjectName("pBtnSetHome");
     QPushButton *pBtnAddControlPoint =
         new QPushButton("Add Control Point", pRouteGroup); // add control point button
+    pBtnAddControlPoint->setObjectName("pBtnAddControlPoint");
     QPushButton *pBtnEditPoint =
         new QPushButton("Edit Points", pRouteGroup); // bring up the toolbar, select the point, and move, delete point function
+    pBtnEditPoint->setObjectName("pBtnEditPoint");
     QPushButton *pBtnGenerate = new QPushButton("Generate Route", pRouteGroup); // generate route
+    pBtnGenerate->setObjectName("pBtnGenerate");
 
     QVBoxLayout *pBtnColumn =
         new QVBoxLayout(pRouteGroup); // use QVBoxLayout instead of QHBoxLayout
+    pBtnColumn->setObjectName("pBtnColumn");
+    pBtnColumn->setContentsMargins(0, 0, 0, 0);
     pBtnColumn->addWidget(pBtnCreateRoute);
     pBtnColumn->addWidget(pBtnSetHome);
     pBtnColumn->addWidget(pBtnAddControlPoint); // add "add control point" button
@@ -276,39 +320,41 @@ void MainWindow::createLeftDockWidget() {
 
     logMessage("create route planning group", Qgis::MessageLevel::Success);
 
-    connect(pBtnSetHome, &QPushButton::clicked, [this]() {
-    if (!mpRoutePlanner->m_settingHomePointMode) {
-        // enter setting home point mode
-        mpRoutePlanner->setSettingHomePointMode(true);
-        logMessage("enter setting home point mode", Qgis::MessageLevel::Success);
-    }
-    });
-    logMessage("connect set home point button to enter setting home point mode", Qgis::MessageLevel::Info);
-
     // ===== flight simulation group =====
     QGroupBox *pSimGroup = new QGroupBox("Flight Simulation", pDockContent);
+    pSimGroup->setObjectName("pSimGroup");
     QFormLayout *pSimLayout = new QFormLayout(pSimGroup);
+    pSimLayout->setObjectName("pSimLayout");
     logMessage("create flight simulation group", Qgis::MessageLevel::Success);
 
     QDoubleSpinBox *pSpeedSpin = new QDoubleSpinBox(pSimGroup);
-    pSpeedSpin->setRange(1.0, 50.0);
-    pSpeedSpin->setValue(10.0);
+    pSpeedSpin->setObjectName("pSpeedSpin");
+    pSpeedSpin->setRange(ws::FlightManager::minFlightSpeed, ws::FlightManager::maxFlightSpeed);
+    pSpeedSpin->setValue(ws::FlightManager::getInstance().getFlightSpeed());
     pSpeedSpin->setSuffix(" m/s");
     pSimLayout->addRow("Flight Speed:", pSpeedSpin);
     logMessage("create flight speed spin box", Qgis::MessageLevel::Success);
 
     QPushButton *pBtnStart = new QPushButton("Start", pSimGroup);
+    pBtnStart->setObjectName("pBtnStart");
     QPushButton *pBtnPause = new QPushButton("Pause", pSimGroup);
+    pBtnPause->setObjectName("pBtnPause");
     QPushButton *pBtnResume = new QPushButton("Resume", pSimGroup);
+    pBtnResume->setObjectName("pBtnResume");
     QPushButton *pBtnReturn = new QPushButton("Return Home", pSimGroup);
+    pBtnReturn->setObjectName("pBtnReturn");
     QPushButton *pBtnStop = new QPushButton("Stop Simulation", pSimGroup);
+    pBtnStop->setObjectName("pBtnStop");
     QHBoxLayout *pControlRow1 = new QHBoxLayout(pSimGroup);
+    pControlRow1->setObjectName("pControlRow1");
     pControlRow1->addWidget(pBtnStart);
     pControlRow1->addWidget(pBtnPause);
     QHBoxLayout *pControlRow2 = new QHBoxLayout(pSimGroup);
+    pControlRow2->setObjectName("pControlRow2");
     pControlRow2->addWidget(pBtnResume);
     pControlRow2->addWidget(pBtnReturn);
     QHBoxLayout *pControlRow3 = new QHBoxLayout(pSimGroup);
+    pControlRow3->setObjectName("pControlRow3");
     pControlRow3->addWidget(pBtnStop);
     logMessage("create flight simulation group", Qgis::MessageLevel::Success);
 
@@ -326,8 +372,11 @@ void MainWindow::createLeftDockWidget() {
     // ===== flight parameters query group =====
     QGroupBox *pFlightParamsGroup =
         new QGroupBox("Flight Parameters", pDockContent);
+    pFlightParamsGroup->setObjectName("pFlightParamsGroup");
     QVBoxLayout *pFlightParamsLayout = new QVBoxLayout(pFlightParamsGroup);
+    pFlightParamsLayout->setObjectName("pFlightParamsLayout");
     QPushButton *pBtnQueryParams = new QPushButton("Query Parameters", pFlightParamsGroup);
+    pBtnQueryParams->setObjectName("pBtnQueryParams");
     m_pFlightParamsDisplay = new QLabel("No flight data available", pFlightParamsGroup);
     m_pFlightParamsDisplay->setWordWrap(true);
     m_pFlightParamsDisplay->setFrameStyle(QFrame::Box);
@@ -339,41 +388,25 @@ void MainWindow::createLeftDockWidget() {
     // ===== basic data group =====
     QGroupBox *pBasicDataGroup =
         new QGroupBox("Environmental Data", pDockContent);
+    pBasicDataGroup->setObjectName("pBasicDataGroup");
     QFormLayout *pBasicDataLayout = new QFormLayout(pBasicDataGroup);
+    pBasicDataLayout->setObjectName("pBasicDataLayout");
     m_pWeatherLabel = new QLabel("Weather: -", pBasicDataGroup);
     m_pTemperatureLabel = new QLabel("Temperature: -", pBasicDataGroup);
     m_pPressureLabel = new QLabel("Pressure: -", pBasicDataGroup);
     QPushButton *pBtnRefreshData = new QPushButton("Refresh Data", pBasicDataGroup);
+    pBtnRefreshData->setObjectName("pBtnRefreshData");
     pBasicDataLayout->addRow("Weather:", m_pWeatherLabel);
     pBasicDataLayout->addRow("Temperature:", m_pTemperatureLabel);
     pBasicDataLayout->addRow("Pressure:", m_pPressureLabel);
     pBasicDataLayout->addRow(pBtnRefreshData);
     pMainLayout->addWidget(pBasicDataGroup);
     logMessage("create basic data group", Qgis::MessageLevel::Success);
-
-    connect(pBtnQueryParams, &QPushButton::clicked, this,
-            &MainWindow::queryFlightParameters);
-    logMessage("connect query flight parameters button to query flight parameters", Qgis::MessageLevel::Info);
-    connect(pBtnRefreshData, &QPushButton::clicked, this,
-            &MainWindow::refreshBasicData);
-    logMessage("connect refresh basic data button to refresh basic data", Qgis::MessageLevel::Info);
-    logMessage("connect query flight parameters and refresh basic data", Qgis::MessageLevel::Success);
 }
 void MainWindow::createRightDockWidget() {
-    QPushButton *pBtnCreateRoute = this->findChild<QPushButton*>("pBtnCreateRoute");
-    QPushButton *pBtnSetHome = this->findChild<QPushButton*>("pBtnSetHome");
-    QPushButton *pBtnAddControlPoint = this->findChild<QPushButton*>("pBtnAddControlPoint");
-    QPushButton *pBtnEditPoint = this->findChild<QPushButton*>("pBtnEditPoint");
-    QPushButton *pBtnGenerate = this->findChild<QPushButton*>("pBtnGenerate");
-    QPushButton *pBtnStart = this->findChild<QPushButton*>("pBtnStart");
-    QPushButton *pBtnPause = this->findChild<QPushButton*>("pBtnPause");
-    QPushButton *pBtnResume = this->findChild<QPushButton*>("pBtnResume");
-    QPushButton *pBtnReturn = this->findChild<QPushButton*>("pBtnReturn");
-    QPushButton *pBtnStop = this->findChild<QPushButton*>("pBtnStop");
-    QPushButton *pBtnQueryParams = this->findChild<QPushButton*>("pBtnQueryParams");
-    QPushButton *pBtnRefreshData = this->findChild<QPushButton*>("pBtnRefreshData");
     // initialize right dock widget
     QDockWidget *pRightDockWidget = new QDockWidget(tr("Property Panel"), this);
+    pRightDockWidget->setObjectName("pRightDockWidget");
     pRightDockWidget->setAllowedAreas(Qt::RightDockWidgetArea);
     pRightDockWidget->setFeatures(QDockWidget::DockWidgetMovable |
                                 QDockWidget::DockWidgetFloatable);
@@ -381,6 +414,7 @@ void MainWindow::createRightDockWidget() {
     logMessage("create right dock widget", Qgis::MessageLevel::Success);
     // create file tree
     mpFileTreeWidget = new QTreeWidget(pRightDockWidget);
+    mpFileTreeWidget->setObjectName("mpFileTreeWidget");
     mpFileTreeWidget->setHeaderLabel(tr("File List"));
     logMessage("create file tree", Qgis::MessageLevel::Success);
     // set right-click menu
@@ -391,6 +425,7 @@ void MainWindow::createRightDockWidget() {
 
     // create select directory button
     QToolButton *selectDirectoryButton = new QToolButton(pRightDockWidget);
+    selectDirectoryButton->setObjectName("selectDirectoryButton");
     selectDirectoryButton->setText(tr("Select Directory"));
     connect(selectDirectoryButton, &QToolButton::clicked, this,
             &MainWindow::onSelectDirectoryClicked);
@@ -398,11 +433,13 @@ void MainWindow::createRightDockWidget() {
 
     // add button and file tree widget to vertical layout
     QVBoxLayout *layout = new QVBoxLayout(pRightDockWidget);
+    layout->setObjectName("layout");
     layout->addWidget(selectDirectoryButton);
     layout->addWidget(mpFileTreeWidget);
 
     QWidget *container = new QWidget(pRightDockWidget);
     container->setLayout(layout);
+    container->setObjectName("container");
     pRightDockWidget->setWidget(container);
     // load file list of specified directory to tree widget
     QString dirPath = ws::PathManager::getInstance().getRootDir();
@@ -411,10 +448,13 @@ void MainWindow::createRightDockWidget() {
     ////
     ///create right bottom tool box sidebar------------------------------------------------------------------------------------
     QDockWidget *mpRightDock = new QDockWidget(tr("tool box"), pRightDockWidget);
+    mpRightDock->setObjectName("mpRightDock");
     mpRightDock->setAllowedAreas(Qt::RightDockWidgetArea);
     addDockWidget(Qt::RightDockWidgetArea, mpRightDock);
     QVBoxLayout *mpToolLayout = new QVBoxLayout(pRightDockWidget);
+    mpToolLayout->setObjectName("mpToolLayout");
     QWidget *toolWidget = new QWidget(pRightDockWidget);
+    toolWidget->setObjectName("toolWidget");
     QTreeWidget *mpToolTree = new QTreeWidget(toolWidget);
     mpToolTree->setHeaderHidden(true); // hide header
     logMessage("create tool tree", Qgis::MessageLevel::Success);
@@ -481,8 +521,22 @@ void MainWindow::createRightDockWidget() {
     mpRightDock->setWidget(toolWidget);
     logMessage("create tool box", Qgis::MessageLevel::Success);
 
-    // link tool tree items to implemented functions
-    logMessage("link tool tree items to implemented functions", Qgis::MessageLevel::Info);
+    QDoubleSpinBox *pBaseHeightSpin = this->safeFindChild<QDoubleSpinBox*>("pBaseHeightSpin");
+    QDoubleSpinBox *pHeightSpin = this->safeFindChild<QDoubleSpinBox*>("pHeightSpin");
+    QDoubleSpinBox *pSpeedSpin = this->safeFindChild<QDoubleSpinBox*>("pSpeedSpin");
+    QDoubleSpinBox *pWidthSpin = this->safeFindChild<QDoubleSpinBox*>("pWidthSpin");
+    QPushButton *pBtnAddControlPoint = this->safeFindChild<QPushButton*>("pBtnAddControlPoint");
+    QPushButton *pBtnCreateRoute = this->safeFindChild<QPushButton*>("pBtnCreateRoute");
+    QPushButton *pBtnEditPoint = this->safeFindChild<QPushButton*>("pBtnEditPoint");
+    QPushButton *pBtnGenerate = this->safeFindChild<QPushButton*>("pBtnGenerate");
+    QPushButton *pBtnPause = this->safeFindChild<QPushButton*>("pBtnPause");
+    QPushButton *pBtnQueryParams = this->safeFindChild<QPushButton*>("pBtnQueryParams");
+    QPushButton *pBtnRefreshData = this->safeFindChild<QPushButton*>("pBtnRefreshData");
+    QPushButton *pBtnResume = this->safeFindChild<QPushButton*>("pBtnResume");
+    QPushButton *pBtnReturn = this->safeFindChild<QPushButton*>("pBtnReturn");
+    QPushButton *pBtnSetHome = this->safeFindChild<QPushButton*>("pBtnSetHome");
+    QPushButton *pBtnStart = this->safeFindChild<QPushButton*>("pBtnStart");
+    QPushButton *pBtnStop = this->safeFindChild<QPushButton*>("pBtnStop");
     connect(mpToolTree, &QTreeWidget::itemClicked, this,
         [=](QTreeWidgetItem *item, int) {
             if (item == pPaintItem) {   Unrealized();}
@@ -506,62 +560,61 @@ void MainWindow::createRightDockWidget() {
             else if (item == pRefreshDataItem) {pBtnRefreshData->click();}
         }
     );
-
-    logMessage("link tool tree items to implemented functions", Qgis::MessageLevel::Success);
+    logMessage("connect right widget to slots", Qgis::MessageLevel::Success);
 }
 void MainWindow::createCanvas() {
-    QPushButton *pBtnCreateRoute = this->findChild<QPushButton*>("pBtnCreateRoute");
-    QPushButton *pBtnAddControlPoint = this->findChild<QPushButton*>("pBtnAddControlPoint");
-    QPushButton *pBtnEditPoint = this->findChild<QPushButton*>("pBtnEditPoint");
-    QPushButton *pBtnGenerate = this->findChild<QPushButton*>("pBtnGenerate");
-    QPushButton *pBtnStart = this->findChild<QPushButton*>("pBtnStart");
-    QPushButton *pBtnPause = this->findChild<QPushButton*>("pBtnPause");
-    QPushButton *pBtnResume = this->findChild<QPushButton*>("pBtnResume");
-    QPushButton *pBtnReturn = this->findChild<QPushButton*>("pBtnReturn");
-    QPushButton *pBtnStop = this->findChild<QPushButton*>("pBtnStop");
-    QDoubleSpinBox *pHeightSpin = this->findChild<QDoubleSpinBox*>("pHeightSpin");
-    QDoubleSpinBox *pWidthSpin = this->findChild<QDoubleSpinBox*>("pWidthSpin");
-    QDoubleSpinBox *pSpeedSpin = this->findChild<QDoubleSpinBox*>("pSpeedSpin");
-    QDoubleSpinBox *pBaseHeightSpin = this->findChild<QDoubleSpinBox*>("pBaseHeightSpin");
     // ================= middle area =================
     mpStackedWidget = new QStackedWidget(this);
     setCentralWidget(mpStackedWidget);
+    mpStackedWidget->setObjectName("mpStackedWidget");
+    mpStackedWidget->addWidget(mpOpenGLWidget.get()); // add 3D view
+    mpStackedWidget->addWidget(mpImageLabel); // add 2D view
+    mpStackedWidget->setCurrentWidget(mpOpenGLWidget.get()); // set 3D view as default
 
-    mpOpenGLWidget->show();
-    mpOpenGLWidget->update();
-
-    connect(mpOpenGLWidget.get(), &MyOpenGLWidget::glInitialized, this, &MainWindow::open3D);
-    //logMessage("connect open 3D to glInitialized", Qgis::MessageLevel::Info);
-
-    // create QLabel to display local image
-    mpImageLabel = new QLabel(this);
-    QPixmap mapImage(":/map/capture.png"); // use resource path to load image
-    if (!mapImage.isNull()) {
-        mpImageLabel->setPixmap(mapImage);
-        mpImageLabel->setScaledContents(true); // let image adapt to label size, keep ratio
-        mpImageLabel->setSizePolicy(QSizePolicy::Ignored,
-                                    QSizePolicy::Ignored); // set size policy
-        logMessage("create QLabel to display local map image", Qgis::MessageLevel::Success);
-    } else {
-        logMessage("failed to load local map image", Qgis::MessageLevel::Critical);
+    logMessage("create stacked widget", Qgis::MessageLevel::Info);
+}
+void MainWindow::createSlots() {
+    logMessage("create slots", Qgis::MessageLevel::Info);
+    QDoubleSpinBox *pBaseHeightSpin = this->safeFindChild<QDoubleSpinBox*>("pBaseHeightSpin");
+    QDoubleSpinBox *pHeightSpin = this->safeFindChild<QDoubleSpinBox*>("pHeightSpin");
+    QDoubleSpinBox *pSpeedSpin = this->safeFindChild<QDoubleSpinBox*>("pSpeedSpin");
+    QDoubleSpinBox *pWidthSpin = this->safeFindChild<QDoubleSpinBox*>("pWidthSpin");
+    QPushButton *pBtnAddControlPoint = this->safeFindChild<QPushButton*>("pBtnAddControlPoint");
+    QPushButton *pBtnCreateRoute = this->safeFindChild<QPushButton*>("pBtnCreateRoute");
+    QPushButton *pBtnEditPoint = this->safeFindChild<QPushButton*>("pBtnEditPoint");
+    QPushButton *pBtnGenerate = this->safeFindChild<QPushButton*>("pBtnGenerate");
+    QPushButton *pBtnPause = this->safeFindChild<QPushButton*>("pBtnPause");
+    QPushButton *pBtnQueryParams = this->safeFindChild<QPushButton*>("pBtnQueryParams");
+    QPushButton *pBtnRefreshData = this->safeFindChild<QPushButton*>("pBtnRefreshData");
+    QPushButton *pBtnResume = this->safeFindChild<QPushButton*>("pBtnResume");
+    QPushButton *pBtnReturn = this->safeFindChild<QPushButton*>("pBtnReturn");
+    QPushButton *pBtnSetHome = this->safeFindChild<QPushButton*>("pBtnSetHome");
+    QPushButton *pBtnStart = this->safeFindChild<QPushButton*>("pBtnStart");
+    QPushButton *pBtnStop = this->safeFindChild<QPushButton*>("pBtnStop");
+    
+    connect(pBtnSetHome, &QPushButton::clicked, [this]() {
+    if (!mpRoutePlanner->m_settingHomePointMode) {
+        // enter setting home point mode
+        mpRoutePlanner->setSettingHomePointMode(true);
+        logMessage("enter setting home point mode", Qgis::MessageLevel::Success);
     }
+    });
+    connect(pBtnQueryParams, &QPushButton::clicked, this,
+            &MainWindow::queryFlightParameters);
+    connect(pBtnRefreshData, &QPushButton::clicked, this,
+            &MainWindow::refreshBasicData);
+    logMessage("connect left widget to slots", Qgis::MessageLevel::Success);
 
-    mpStackedWidget->addWidget(mpOpenGLWidget.get());
-    mpStackedWidget->addWidget(mpImageLabel);
-    mpStackedWidget->setCurrentWidget(mpOpenGLWidget.get());
-    logMessage("create stacked widget", Qgis::MessageLevel::Success);
     // connect signal in main window constructor
     connect(mpStackedWidget, &QStackedWidget::currentChanged, this,
             [=](int index) {
-            if (index == 0) { // assume MyOpenGLWidget is the first page (index 0)
+            if (index == 0 && ws::WindowManager::getInstance().getCurrentCanvas() == ws::CanvasType::ThreeD) { // assume MyOpenGLWidget is the first page (index 0)
                 mpOpenGLWidget->setFocus(); // switch back to force focus
             }
             });
     logMessage("connect signal in main window constructor", Qgis::MessageLevel::Info);
     // ================= signal and slot connection =================
 
-    // pass RoutePlanner instance to OpenGLWidget
-    mpOpenGLWidget->setRoutePlanner(mpRoutePlanner.get());
     connect(mpBtnReset, &QPushButton::clicked, this, &MainWindow::resetView);
     logMessage("connect reset view button to reset view", Qgis::MessageLevel::Info);
     connect(mpBtnSwitchTo3D, &QPushButton::clicked, this,
@@ -613,13 +666,17 @@ void MainWindow::createCanvas() {
             &MyOpenGLWidget::stopSimulation);
     connect(pBaseHeightSpin, SIGNAL(valueChanged(double)), mpOpenGLWidget.get(),
             SLOT(setBaseHeight(double)));
-    logMessage("connect base height spin box to set base height", Qgis::MessageLevel::Success);
+    logMessage("connected all slots on main window", Qgis::MessageLevel::Success);
 }
 void MainWindow::createMainWindow() {
     logMessage("create main window", Qgis::MessageLevel::Info);
     createLeftDockWidget();
+    logMessage("create left dock widget", Qgis::MessageLevel::Success);
     createRightDockWidget();
+    logMessage("create right dock widget", Qgis::MessageLevel::Success);
     createCanvas();
+    logMessage("create canvas", Qgis::MessageLevel::Success);
+    createSlots();
     logMessage("create main window", Qgis::MessageLevel::Success);
 }
 // select file list directory
@@ -672,12 +729,14 @@ void MainWindow::loadDirectoryLevel(QTreeWidgetItem *parentItem, const QString &
 void MainWindow::switchTo3D() {
     logMessage("switch to 3D model view", Qgis::MessageLevel::Info);
     mpStackedWidget->setCurrentWidget(mpOpenGLWidget.get()); // switch to 3D model view
+    ws::WindowManager::getInstance().setCurrentCanvas(ws::CanvasType::ThreeD);
     logMessage("switch to 3D model view", Qgis::MessageLevel::Success);
 }
 // switch to 2D
 void MainWindow::switchTo2D() {
     logMessage("switch to 2D map view", Qgis::MessageLevel::Info);
     mpStackedWidget->setCurrentWidget(mpImageLabel); // switch to 2D map view
+    ws::WindowManager::getInstance().setCurrentCanvas(ws::CanvasType::TwoD);
     logMessage("switch to 2D map view", Qgis::MessageLevel::Success);
 }
 
@@ -980,7 +1039,7 @@ void MainWindow::showEnvironmentalParamsDialog() {
     logMessage("show environmental parameters dialog", Qgis::MessageLevel::Success);
 }
 
-void MainWindow::createDockWidgets() {
+void MainWindow::createJoyDockWidgets() {
     //create flight control dock widget
     QDockWidget *controlDock = new QDockWidget(tr("Flight Control"), this);
     QWidget *controlPanel = new QWidget(this);

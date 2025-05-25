@@ -40,3 +40,8 @@ ws::FlightManager::FlightManager() {
     mFlightBattery = 100.0;
 }
 ws::FlightManager::~FlightManager() {}
+
+ws::WindowManager::WindowManager() {
+    mCurrentCanvas = CanvasType::ThreeD;
+}
+ws::WindowManager::~WindowManager() {}
