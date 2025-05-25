@@ -9,9 +9,11 @@
 #include <QTextStream>
 #include <QTransform>
 #include <QWheelEvent>
+#include <memory>
 #include <qtimer.h>
 #include <qgsapplication.h>
 #include <qgis.h>
+#include <qvector4d.h>
 
 namespace gl{
   Primitive::Primitive(GLenum primitiveType, GLfloat* vertices, GLuint vertexNum){
@@ -35,7 +37,7 @@ namespace gl{
   void Primitive::setModelMatrix(const QMatrix4x4 &matrix){
     this->modelMatrix = matrix;
   }
-  ColorPrimitive::ColorPrimitive(GLenum primitiveType, GLfloat* vertices, GLuint vertexNum, const QVector3D& color):
+  ColorPrimitive::ColorPrimitive(GLenum primitiveType, GLfloat* vertices, GLuint vertexNum, const QVector4D& color):
     Primitive(primitiveType, vertices, vertexNum),color(color){}
   void ColorPrimitive::draw(){
     this->shader->bind();
@@ -48,9 +50,9 @@ namespace gl{
     this->vao.release();
     this->shader->release();
   }
-  BasePlane::BasePlane(GLfloat* vertices, GLuint vertexNum, const QVector3D& color):
+  BasePlane::BasePlane(GLfloat* vertices, GLuint vertexNum, const QVector4D& color):
     ColorPrimitive(GL_LINES, vertices, vertexNum, color){}
-  HomePoint::HomePoint(GLfloat* vertices, GLuint vertexNum, const QVector3D& color):
+  HomePoint::HomePoint(GLfloat* vertices, GLuint vertexNum, const QVector4D& color):
     ColorPrimitive(GL_POINTS, vertices, vertexNum, color){}
   Model::Model(GLfloat* vertices, GLuint vertexNum, std::shared_ptr<QOpenGLTexture> texture):
     Primitive(GL_TRIANGLES, vertices, vertexNum), texture(texture){}
@@ -67,11 +69,17 @@ namespace gl{
   }
 }
 
-std::shared_ptr<QOpenGLShaderProgram> MyOpenGLWidget::constructShader(const QString& vertexShaderPath, const QString& fragmentShaderPath) {
+std::shared_ptr<QOpenGLShaderProgram> MyOpenGLWidget::constructShader(const QString& vertexShaderPath, const QString& fragmentShaderPath, const QString& geometryShaderPath) {
     std::shared_ptr<QOpenGLShaderProgram> shader = std::make_shared<QOpenGLShaderProgram>();
     if (!shader->addShaderFromSourceFile(QOpenGLShader::Vertex, vertexShaderPath)) {
         logMessage(QString("Shader Error:") + shader->log(), Qgis::MessageLevel::Critical);
         return nullptr;
+    }
+    if (!geometryShaderPath.isEmpty()) {
+        if (!shader->addShaderFromSourceFile(QOpenGLShader::Geometry, geometryShaderPath)) {
+            logMessage(QString("Shader Error:") + shader->log(), Qgis::MessageLevel::Critical);
+            return nullptr;
+        }
     }
     if (!shader->addShaderFromSourceFile(QOpenGLShader::Fragment, fragmentShaderPath)) {
         logMessage(QString("Shader Error:") + shader->log(), Qgis::MessageLevel::Critical);
@@ -80,6 +88,7 @@ std::shared_ptr<QOpenGLShaderProgram> MyOpenGLWidget::constructShader(const QStr
     if (!shader->link()) {
         logMessage(QString("Shader Link Error:") + shader->log(), Qgis::MessageLevel::Critical);
     }
+    shader->setUniformValue("projection", mProjection);
     return shader;
 }
 
@@ -97,6 +106,9 @@ MyOpenGLWidget::MyOpenGLWidget(QWidget *parent)
   logMessage("m_animationTimer connected", Qgis::MessageLevel::Info);
   setFocusPolicy(Qt::StrongFocus); // 设置为强焦点模式
   setFocus();                      // 主动获取焦点
+  modelWidget = nullptr;
+  basePlaneWidget = nullptr;
+  homePointWidget = nullptr;
 }
 
 MyOpenGLWidget::~MyOpenGLWidget() {
@@ -106,6 +118,9 @@ MyOpenGLWidget::~MyOpenGLWidget() {
   delete m_texture;
   m_texture = nullptr;
   doneCurrent();
+  modelWidget = nullptr;
+  basePlaneWidget = nullptr;
+  homePointWidget = nullptr;
 }
 
 void MyOpenGLWidget::setupOpenGLContext(){
@@ -127,97 +142,53 @@ void MyOpenGLWidget::setupOpenGLContext(){
   logMessage("depth test enabled", Qgis::MessageLevel::Info);
 }
 
-void MyOpenGLWidget::initShaders(){
-  makeCurrent();
-  if (!isValid()) {
-    logMessage("OpenGL context is not valid", Qgis::MessageLevel::Critical);
-    return;
-  }
-  
-  mLineShader = constructShader(":/shaders/line_vshader.vs", ":/shaders/line_fshader.fs");
-  if (!mLineShader) {
-    logMessage("Failed to load line shader", Qgis::MessageLevel::Critical);
-    return;
-  }
-  logMessage("line shader loaded", Qgis::MessageLevel::Info);
-
-  mModelShader = constructShader(":/shaders/vshader.vs", ":/shaders/fshader.fs");
-  if (!mModelShader) {
-    logMessage("Failed to load model shader", Qgis::MessageLevel::Critical);
-    return;
-  }
-  mModelShader->bind();
-  mModelShader->enableAttributeArray(0);
-  mModelShader->setAttributeBuffer(0, GL_FLOAT, offsetof(Vertex, position), 3,
-                                    sizeof(Vertex));
-
-  mModelShader->enableAttributeArray(1);
-  mModelShader->setAttributeBuffer(1, GL_FLOAT, offsetof(Vertex, texCoord), 2,
-                                    sizeof(Vertex));
-  logMessage("model shader loaded", Qgis::MessageLevel::Info);
-}
-
 void MyOpenGLWidget::initCanvas(){
-  initBasePlane();
+  basePlaneWidget = initBasePlane();
+  //homePointWidget = initHomePoint();
 }
 
-void MyOpenGLWidget::initBasePlane(){
-  m_basePlaneVAO.create();
-  m_basePlaneVBO.create();
-  
-  if (!mLineShader->bind())
-    return;
-
-  QMatrix4x4 view;
-  view.translate(0, 0, mfDistance);
-  view.translate(m_viewTranslation);
-  QMatrix4x4 mvp = mProjection * view * mModelView;
-  mLineShader->setUniformValue("mvp", mvp);
-  mLineShader->setUniformValue("color", QVector4D(0.6f, 0.6f, 0.6f, 0.5f));
-  
+std::shared_ptr<gl::BasePlane> MyOpenGLWidget::initBasePlane(){
   const float size = 1000.0f;
   const float step = 50.0f;
   QVector<float> vertices;
+  int vertexNum = 0;
   for (float x = -size; x <= size; x += step) {
     vertices << x << -size << m_baseHeight << x << size << m_baseHeight;
+    vertexNum += 2;
   }
   for (float y = -size; y <= size; y += step) {
     vertices << -size << y << m_baseHeight << size << y << m_baseHeight;
+    vertexNum += 2;
   }
 
-  m_basePlaneVAO.bind();
-  m_basePlaneVBO.bind();
-  m_basePlaneVBO.allocate(vertices.constData(),
-                          vertices.size() * sizeof(float));
+  QVector4D initColor = QVector4D(0.6f, 0.6f, 0.6f, 0.5f);
+  std::shared_ptr<gl::BasePlane> basePlane = std::make_shared<gl::BasePlane>(vertices, vertexNum, initColor);
+  basePlane->setShader(constructShader(":/shaders/line.vs", ":/shaders/line.fs"));
+  logMessage("base plane initialized", Qgis::MessageLevel::Info);
+  return basePlane;
+}
+std::shared_ptr<gl::HomePoint> MyOpenGLWidget::initHomePoint(){
 
-  glEnableVertexAttribArray(0);
-  glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, nullptr);
-  glDrawArrays(GL_LINES, 0, vertices.size() / 3);
-
-  m_basePlaneVBO.release();
-  m_basePlaneVAO.release();
-  mLineShader->release();
-
-  logMessage("drawBasePlane", Qgis::MessageLevel::Info);
+  return nullptr;
+}
+std::shared_ptr<gl::Model> MyOpenGLWidget::initModel(){
+  return nullptr;
 }
 
 void MyOpenGLWidget::initializeGL() {
   initializeOpenGLFunctions();
   setupOpenGLContext();
   logMessage("OpenGL context initialized", Qgis::MessageLevel::Success);
-  initShaders();
-  logMessage("shader initialized", Qgis::MessageLevel::Success);
+  double aspectRatio = static_cast<double>(width()) / static_cast<double>(height());
+  mProjection.perspective(45.0f, aspectRatio, 0.1f, 1000.0f);
   initCanvas();
-  initBuffers();
+  //initBuffers();
   logMessage("buffers initialized", Qgis::MessageLevel::Success);
-
-  mProjection.perspective(45.0f, width() / (float)height(), 0.1f, 1000.0f);
   logMessage("projection initialized", Qgis::MessageLevel::Success);
 
   emit glInitialized();
-  doneCurrent();
 }
-
+/*
 void MyOpenGLWidget::paintGL() {
   qDebug() << "paintGL";
   glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
@@ -332,7 +303,12 @@ void MyOpenGLWidget::initBuffers() {
   mVAO.release();
   mVBO.release();
 }
-
+*/
+void MyOpenGLWidget::paintGL(){
+  glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
+  glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+  basePlaneWidget->draw();
+}
 void MyOpenGLWidget::loadObjModel(const QString &filePath,
                                   const QString &texturePath) {
   makeCurrent();
@@ -900,22 +876,6 @@ void MyOpenGLWidget::generateFlightRoute(float height) // 生成航线
 {
   m_routePlanner->m_editingMode = false;
 }; // 生成航线
-
-void MyOpenGLWidget::drawBasePlane() {
-  if (!m_basePlaneVAO.isCreated() || !m_basePlaneVBO.isCreated()){
-    logMessage("Base plane VAO or VBO is not created, drawBasePlane failed", Qgis::MessageLevel::Critical);
-    return;
-  }
-  if (!mLineShader->bind()){
-    logMessage("Failed to bind line shader, drawBasePlane failed", Qgis::MessageLevel::Critical);
-    return;
-  }
-
-  m_basePlaneVAO.bind();
-  m_basePlaneVBO.bind();
-  glDrawArrays(GL_LINES, 0, vertices.size() / 3);
-  m_basePlaneVBO.release();
-}
 
 void MyOpenGLWidget::setBaseHeight(double height) {
   m_baseHeight = height + m_initialBaseHeight;

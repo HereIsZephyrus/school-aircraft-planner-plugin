@@ -44,6 +44,8 @@ ws::FlightManager::~FlightManager() {}
 ws::WindowManager::WindowManager() {
     mCurrentCanvas = CanvasType::ThreeD;
     pDefaultObject = new QObject();
+    is3DMapInited = false;
+    is2DMapInited = false;
 }
 ws::WindowManager::~WindowManager() {
     delete pDefaultObject;

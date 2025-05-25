@@ -1,5 +1,7 @@
 ﻿#include "MainWindow.h"
+#include "MyOpenGLWidget.h"
 #include "StyleManager.h"
+#include "WorkspaceState.h"
 #include "qgsmessagelog.h"
 #include <memory>
 #include <QAction>
@@ -104,20 +106,22 @@ void MainWindow::initWindowStatus(){
 void MainWindow::Unrealized() {}
 
 void MainWindow::open3D() {
-    logMessage("Start loading 3D models", Qgis::MessageLevel::Info);
+    if (!ws::WindowManager::getInstance().get3DMapInited()) {
+        init3DWidget();
+    }
 
-    ws::PathManager& pathManager = ws::PathManager::getInstance();
-    QString rootDir = pathManager.getRootDir();
-    logMessage("rootDir: " + rootDir, Qgis::MessageLevel::Info);
-    if (pathManager.getObjTexturePairs().isEmpty()) {
-        logMessage("No 3D models found", Qgis::MessageLevel::Info);
-        return;
-    }
-    QList<ObjTexturePair> objTexturePairs = pathManager.getObjTexturePairs();
-    for (const ObjTexturePair& objTexturePair : objTexturePairs) {
-        static_cast<MyOpenGLWidget *>(mpOpenGLWidget.get())->loadObjModel(objTexturePair.first, objTexturePair.second);
-    }
-    static_cast<MyOpenGLWidget*>(mpOpenGLWidget.get())->applyGlobalCentering();
+    //ws::PathManager& pathManager = ws::PathManager::getInstance();
+    //QString rootDir = pathManager.getRootDir();
+    //logMessage("rootDir: " + rootDir, Qgis::MessageLevel::Info);
+    //if (pathManager.getObjTexturePairs().isEmpty()) {
+    //    logMessage("No 3D models found", Qgis::MessageLevel::Info);
+    //    return;
+    //}
+    //QList<ObjTexturePair> objTexturePairs = pathManager.getObjTexturePairs();
+    //for (const ObjTexturePair& objTexturePair : objTexturePairs) {
+    //    static_cast<MyOpenGLWidget *>(mpOpenGLWidget.get())->loadObjModel(objTexturePair.first, objTexturePair.second);
+    //}
+    //static_cast<MyOpenGLWidget*>(mpOpenGLWidget.get())->applyGlobalCentering();
     update();
 /*
     QDir dir(rootDir);

@@ -25,9 +25,14 @@ public:
     void setCurrentCanvas(CanvasType canvas) {mCurrentCanvas = canvas;}
     CanvasType getCurrentCanvas() const {return mCurrentCanvas;}
     QObject* getDefaultObject() const {return pDefaultObject;}
+    bool get3DMapInited() const {return is3DMapInited;}
+    bool get2DMapInited() const {return is2DMapInited;}
+    void set3DMapInited() {is3DMapInited = true;}
+    void set2DMapInited() {is2DMapInited = true;}
 private:
     CanvasType mCurrentCanvas;
     static QObject *pDefaultObject;
+    bool is3DMapInited,is2DMapInited;
 };
 class PathManager {
 private:
