@@ -96,22 +96,6 @@ private slots:
   void showEnvironmentalParamsDialog();
 
 private:
-  struct FlightParams {
-    double speed = 10.0;
-    double altitude = 100.0;
-    double battery = 100.0;
-  };
-
-  struct EnvironmentalParams {
-    QString weather = "Sunny";
-    double temperature = 25.0;
-    double pressure = 1013.25;
-  };
-
-  FlightParams m_flightParams;
-  EnvironmentalParams m_envParams;
-
-private:
   QPushButton *m_btnManualMode;
   QPushButton *m_btnAutoMode;
 

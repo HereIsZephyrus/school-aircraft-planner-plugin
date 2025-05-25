@@ -691,8 +691,8 @@ void MainWindow::resetView() {
 void MainWindow::queryFlightParameters() {
     logMessage("generate random flight parameters", Qgis::MessageLevel::Info);
     double speed = mpOpenGLWidget->currentSpeed;
-    double altitude = QRandomGenerator::global()->bounded(50, 500);
-    double battery = QRandomGenerator::global()->bounded(0, 100);
+    double altitude = QRandomGenerator::global()->bounded(ws::FlightManager::minFlightAltitude, ws::FlightManager::maxFlightAltitude);
+    double battery = QRandomGenerator::global()->bounded(ws::FlightManager::minFlightBattery, ws::FlightManager::maxFlightBattery);
     double latitude = QRandomGenerator::global()->bounded(-90, 90);
     double longitude = QRandomGenerator::global()->bounded(-180, 180);
 
@@ -716,9 +716,10 @@ void MainWindow::refreshBasicData() {
     QStringList weatherTypes = {"Sunny", "Cloudy", "Rainy", "Snowy", "Foggy"};
     QString weather = weatherTypes[QRandomGenerator::global()->bounded(5)];
 
-    double temperature = QRandomGenerator::global()->bounded(-200, 450) / 10.0;
+    ws::EnvManager& envManager = ws::EnvManager::getInstance();
+    double temperature = QRandomGenerator::global()->bounded(envManager.minTemperature * 10, envManager.maxTemperature * 10) / 10.0;
 
-    double pressure = QRandomGenerator::global()->bounded(9500, 10500) / 10.0;
+    double pressure = QRandomGenerator::global()->bounded(envManager.minPressure * 10, envManager.maxPressure * 10) / 10.0;
 
     m_pWeatherLabel->setText(weather);
     m_pTemperatureLabel->setText(QString("%1 C").arg(temperature, 0, 'f', 1));
@@ -900,19 +901,20 @@ void MainWindow::showFlightParamsDialog() {
 
     QFormLayout *form = new QFormLayout(dialog);
 
+    ws::FlightManager& flightManager = ws::FlightManager::getInstance();
     QDoubleSpinBox *speedSpin = new QDoubleSpinBox(dialog);
-    speedSpin->setRange(1.0, 50.0);
-    speedSpin->setValue(m_flightParams.speed);
+    speedSpin->setRange(ws::FlightManager::minFlightSpeed, ws::FlightManager::maxFlightSpeed);
+    speedSpin->setValue(ws::FlightManager::getInstance().getFlightSpeed());
     form->addRow(tr("Flight Speed (m/s):"), speedSpin);
 
     QDoubleSpinBox *altitudeSpin = new QDoubleSpinBox(dialog);
-    altitudeSpin->setRange(0.0, 1000.0);
-    altitudeSpin->setValue(m_flightParams.altitude);
+    altitudeSpin->setRange(ws::FlightManager::minFlightAltitude, ws::FlightManager::maxFlightAltitude);
+    altitudeSpin->setValue(ws::FlightManager::getInstance().getFlightAltitude());
     form->addRow(tr("Max Altitude (m):"), altitudeSpin);
 
     QDoubleSpinBox *batterySpin = new QDoubleSpinBox(dialog);
-    batterySpin->setRange(0.0, 100.0);
-    batterySpin->setValue(m_flightParams.battery);
+    batterySpin->setRange(ws::FlightManager::minFlightBattery, ws::FlightManager::maxFlightBattery);
+    batterySpin->setValue(ws::FlightManager::getInstance().getFlightBattery());
     form->addRow(tr("Battery Capacity (%):"), batterySpin);
 
     QDialogButtonBox *buttonBox = new QDialogButtonBox(
@@ -925,12 +927,12 @@ void MainWindow::showFlightParamsDialog() {
     logMessage("connect flight parameters dialog button box rejected", Qgis::MessageLevel::Success);
 
     if (dialog->exec() == QDialog::Accepted) {
-        m_flightParams.speed = speedSpin->value();
-        m_flightParams.altitude = altitudeSpin->value();
-        m_flightParams.battery = batterySpin->value();
+        flightManager.setFlightSpeed(speedSpin->value());
+        flightManager.setFlightAltitude(altitudeSpin->value());
+        flightManager.setFlightBattery(batterySpin->value());
 
         // 更新仿真参数
-        mpOpenGLWidget->setMaxAltitude(m_flightParams.altitude);
+        //mpOpenGLWidget->setMaxAltitude(flightManager.getFlightAltitude());
         // 更新显示
         queryFlightParameters(); // 刷新飞行参数显示
     }
@@ -943,19 +945,20 @@ void MainWindow::showEnvironmentalParamsDialog() {
 
     QFormLayout *form = new QFormLayout(dialog);
 
+    ws::EnvManager& envManager = ws::EnvManager::getInstance();
     QComboBox *weatherCombo = new QComboBox(dialog);
-    weatherCombo->addItems({"Sunny", "Cloudy", "Rainy", "Snowy", "Foggy"});
-    weatherCombo->setCurrentText(m_envParams.weather);
+    weatherCombo->addItems(envManager.weatherList);
+    weatherCombo->setCurrentText(envManager.getWeatherString());
     form->addRow(tr("Weather Condition:"), weatherCombo);
 
     QDoubleSpinBox *tempSpin = new QDoubleSpinBox(dialog);
-    tempSpin->setRange(-50.0, 50.0);
-    tempSpin->setValue(m_envParams.temperature);
+    tempSpin->setRange(ws::EnvManager::minTemperature, ws::EnvManager::maxTemperature);
+    tempSpin->setValue(envManager.getTemperature());
     form->addRow(tr("Temperature (°C):"), tempSpin);
 
     QDoubleSpinBox *pressureSpin = new QDoubleSpinBox(dialog);
-    pressureSpin->setRange(800.0, 1100.0);
-    pressureSpin->setValue(m_envParams.pressure);
+    pressureSpin->setRange(ws::EnvManager::minPressure, ws::EnvManager::maxPressure);
+    pressureSpin->setValue(envManager.getPressure());
     form->addRow(tr("Pressure (hPa):"), pressureSpin);
 
     QDialogButtonBox *buttonBox = new QDialogButtonBox(
@@ -968,9 +971,9 @@ void MainWindow::showEnvironmentalParamsDialog() {
     logMessage("connect environmental parameters dialog button box rejected", Qgis::MessageLevel::Success);
 
     if (dialog->exec() == QDialog::Accepted) {
-        m_envParams.weather = weatherCombo->currentText();
-        m_envParams.temperature = tempSpin->value();
-        m_envParams.pressure = pressureSpin->value();
+        envManager.setWeather(static_cast<ws::WeatherType>(weatherCombo->currentIndex()));
+        envManager.setTemperature(tempSpin->value());
+        envManager.setPressure(pressureSpin->value());
 
         refreshBasicData(); // refresh environment data display
     }

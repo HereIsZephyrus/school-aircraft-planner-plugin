@@ -26,3 +26,17 @@ ObjTexturePair ws::PathManager::getObjTexturePair(int index) const {
     }
     return mObjTexturePairs[index];
 }
+
+ws::EnvManager::EnvManager() {
+    mWeather = WeatherType::Sunny;
+    mTemperature = 25.0;
+    mPressure = 1013.25;
+}
+ws::EnvManager::~EnvManager() {}
+
+ws::FlightManager::FlightManager() {
+    mFlightSpeed = 10.0;
+    mFlightAltitude = 100.0;
+    mFlightBattery = 100.0;
+}
+ws::FlightManager::~FlightManager() {}
