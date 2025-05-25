@@ -3,10 +3,12 @@
     <qresource prefix="/">
         <file>plugin.svg</file>
     </qresource>
-    <qresource prefix="/shader">
-        <file>shader/fshader.glsl</file>
-        <file>shader/line_vshader.glsl</file>
-        <file>shader/line_fshader.glsl</file>
-        <file>shader/fragment_shader.glsl</file>
+    <qresource prefix="/shaders">
+        <file>shaders/fshader.glsl</file>
+        <file>shaders/line_vshader.glsl</file>
+        <file>shaders/line_fshader.glsl</file>
+        <file>shaders/fragment_shader.glsl</file>
+        <file>shaders/vertex_shader.glsl</file>
+        <file>shaders/vshader.glsl</file>
     </qresource>
 </RCC> 

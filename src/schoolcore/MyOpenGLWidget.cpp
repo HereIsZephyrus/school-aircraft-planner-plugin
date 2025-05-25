@@ -86,18 +86,18 @@ void MyOpenGLWidget::initializeGL() {
   // 线框着色器
   if (!m_lineShader.addShaderFromSourceFile(QOpenGLShader::Vertex,
                                             ":/shaders/line_vshader.glsl")) {
-    logMessage("m_lineShader Line Vertex Shader Error:" + m_lineShader.log(), Qgis::MessageLevel::Critical);
+    logMessage(QString("m_lineShader Line Vertex Shader Error:") + m_lineShader.log(), Qgis::MessageLevel::Critical);
   }else{
     logMessage("m_lineShader Line Vertex Shader initialized", Qgis::MessageLevel::Info);
   }
   if (!m_lineShader.addShaderFromSourceFile(QOpenGLShader::Fragment,
                                             ":/shaders/line_fshader.glsl")) {
-    logMessage("m_lineShader Line Fragment Shader Error:" + m_lineShader.log(), Qgis::MessageLevel::Critical);
+    logMessage(QString("m_lineShader Line Fragment Shader Error:") + m_lineShader.log(), Qgis::MessageLevel::Critical);
   }else{
     logMessage("m_lineShader Line Fragment Shader initialized", Qgis::MessageLevel::Info);
   }
   if (!m_lineShader.link()) {
-    logMessage("m_lineShader Line Shader Link Error:" + m_lineShader.log(), Qgis::MessageLevel::Critical);
+    logMessage(QString("m_lineShader Line Shader Link Error:") + m_lineShader.log(), Qgis::MessageLevel::Critical);
   }else{
     logMessage("m_lineShader Line Shader initialized", Qgis::MessageLevel::Info);
   }
@@ -230,11 +230,11 @@ void MyOpenGLWidget::initShaders() {
 
   if (!mShaderProgram.addShaderFromSourceFile(QOpenGLShader::Vertex,
                                               ":/shaders/vshader.glsl")) {
-    logMessage("Vertex Shader Error:" + mShaderProgram.log(), Qgis::MessageLevel::Critical);
+    logMessage(QString("Vertex Shader Error:") + mShaderProgram.log(), Qgis::MessageLevel::Critical);
   }
   if (!mShaderProgram.addShaderFromSourceFile(QOpenGLShader::Fragment,
                                               ":/shaders/fshader.glsl")) {
-    logMessage("Fragment Shader Error:" + mShaderProgram.log(), Qgis::MessageLevel::Critical);
+    logMessage(QString("Fragment Shader Error:") + mShaderProgram.log(), Qgis::MessageLevel::Critical);
   }
   if (!mShaderProgram.link()) {
     logMessage("Shader Link Error:" + mShaderProgram.log(), Qgis::MessageLevel::Critical);
