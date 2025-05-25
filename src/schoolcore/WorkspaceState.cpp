@@ -38,6 +38,7 @@ ws::FlightManager::FlightManager() {
     mFlightSpeed = 10.0;
     mFlightAltitude = 100.0;
     mFlightBattery = 100.0;
+    mBaseHeight = 25.0;
 }
 ws::FlightManager::~FlightManager() {}
 
@@ -46,6 +47,7 @@ ws::WindowManager::WindowManager() {
     pDefaultObject = new QObject();
     is3DMapInited = false;
     is2DMapInited = false;
+    mBounds = Bounds();
 }
 ws::WindowManager::~WindowManager() {
     delete pDefaultObject;

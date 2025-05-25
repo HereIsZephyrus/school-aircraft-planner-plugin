@@ -5,6 +5,7 @@ Date:2025.3.13
 ****************************************************************************/
 #pragma once
 #include "qgis_debug.h"
+#include "Primitive.h"
 #include "RoutePlanner.h"
 #include <GL/gl.h>
 #include <QOpenGLBuffer>
@@ -20,53 +21,6 @@ Date:2025.3.13
 #include <cfloat>
 #include <memory>
 
-namespace gl{
-class Primitive{
-protected:
-  QOpenGLVertexArrayObject vao;
-  QOpenGLBuffer vbo;
-  QMatrix4x4 modelMatrix;
-  std::shared_ptr<QOpenGLShaderProgram> shader;
-  GLenum primitiveType;
-  GLfloat* vertices;
-  GLuint vertexNum;
-public:
-  Primitive(GLenum primitiveType, GLfloat* vertices, GLuint vertexNum);
-  void setModelMatrix(const QMatrix4x4 &matrix);
-  void setShader(std::shared_ptr<QOpenGLShaderProgram> shader);
-  virtual ~Primitive();
-  virtual void draw()=0;
-};
-
-class ColorPrimitive : public Primitive{
-  QVector4D color;
-  constexpr static int stride = 3;
-  public:
-  ColorPrimitive(GLenum primitiveType, GLfloat* vertices, GLuint vertexNum, const QVector4D& color=QVector4D(1.0f, 1.0f, 1.0f, 1.0f));
-  void setColor(const QVector4D& color){this->color = color;}
-  QVector4D getColor() const{return this->color;}
-  void draw() override;
-};
-
-class BasePlane : public ColorPrimitive{
-  public:
-  BasePlane(GLfloat* vertices, GLuint vertexNum, const QVector4D& color=QVector4D(1.0f, 1.0f, 1.0f, 1.0f));
-};
-
-class HomePoint : public ColorPrimitive{
-  public:
-  HomePoint(GLfloat* vertices, GLuint vertexNum=1, const QVector4D& color=QVector4D(1.0f, 1.0f, 1.0f, 1.0f));
-};
-
-class Model : public Primitive{
-  std::shared_ptr<QOpenGLTexture> texture;
-  constexpr static int stride = 5;
-  public:
-  Model(GLfloat* vertices, GLuint vertexNum, std::shared_ptr<QOpenGLTexture> texture);
-  void draw() override;
-};
-}
-
 class RoutePlanner;
 class MyOpenGLWidget : public QOpenGLWidget, protected QOpenGLFunctions {
   Q_OBJECT
@@ -74,7 +28,6 @@ class MyOpenGLWidget : public QOpenGLWidget, protected QOpenGLFunctions {
 public:
   MyOpenGLWidget(QWidget *parent = nullptr);
   ~MyOpenGLWidget();
-  void loadObjModel(const QString &filePath, const QString &texturePath);
   void resetView();
   QVector3D getSurfacePointFromMouse();
   void addControlPoint(const QVector3D &point);
@@ -85,41 +38,31 @@ public:
 protected:
   std::shared_ptr<gl::Model> modelWidget;
   std::shared_ptr<gl::BasePlane> basePlaneWidget;
-  std::shared_ptr<gl::HomePoint> homePointWidget;
+  std::shared_ptr<gl::ControlPoints> ControlPointsWidget;
   void initializeGL() override;
   void paintGL() override;
   void resizeGL(int w, int h) override;
   void mousePressEvent(QMouseEvent *event) override;
   void mouseMoveEvent(QMouseEvent *event) override;
   void wheelEvent(QWheelEvent *event) override;
-  QList<QOpenGLTexture *> m_textures; // 存储纹理
   void drawControlPoints();
   void drawConvexHull();
   void drawRoutePath();
   void drawBasePlane();
+  QString retriveMtlPath(const QString &objfilePath);
 
 private:
   void setupOpenGLContext();
   void initCanvas();
   std::shared_ptr<gl::BasePlane> initBasePlane();
-  std::shared_ptr<gl::HomePoint> initHomePoint();
+  std::shared_ptr<gl::ControlPoints> initControlPoints();
   std::shared_ptr<gl::Model> initModel();
   void initBuffers();
-  std::shared_ptr<QOpenGLShaderProgram> constructShader(const QString& vertexShaderPath, const QString& fragmentShaderPath, const QString& geometryShaderPath="");
   
 private:
   RoutePlanner *m_routePlanner = nullptr;
   QMatrix4x4 mViewMatrix;
 
-  struct Material {
-    QString name;
-    QVector3D ambient = QVector3D(0.2f, 0.2f, 0.2f);
-    QVector3D diffuse = QVector3D(0.8f, 0.8f, 0.8f);
-    QVector3D specular = QVector3D(1.0f, 1.0f, 1.0f);
-    float shininess = 32.0f;
-    QString diffuseTexture;
-  };
-  /*
   struct ModelData {
     QOpenGLVertexArrayObject vao;
     QOpenGLBuffer vbo;
@@ -141,8 +84,6 @@ private:
   QOpenGLBuffer mVBO;
   QOpenGLVertexArrayObject mVAO;
   QOpenGLTexture *m_texture = nullptr;
-  */
-  QMatrix4x4 mProjection;
   QMatrix4x4 mModelView;
   QPoint m_lastMousePos;
   float mfDistance = -5.0f;
@@ -161,7 +102,6 @@ private:
   std::shared_ptr<QOpenGLShaderProgram> mModelShader;
   QVector3D calculateRayIntersection(const QVector3D &origin,
                                      const QVector3D &direction);
-  float m_baseHeight = 25.0f; // 初始标准高度
   float m_initialBaseHeight = 25.0f;
   QOpenGLVertexArrayObject m_basePlaneVAO;
   QOpenGLBuffer m_basePlaneVBO{QOpenGLBuffer::VertexBuffer};
@@ -169,7 +109,6 @@ private:
 public slots:
   void updateFlightHeight(double height);
   void handleMouseMove(QMouseEvent *event);
-  void setBaseHeight(double height);
 
   void generateFlightRoute(float height); // 生成航线
   void startSimulation(float speed);      // 开始模拟
@@ -202,28 +141,4 @@ public slots:
     m_maxAltitude = altitude;
     update();
   }
-
-private:
-  double m_maxAltitude = 500.0; // 默认最大高度
-public:
-  void loadMtl(const QString &mtlPath, ModelData *modelData);
-  QVector3D calculateModelCenter(ModelData *modelData);
-
-  struct ModelBounds {
-    QVector3D min;
-    QVector3D max;
-    QVector3D center;
-    QVector3D originalCenter; // 存储原始中心
-  };
-
-  struct GlobalBounds {
-    QVector3D sceneMin = QVector3D(FLT_MAX, FLT_MAX, FLT_MAX);
-    QVector3D sceneMax = QVector3D(-FLT_MAX, -FLT_MAX, -FLT_MAX);
-    QVector3D sceneCenter;
-  } m_globalBounds;
-
-  QMap<ModelData *, ModelBounds> m_modelBoundsMap; // 模型边界映射
-  void calculateModelBounds(ModelData *modelData, ModelBounds &bounds);
-  void updateGlobalBounds(const ModelBounds &modelBounds);
-  void applyGlobalCentering();
 };

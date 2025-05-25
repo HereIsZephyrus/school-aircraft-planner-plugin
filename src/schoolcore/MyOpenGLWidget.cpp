@@ -1,5 +1,6 @@
 ﻿#include "MyOpenGLWidget.h"
 #include "MainWindow.h"
+#include "WorkspaceState.h"
 #include "qgis_debug.h"
 #include <QDebug>
 #include <QFile>
@@ -14,83 +15,6 @@
 #include <qgsapplication.h>
 #include <qgis.h>
 #include <qvector4d.h>
-
-namespace gl{
-  Primitive::Primitive(GLenum primitiveType, GLfloat* vertices, GLuint vertexNum){
-    this->primitiveType = primitiveType;
-    this->vertices = vertices;
-    this->vertexNum = vertexNum;
-    this->vao.create();
-    this->vbo.create();
-    this->modelMatrix.setToIdentity();
-    shader = nullptr;
-    this->vbo.bind();
-    this->vbo.allocate(this->vertices, this->vertexNum * sizeof(GLfloat));
-    this->vbo.release();
-  }
-  Primitive::~Primitive(){
-    this->vao.destroy();
-    this->vbo.destroy();
-    shader = nullptr;
-    delete[] this->vertices;
-  }
-  void Primitive::setModelMatrix(const QMatrix4x4 &matrix){
-    this->modelMatrix = matrix;
-  }
-  ColorPrimitive::ColorPrimitive(GLenum primitiveType, GLfloat* vertices, GLuint vertexNum, const QVector4D& color):
-    Primitive(primitiveType, vertices, vertexNum),color(color){}
-  void ColorPrimitive::draw(){
-    this->shader->bind();
-    this->shader->setUniformValue("modelMatrix", this->modelMatrix);
-    this->shader->setUniformValue("vColor", this->color);
-    this->vao.bind();
-    this->vbo.bind();
-    glDrawArrays(this->primitiveType, 0, this->vertexNum * stride);
-    this->vbo.release();
-    this->vao.release();
-    this->shader->release();
-  }
-  BasePlane::BasePlane(GLfloat* vertices, GLuint vertexNum, const QVector4D& color):
-    ColorPrimitive(GL_LINES, vertices, vertexNum, color){}
-  HomePoint::HomePoint(GLfloat* vertices, GLuint vertexNum, const QVector4D& color):
-    ColorPrimitive(GL_POINTS, vertices, vertexNum, color){}
-  Model::Model(GLfloat* vertices, GLuint vertexNum, std::shared_ptr<QOpenGLTexture> texture):
-    Primitive(GL_TRIANGLES, vertices, vertexNum), texture(texture){}
-  void Model::draw(){
-    this->shader->bind();
-    this->shader->setUniformValue("modelMatrix", this->modelMatrix);
-    this->shader->setUniformValue("textureSampler", 0);
-    this->vao.bind();
-    this->vbo.bind();
-    glDrawArrays(this->primitiveType, 0, this->vertexNum * stride);
-    this->vbo.release();
-    this->vao.release();
-    this->shader->release();
-  }
-}
-
-std::shared_ptr<QOpenGLShaderProgram> MyOpenGLWidget::constructShader(const QString& vertexShaderPath, const QString& fragmentShaderPath, const QString& geometryShaderPath) {
-    std::shared_ptr<QOpenGLShaderProgram> shader = std::make_shared<QOpenGLShaderProgram>();
-    if (!shader->addShaderFromSourceFile(QOpenGLShader::Vertex, vertexShaderPath)) {
-        logMessage(QString("Shader Error:") + shader->log(), Qgis::MessageLevel::Critical);
-        return nullptr;
-    }
-    if (!geometryShaderPath.isEmpty()) {
-        if (!shader->addShaderFromSourceFile(QOpenGLShader::Geometry, geometryShaderPath)) {
-            logMessage(QString("Shader Error:") + shader->log(), Qgis::MessageLevel::Critical);
-            return nullptr;
-        }
-    }
-    if (!shader->addShaderFromSourceFile(QOpenGLShader::Fragment, fragmentShaderPath)) {
-        logMessage(QString("Shader Error:") + shader->log(), Qgis::MessageLevel::Critical);
-        return nullptr;
-    }
-    if (!shader->link()) {
-        logMessage(QString("Shader Link Error:") + shader->log(), Qgis::MessageLevel::Critical);
-    }
-    shader->setUniformValue("projection", mProjection);
-    return shader;
-}
 
 MyOpenGLWidget::MyOpenGLWidget(QWidget *parent)
     : QOpenGLWidget(parent), m_routePlanner(new RoutePlanner(this)),
@@ -108,7 +32,7 @@ MyOpenGLWidget::MyOpenGLWidget(QWidget *parent)
   setFocus();                      // 主动获取焦点
   modelWidget = nullptr;
   basePlaneWidget = nullptr;
-  homePointWidget = nullptr;
+  ControlPointsWidget = nullptr;
 }
 
 MyOpenGLWidget::~MyOpenGLWidget() {
@@ -120,7 +44,7 @@ MyOpenGLWidget::~MyOpenGLWidget() {
   doneCurrent();
   modelWidget = nullptr;
   basePlaneWidget = nullptr;
-  homePointWidget = nullptr;
+  ControlPointsWidget = nullptr;
 }
 
 void MyOpenGLWidget::setupOpenGLContext(){
@@ -144,7 +68,7 @@ void MyOpenGLWidget::setupOpenGLContext(){
 
 void MyOpenGLWidget::initCanvas(){
   basePlaneWidget = initBasePlane();
-  //homePointWidget = initHomePoint();
+  //ControlPointsWidget = initControlPoints();
 }
 
 std::shared_ptr<gl::BasePlane> MyOpenGLWidget::initBasePlane(){
@@ -152,22 +76,23 @@ std::shared_ptr<gl::BasePlane> MyOpenGLWidget::initBasePlane(){
   const float step = 50.0f;
   QVector<float> vertices;
   int vertexNum = 0;
+  double baseHeight = ws::FlightManager::getInstance().getBaseHeight();
   for (float x = -size; x <= size; x += step) {
-    vertices << x << -size << m_baseHeight << x << size << m_baseHeight;
+    vertices << x << -size << baseHeight << x << size << baseHeight;
     vertexNum += 2;
   }
   for (float y = -size; y <= size; y += step) {
-    vertices << -size << y << m_baseHeight << size << y << m_baseHeight;
+    vertices << -size << y << baseHeight << size << y << baseHeight;
     vertexNum += 2;
   }
 
   QVector4D initColor = QVector4D(0.6f, 0.6f, 0.6f, 0.5f);
   std::shared_ptr<gl::BasePlane> basePlane = std::make_shared<gl::BasePlane>(vertices, vertexNum, initColor);
-  basePlane->setShader(constructShader(":/shaders/line.vs", ":/shaders/line.fs"));
+  basePlane->setShader(gl::constructShader(":/shaders/line.vs", ":/shaders/line.fs"));
   logMessage("base plane initialized", Qgis::MessageLevel::Info);
   return basePlane;
 }
-std::shared_ptr<gl::HomePoint> MyOpenGLWidget::initHomePoint(){
+std::shared_ptr<gl::ControlPoints> MyOpenGLWidget::initControlPoints(){
 
   return nullptr;
 }
@@ -179,8 +104,7 @@ void MyOpenGLWidget::initializeGL() {
   initializeOpenGLFunctions();
   setupOpenGLContext();
   logMessage("OpenGL context initialized", Qgis::MessageLevel::Success);
-  double aspectRatio = static_cast<double>(width()) / static_cast<double>(height());
-  mProjection.perspective(45.0f, aspectRatio, 0.1f, 1000.0f);
+  ws::WindowManager::getInstance().setProjection(45.0f, static_cast<double>(width()), static_cast<double>(height()), 0.1f, 1000.0f);
   initCanvas();
   //initBuffers();
   logMessage("buffers initialized", Qgis::MessageLevel::Success);
@@ -309,133 +233,6 @@ void MyOpenGLWidget::paintGL(){
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
   basePlaneWidget->draw();
 }
-void MyOpenGLWidget::loadObjModel(const QString &filePath,
-                                  const QString &texturePath) {
-  makeCurrent();
-
-  ModelData *modelData = new ModelData;
-  QString mtlPath;
-
-  // [1] 解析 OBJ 文件头获取材质库
-  QFile objFile(filePath);
-  if (objFile.open(QIODevice::ReadOnly | QIODevice::Text)) {
-    QTextStream in(&objFile);
-    while (!in.atEnd()) {
-      QString line = in.readLine().trimmed();
-      if (line.startsWith("mtllib")) {
-        mtlPath = QFileInfo(filePath).absolutePath() + "/" + line.split(" ")[1];
-        break;
-      }
-    }
-    objFile.close();
-  }
-
-  // [2] 加载材质文件
-  if (!mtlPath.isEmpty()) {
-    loadMtl(mtlPath, modelData);
-  }
-
-  // [3] 重新打开OBJ文件解析几何数据
-  if (objFile.open(QIODevice::ReadOnly | QIODevice::Text)) {
-    QTextStream in(&objFile);
-    QVector<QVector3D> positions;
-    QVector<QVector2D> texCoords;
-    QString currentMaterial;
-
-    while (!in.atEnd()) {
-      QString line = in.readLine().trimmed();
-      QStringList parts = line.split(" ", Qt::SkipEmptyParts);
-      if (parts.isEmpty())
-        continue;
-
-      // 处理材质切换
-      if (parts[0] == "usemtl") {
-        currentMaterial = parts[1];
-      }
-      // 处理顶点数据
-      else if (parts[0] == "v") {
-        positions.append(QVector3D(parts[1].toFloat(), parts[2].toFloat(),
-                                   parts[3].toFloat()));
-      } else if (parts[0] == "vt") {
-        texCoords.append(QVector2D(parts[1].toFloat(),
-                                   1.0f - parts[2].toFloat() // 翻转Y轴
-                                   ));
-      }
-      // 处理面数据
-      // 修改后的面解析逻辑
-      else if (parts[0] == "f") {
-        QVector<Vertex> faceVertices;
-        // 三角化面数据（假设是三角形面）
-        for (int i = 1; i <= 3; ++i) { // 只处理三角形前三个顶点
-          QStringList indices = parts[i].split("/", Qt::KeepEmptyParts);
-
-          Vertex vertex;
-          // 位置索引
-          int posIndex = indices[0].toInt() - 1;
-          if (posIndex >= 0 && posIndex < positions.size()) {
-            vertex.position = positions[posIndex];
-          }
-
-          // 纹理坐标索引
-          if (indices.size() > 1 && !indices[1].isEmpty()) {
-            int texIndex = indices[1].toInt() - 1;
-            if (texIndex >= 0 && texIndex < texCoords.size()) {
-              vertex.texCoord = texCoords[texIndex];
-              vertex.texCoord.setY(
-                  1.0f - vertex.texCoord.y()); // OpenGL纹理坐标需要翻转Y轴
-            }
-          }
-
-          modelData->materialGroups[currentMaterial].append(vertex);
-        }
-      }
-    }
-    objFile.close();
-  }
-
-  //// [4] 计算模型中心并平移
-  // QVector3D center = calculateModelCenter(modelData);
-  // for (auto& group : modelData->materialGroups) {
-  //     for (Vertex& v : group) {
-  //         v.position -= center;
-  //     }
-  // }
-  //  [4] 计算模型原始包围盒（不要修改顶点）
-  ModelBounds bounds;
-  QString bound_range = QString("bound_range: %1-%2-%3+%4-%5-%6").arg(bounds.min.x()).arg(bounds.min.y()).arg(bounds.min.z()).arg(bounds.max.x()).arg(bounds.max.y()).arg(bounds.max.z());
-  logMessage(bound_range, Qgis::MessageLevel::Info);
-  calculateModelBounds(modelData, bounds);
-
-  // 存储原始数据
-  m_modelBoundsMap[modelData] = bounds;
-
-  // [5] 更新全局包围盒
-  updateGlobalBounds(bounds);
-
-  // [5] 初始化OpenGL资源
-  modelData->vao.create();
-  modelData->vbo.create();
-
-  modelData->vao.bind();
-  modelData->vbo.bind();
-  modelData->vbo.allocate(nullptr, 0); // 先分配空缓冲
-  logMessage("initBuffers", Qgis::MessageLevel::Info);
-
-  glEnableVertexAttribArray(0);
-  glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex),
-                        (void *)offsetof(Vertex, position));
-  glEnableVertexAttribArray(1);
-  glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex),
-                        (void *)offsetof(Vertex, texCoord));
-
-  modelData->vbo.release();
-  modelData->vao.release();
-  logMessage("releaseBuffers", Qgis::MessageLevel::Info);
-  m_models.append(modelData);
-  doneCurrent();
-  update();
-  logMessage("loadObjModel", Qgis::MessageLevel::Info);
-}
 
 // 辅助函数：计算模型中心
 QVector3D MyOpenGLWidget::calculateModelCenter(ModelData *modelData) {
@@ -461,12 +258,12 @@ void MyOpenGLWidget::mousePressEvent(QMouseEvent *event) {
 
   if (m_routePlanner && m_routePlanner->mCreateRoute) {
     // 优先处理添加控制点模式
-    if (m_routePlanner->isSettingHomePointMode() &&
+    if (m_routePlanner->isSettingControlPointsMode() &&
         event->button() == Qt::LeftButton) {
       QVector3D surfacePoint = getSurfacePointFromMouse();
       if (surfacePoint != QVector3D(0, 0, 0)) {
-        m_routePlanner->setHomePoint(surfacePoint);
-        m_routePlanner->setSettingHomePointMode(false); // 退出设置模式
+        m_routePlanner->setControlPoints(surfacePoint);
+        m_routePlanner->setSettingControlPointsMode(false); // 退出设置模式
         update();
         return;
       }
@@ -540,7 +337,7 @@ void MyOpenGLWidget::mouseMoveEvent(QMouseEvent *event) {
       if (m_routePlanner->isAddingControlPoint()) {
         return;
       }
-      if (m_routePlanner->isSettingHomePointMode()) {
+      if (m_routePlanner->isSettingControlPointsMode()) {
         return;
       }
     }
@@ -607,8 +404,9 @@ void MyOpenGLWidget::drawControlPoints() {
   // 绘制控制点
   QVector<QVector3D> points = m_routePlanner->controlPoints();
   QVector<float> vertexData;
+  double baseHeight = ws::FlightManager::getInstance().getBaseHeight();
   for (const QVector3D &p : points) {
-    vertexData << p.x() << p.y() << p.z() + mfFlightHight + m_baseHeight;
+    vertexData << p.x() << p.y() << p.z() + mfFlightHight + baseHeight;
   }
 
   m_pointVAO.bind();
@@ -640,10 +438,10 @@ void MyOpenGLWidget::drawControlPoints() {
   }
 
   // 绘制Home点（紫色）
-  if (m_routePlanner && !m_routePlanner->homePoint().isNull()) {
-    QVector3D homePoint = m_routePlanner->homePoint();
+  if (m_routePlanner && !m_routePlanner->ControlPoints().isNull()) {
+    QVector3D ControlPoints = m_routePlanner->ControlPoints();
     QVector<float> homeVertex;
-    homeVertex << homePoint.x() << homePoint.y() << homePoint.z();
+    homeVertex << ControlPoints.x() << ControlPoints.y() << ControlPoints.z();
 
     mLineShader->setUniformValue("color",
                                  QVector4D(0.5f, 0.0f, 0.5f, 1.0f)); // 紫色
@@ -675,8 +473,9 @@ void MyOpenGLWidget::drawConvexHull() {
   // 准备顶点数据
   QVector<QVector3D> hull = m_routePlanner->convexHull();
   QVector<float> vertexData;
+  double baseHeight = ws::FlightManager::getInstance().getBaseHeight();
   for (const QVector3D &p : hull) {
-    vertexData << p.x() << p.y() << p.z() + mfFlightHight + m_baseHeight;
+    vertexData << p.x() << p.y() << p.z() + mfFlightHight + baseHeight;
   }
 
   // 设置顶点缓冲
@@ -770,8 +569,9 @@ void MyOpenGLWidget::addControlPoint(const QVector3D &point) {
   if (m_routePlanner) {
     // 直接在基准面高度上添加控制点（不再需要Z轴偏移）
 
+    double baseHeight = ws::FlightManager::getInstance().getBaseHeight();
     QVector3D modelPoint =
-        mModelView.inverted() * QVector3D(point.x(), point.y(), m_baseHeight);
+        mModelView.inverted() * QVector3D(point.x(), point.y(), baseHeight);
 
     m_routePlanner->addControlPoint(modelPoint);
     update();
@@ -813,7 +613,8 @@ MyOpenGLWidget::calculateRayIntersection(const QVector3D &rayOrigin,
   QVector3D closestPoint;
 
   // 基准面高度
-  const float planeZ = m_baseHeight;
+  double baseHeight = ws::FlightManager::getInstance().getBaseHeight();
+  const float planeZ = baseHeight;
 
   // 组合视图和模型矩阵
   QMatrix4x4 modelViewMatrix = mViewMatrix * mModelView;
@@ -877,11 +678,6 @@ void MyOpenGLWidget::generateFlightRoute(float height) // 生成航线
   m_routePlanner->m_editingMode = false;
 }; // 生成航线
 
-void MyOpenGLWidget::setBaseHeight(double height) {
-  m_baseHeight = height + m_initialBaseHeight;
-  qDebug() << "setBaseHeight =" << m_baseHeight - 25.0f;
-  update(); // 触发重绘
-}
 void MyOpenGLWidget::startSimulation(float speed) {
   if (!m_routePlanner)
     return;
@@ -916,7 +712,8 @@ void MyOpenGLWidget::updateAnimation() {
     m_animationProgress = 1.0f;
     m_animationTimer->stop();
   }
-  float currentHeight = m_baseHeight + mfFlightHight + m_initialBaseHeight;
+  double baseHeight = ws::FlightManager::getInstance().getBaseHeight();
+  float currentHeight = baseHeight + mfFlightHight + baseHeight;
   // 计算当前路径位置
   int index = static_cast<int>((m_flightPath.size() - 1) * m_animationProgress);
   float t = (m_flightPath.size() - 1) * m_animationProgress - index;
@@ -1031,43 +828,7 @@ void MyOpenGLWidget::stopSimulation() {
   m_animationTimer->stop();
   m_isAnimating = false;
   m_animationProgress = 0.0f;
-  update(); // 更新界面
-}
-void MyOpenGLWidget::loadMtl(const QString &mtlPath, ModelData *modelData) {
-  QFile file(mtlPath);
-  if (!file.open(QIODevice::ReadOnly | QIODevice::Text))
-    return;
-
-  Material currentMaterial;
-  QTextStream in(&file);
-  while (!in.atEnd()) {
-    QString line = in.readLine().trimmed();
-    QStringList parts = line.split(" ", Qt::SkipEmptyParts);
-    if (parts.isEmpty())
-      continue;
-
-    if (parts[0] == "newmtl") {
-      if (!currentMaterial.name.isEmpty()) {
-        modelData->materials.append(currentMaterial);
-      }
-      currentMaterial = Material();
-      currentMaterial.name = parts[1];
-    } else if (parts[0] == "map_Kd") {
-      QString texPath = QFileInfo(mtlPath).absolutePath() + "/" + parts[1];
-      if (!modelData->textures.contains(currentMaterial.name)) {
-        QImage img(texPath);
-        if (!img.isNull()) {
-          QOpenGLTexture *texture = new QOpenGLTexture(img.mirrored());
-          texture->setMinificationFilter(QOpenGLTexture::LinearMipMapLinear);
-          texture->setMagnificationFilter(QOpenGLTexture::Linear);
-          modelData->textures[currentMaterial.name] = texture;
-        }
-      }
-    }
-  }
-  if (!currentMaterial.name.isEmpty()) {
-    modelData->materials.append(currentMaterial);
-  }
+  update();
 }
 // 计算单个模型包围盒
 void MyOpenGLWidget::calculateModelBounds(ModelData *modelData,

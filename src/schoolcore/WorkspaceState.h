@@ -2,8 +2,21 @@
 #include <QString>
 #include <QList>
 #include <QDir>
+#include <QMatrix4x4>
+#include <QVector3D>
+#include <float.h>
+
 //use a singleton to manage the workspace state
 typedef std::pair<QString, QString> ObjTexturePair; // the first is the obj path, the second is the texture path
+struct Bounds{
+    QVector3D min;
+    QVector3D max;
+    QVector3D center;
+    Bounds( QVector3D min = QVector3D(FLT_MAX, FLT_MAX, FLT_MAX), 
+            QVector3D max = QVector3D(-FLT_MAX, -FLT_MAX, -FLT_MAX), 
+            QVector3D center = QVector3D(0, 0, 0)) 
+        : min(min), max(max), center(center) {}
+};
 namespace ws{
 void initializeWorkspaceState();
 
@@ -29,10 +42,16 @@ public:
     bool get2DMapInited() const {return is2DMapInited;}
     void set3DMapInited() {is3DMapInited = true;}
     void set2DMapInited() {is2DMapInited = true;}
+    void setProjection(double fov, double width, double height, double near, double far) {mProjection.perspective(fov, width, height, near, far);}
+    QMatrix4x4 getProjection() const {return mProjection;}
+    const Bounds& getBounds() const {return mBounds;}
+    void setBounds(const Bounds& bounds) {mBounds = bounds;}
 private:
     CanvasType mCurrentCanvas;
     static QObject *pDefaultObject;
     bool is3DMapInited,is2DMapInited;
+    QMatrix4x4 mProjection;
+    Bounds mBounds;
 };
 class PathManager {
 private:
@@ -110,15 +129,20 @@ public:
     double getFlightAltitude() const {return mFlightAltitude;}
     void setFlightBattery(double battery) {mFlightBattery = battery;}
     double getFlightBattery() const {return mFlightBattery;}
+    void setBaseHeight(double height) {mBaseHeight = height;}
+    double getBaseHeight() const {return mBaseHeight;}
     static constexpr int minFlightSpeed = 1;
     static constexpr int maxFlightSpeed = 50;
     static constexpr int minFlightAltitude = 50;
     static constexpr int maxFlightAltitude = 1000;
     static constexpr int minFlightBattery = 0;
     static constexpr int maxFlightBattery = 100;
+    static constexpr int minBaseHeight = 0;
+    static constexpr int maxBaseHeight = 100;
 private:
     double mFlightSpeed;
     double mFlightAltitude;
     double mFlightBattery;
+    double mBaseHeight;
 };
 }
