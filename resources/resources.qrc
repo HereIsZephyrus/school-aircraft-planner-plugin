@@ -2,8 +2,6 @@
 <RCC>
     <qresource prefix="/">
         <file>plugin.svg</file>
-    </qresource>
-    <qresource prefix="/shaders">
         <file>shaders/fshader.glsl</file>
         <file>shaders/line_vshader.glsl</file>
         <file>shaders/line_fshader.glsl</file>

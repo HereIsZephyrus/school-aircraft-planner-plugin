@@ -227,20 +227,20 @@ void MyOpenGLWidget::resizeGL(int w, int h) {
 }
 
 void MyOpenGLWidget::initShaders() {
-
   if (!mShaderProgram.addShaderFromSourceFile(QOpenGLShader::Vertex,
                                               ":/shaders/vshader.glsl")) {
+    logMessage(mShaderProgram.log(), Qgis::MessageLevel::Info);
     logMessage(QString("Vertex Shader Error:") + mShaderProgram.log(), Qgis::MessageLevel::Critical);
   }
   if (!mShaderProgram.addShaderFromSourceFile(QOpenGLShader::Fragment,
                                               ":/shaders/fshader.glsl")) {
+    logMessage(mShaderProgram.log(), Qgis::MessageLevel::Info);
     logMessage(QString("Fragment Shader Error:") + mShaderProgram.log(), Qgis::MessageLevel::Critical);
   }
   if (!mShaderProgram.link()) {
-    logMessage("Shader Link Error:" + mShaderProgram.log(), Qgis::MessageLevel::Critical);
+    logMessage(mShaderProgram.log(), Qgis::MessageLevel::Info);
+    logMessage(QString("Shader Link Error:") + mShaderProgram.log(), Qgis::MessageLevel::Critical);
   }
-  QFile vshaderFile(":/shaders/vshader.glsl");
-  vshaderFile.open(QIODevice::ReadOnly);
 }
 
 void MyOpenGLWidget::initBuffers() {
