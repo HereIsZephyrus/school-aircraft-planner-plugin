@@ -1,3 +1,4 @@
+#pragma once
 #include <QString>
 #include <QList>
 #include <QDir>
@@ -23,8 +24,10 @@ public:
     WindowManager& operator=(const WindowManager&) = delete;
     void setCurrentCanvas(CanvasType canvas) {mCurrentCanvas = canvas;}
     CanvasType getCurrentCanvas() const {return mCurrentCanvas;}
+    QObject* getDefaultObject() const {return pDefaultObject;}
 private:
     CanvasType mCurrentCanvas;
+    static QObject *pDefaultObject;
 };
 class PathManager {
 private:

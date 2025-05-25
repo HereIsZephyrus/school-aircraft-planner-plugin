@@ -1,6 +1,5 @@
 ﻿#include "MainWindow.h"
 #include "StyleManager.h"
-#include "WorkspaceState.h"
 #include "qgsmessagelog.h"
 #include <memory>
 #include <QAction>

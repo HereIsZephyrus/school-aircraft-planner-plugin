@@ -6,6 +6,7 @@ Date:2025.1.6
 #pragma once
 #include "MyOpenGLWidget.h"
 #include "RoutePlanner.h"
+#include "WorkspaceState.h"
 #include "qgisinterface.h"
 #include "qgisplugin.h"
 #include "qgsmapcanvas.h"
@@ -87,8 +88,10 @@ private:
   template <typename Tp> // Tp is the pointer type
   Tp safeFindChild(const QString &name) {
     Tp pWidget = this->findChild<Tp>(name);
-    if (pWidget == nullptr)
+    if (pWidget == nullptr){
       logMessage("findChild: " + name + " not found", Qgis::MessageLevel::Critical);
+      return dynamic_cast<Tp>(ws::WindowManager::getInstance().getDefaultObject());
+    }
     return pWidget;
   }
 
