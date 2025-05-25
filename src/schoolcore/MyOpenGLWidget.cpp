@@ -1,4 +1,5 @@
 ﻿#include "MyOpenGLWidget.h"
+#include "MainWindow.h"
 #include "qgis_debug.h"
 #include <QDebug>
 #include <QFile>
@@ -11,6 +12,76 @@
 #include <qtimer.h>
 #include <qgsapplication.h>
 #include <qgis.h>
+
+namespace gl{
+  Primitive::Primitive(GLenum primitiveType, GLfloat* vertices, GLuint vertexNum){
+    this->primitiveType = primitiveType;
+    this->vertices = vertices;
+    this->vertexNum = vertexNum;
+    this->vao.create();
+    this->vbo.create();
+    this->modelMatrix.setToIdentity();
+    shader = nullptr;
+    this->vbo.bind();
+    this->vbo.allocate(this->vertices, this->vertexNum * sizeof(GLfloat));
+    this->vbo.release();
+  }
+  Primitive::~Primitive(){
+    this->vao.destroy();
+    this->vbo.destroy();
+    shader = nullptr;
+    delete[] this->vertices;
+  }
+  void Primitive::setModelMatrix(const QMatrix4x4 &matrix){
+    this->modelMatrix = matrix;
+  }
+  ColorPrimitive::ColorPrimitive(GLenum primitiveType, GLfloat* vertices, GLuint vertexNum, const QVector3D& color):
+    Primitive(primitiveType, vertices, vertexNum),color(color){}
+  void ColorPrimitive::draw(){
+    this->shader->bind();
+    this->shader->setUniformValue("modelMatrix", this->modelMatrix);
+    this->shader->setUniformValue("vColor", this->color);
+    this->vao.bind();
+    this->vbo.bind();
+    glDrawArrays(this->primitiveType, 0, this->vertexNum * stride);
+    this->vbo.release();
+    this->vao.release();
+    this->shader->release();
+  }
+  BasePlane::BasePlane(GLfloat* vertices, GLuint vertexNum, const QVector3D& color):
+    ColorPrimitive(GL_LINES, vertices, vertexNum, color){}
+  HomePoint::HomePoint(GLfloat* vertices, GLuint vertexNum, const QVector3D& color):
+    ColorPrimitive(GL_POINTS, vertices, vertexNum, color){}
+  Model::Model(GLfloat* vertices, GLuint vertexNum, std::shared_ptr<QOpenGLTexture> texture):
+    Primitive(GL_TRIANGLES, vertices, vertexNum), texture(texture){}
+  void Model::draw(){
+    this->shader->bind();
+    this->shader->setUniformValue("modelMatrix", this->modelMatrix);
+    this->shader->setUniformValue("textureSampler", 0);
+    this->vao.bind();
+    this->vbo.bind();
+    glDrawArrays(this->primitiveType, 0, this->vertexNum * stride);
+    this->vbo.release();
+    this->vao.release();
+    this->shader->release();
+  }
+}
+
+std::shared_ptr<QOpenGLShaderProgram> MyOpenGLWidget::constructShader(const QString& vertexShaderPath, const QString& fragmentShaderPath) {
+    std::shared_ptr<QOpenGLShaderProgram> shader = std::make_shared<QOpenGLShaderProgram>();
+    if (!shader->addShaderFromSourceFile(QOpenGLShader::Vertex, vertexShaderPath)) {
+        logMessage(QString("Shader Error:") + shader->log(), Qgis::MessageLevel::Critical);
+        return nullptr;
+    }
+    if (!shader->addShaderFromSourceFile(QOpenGLShader::Fragment, fragmentShaderPath)) {
+        logMessage(QString("Shader Error:") + shader->log(), Qgis::MessageLevel::Critical);
+        return nullptr;
+    }
+    if (!shader->link()) {
+        logMessage(QString("Shader Link Error:") + shader->log(), Qgis::MessageLevel::Critical);
+    }
+    return shader;
+}
 
 MyOpenGLWidget::MyOpenGLWidget(QWidget *parent)
     : QOpenGLWidget(parent), m_routePlanner(new RoutePlanner(this)),
@@ -37,103 +108,113 @@ MyOpenGLWidget::~MyOpenGLWidget() {
   doneCurrent();
 }
 
-void MyOpenGLWidget::initializeGL() {
-  // 检查QGIS环境
-  if (!QgsApplication::instance()) {
-    qWarning() << "QGIS application not initialized";
-    return;
-  }
-  
-  // 设置QGIS OpenGL格式
+void MyOpenGLWidget::setupOpenGLContext(){
   QgsApplication::setAttribute(Qt::AA_UseDesktopOpenGL);
   QgsApplication::setAttribute(Qt::AA_ShareOpenGLContexts);
   
-  // 设置OpenGL格式
   QSurfaceFormat format;
   format.setVersion(3, 3);
   format.setProfile(QSurfaceFormat::CoreProfile);
   format.setDepthBufferSize(24);
   format.setStencilBufferSize(8);
-  format.setSamples(4);  // 多重采样
+  format.setSamples(4);
   QSurfaceFormat::setDefaultFormat(format);
   setFormat(format);
-  
-  // 确保当前上下文
+
+  QString version = QString::fromUtf8((const char*)glGetString(GL_VERSION));
+  logMessage("OpenGL Version: " + version, Qgis::MessageLevel::Info);
+  glEnable(GL_DEPTH_TEST);
+  logMessage("depth test enabled", Qgis::MessageLevel::Info);
+}
+
+void MyOpenGLWidget::initShaders(){
   makeCurrent();
-  
-  // 检查上下文有效性
   if (!isValid()) {
     logMessage("OpenGL context is not valid", Qgis::MessageLevel::Critical);
     return;
   }
-  initializeOpenGLFunctions();
   
-  // 检查OpenGL版本
-  QString version = QString::fromUtf8((const char*)glGetString(GL_VERSION));
-  logMessage("OpenGL Version: " + version, Qgis::MessageLevel::Info);
-  
-  // 继续其他初始化
-  glEnable(GL_DEPTH_TEST);
-  logMessage("depth test enabled", Qgis::MessageLevel::Info);
-  initShaders();
-  logMessage("shader initialized", Qgis::MessageLevel::Info);
-  initBuffers();
-  logMessage("buffers initialized", Qgis::MessageLevel::Info);
-
-  mProjection.perspective(45.0f, width() / (float)height(), 0.1f, 1000.0f);
-  logMessage("projection initialized", Qgis::MessageLevel::Info);
-  // 线框着色器
-  if (!m_lineShader.addShaderFromSourceFile(QOpenGLShader::Vertex,
-                                            ":/shaders/line_vshader.glsl")) {
-    logMessage(QString("m_lineShader Line Vertex Shader Error:") + m_lineShader.log(), Qgis::MessageLevel::Critical);
-  }else{
-    logMessage("m_lineShader Line Vertex Shader initialized", Qgis::MessageLevel::Info);
+  mLineShader = constructShader(":/shaders/line_vshader.vs", ":/shaders/line_fshader.fs");
+  if (!mLineShader) {
+    logMessage("Failed to load line shader", Qgis::MessageLevel::Critical);
+    return;
   }
-  if (!m_lineShader.addShaderFromSourceFile(QOpenGLShader::Fragment,
-                                            ":/shaders/line_fshader.glsl")) {
-    logMessage(QString("m_lineShader Line Fragment Shader Error:") + m_lineShader.log(), Qgis::MessageLevel::Critical);
-  }else{
-    logMessage("m_lineShader Line Fragment Shader initialized", Qgis::MessageLevel::Info);
-  }
-  if (!m_lineShader.link()) {
-    logMessage(QString("m_lineShader Line Shader Link Error:") + m_lineShader.log(), Qgis::MessageLevel::Critical);
-  }else{
-    logMessage("m_lineShader Line Shader initialized", Qgis::MessageLevel::Info);
-  }
-  m_pointVAO.create();
-  m_hullVAO.create();
-  m_routeVAO.create();
+  logMessage("line shader loaded", Qgis::MessageLevel::Info);
 
-  m_pointVBO.create();
-  m_hullVBO.create();
-  m_routeVBO.create();
+  mModelShader = constructShader(":/shaders/vshader.vs", ":/shaders/fshader.fs");
+  if (!mModelShader) {
+    logMessage("Failed to load model shader", Qgis::MessageLevel::Critical);
+    return;
+  }
+  mModelShader->bind();
+  mModelShader->enableAttributeArray(0);
+  mModelShader->setAttributeBuffer(0, GL_FLOAT, offsetof(Vertex, position), 3,
+                                    sizeof(Vertex));
 
-  // 初始化基准面数据
+  mModelShader->enableAttributeArray(1);
+  mModelShader->setAttributeBuffer(1, GL_FLOAT, offsetof(Vertex, texCoord), 2,
+                                    sizeof(Vertex));
+  logMessage("model shader loaded", Qgis::MessageLevel::Info);
+}
+
+void MyOpenGLWidget::initCanvas(){
+  initBasePlane();
+}
+
+void MyOpenGLWidget::initBasePlane(){
   m_basePlaneVAO.create();
   m_basePlaneVBO.create();
+  
+  if (!mLineShader->bind())
+    return;
 
-  // 生成顶点数据
+  QMatrix4x4 view;
+  view.translate(0, 0, mfDistance);
+  view.translate(m_viewTranslation);
+  QMatrix4x4 mvp = mProjection * view * mModelView;
+  mLineShader->setUniformValue("mvp", mvp);
+  mLineShader->setUniformValue("color", QVector4D(0.6f, 0.6f, 0.6f, 0.5f));
+  
   const float size = 1000.0f;
   const float step = 50.0f;
   QVector<float> vertices;
   for (float x = -size; x <= size; x += step) {
-    vertices << x << -size << 0.0f << x << size << 0.0f;
+    vertices << x << -size << m_baseHeight << x << size << m_baseHeight;
   }
   for (float y = -size; y <= size; y += step) {
-    vertices << -size << y << 0.0f << size << y << 0.0f;
+    vertices << -size << y << m_baseHeight << size << y << m_baseHeight;
   }
 
-  // 上传数据到 VBO
   m_basePlaneVAO.bind();
   m_basePlaneVBO.bind();
   m_basePlaneVBO.allocate(vertices.constData(),
                           vertices.size() * sizeof(float));
+
   glEnableVertexAttribArray(0);
   glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, nullptr);
-  m_basePlaneVAO.release();
-  m_basePlaneVBO.release();
+  glDrawArrays(GL_LINES, 0, vertices.size() / 3);
 
-  emit glInitialized(); // 添加在函数末尾
+  m_basePlaneVBO.release();
+  m_basePlaneVAO.release();
+  mLineShader->release();
+
+  logMessage("drawBasePlane", Qgis::MessageLevel::Info);
+}
+
+void MyOpenGLWidget::initializeGL() {
+  initializeOpenGLFunctions();
+  setupOpenGLContext();
+  logMessage("OpenGL context initialized", Qgis::MessageLevel::Success);
+  initShaders();
+  logMessage("shader initialized", Qgis::MessageLevel::Success);
+  initCanvas();
+  initBuffers();
+  logMessage("buffers initialized", Qgis::MessageLevel::Success);
+
+  mProjection.perspective(45.0f, width() / (float)height(), 0.1f, 1000.0f);
+  logMessage("projection initialized", Qgis::MessageLevel::Success);
+
+  emit glInitialized();
   doneCurrent();
 }
 
@@ -143,7 +224,7 @@ void MyOpenGLWidget::paintGL() {
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
   // 绑定着色器程序
-  mShaderProgram.bind();
+  mModelShader->bind();
 
   QMatrix4x4 view;
   // MyOpenGLWidget.cpp 修改paintGL()中的视角计算
@@ -169,14 +250,14 @@ void MyOpenGLWidget::paintGL() {
     QMatrix4x4 mvp = mProjection * view * mModelView; // MVP 矩阵
 
     // 传递矩阵到着色器
-    mShaderProgram.setUniformValue("mvp", mvp);
-    mShaderProgram.setUniformValue("modelView", modelView);
-    mShaderProgram.setUniformValue("normalMatrix", modelView.normalMatrix());
+    mModelShader->setUniformValue("mvp", mvp);
+    mModelShader->setUniformValue("modelView", modelView);
+    mModelShader->setUniformValue("normalMatrix", modelView.normalMatrix());
 
     //// 绑定纹理（如果存在）
     // if (model->texture && model->texture->isCreated()) {
     //     model->texture->bind();
-    //     mShaderProgram.setUniformValue("textureSampler", 0);
+    //     mModelShader->setUniformValue("textureSampler", 0);
     // }
     // MyOpenGLWidget.cpp 中 paintGL() 的绘制部分修改为：
     QMap<QString, QVector<Vertex>>::const_iterator it;
@@ -187,7 +268,7 @@ void MyOpenGLWidget::paintGL() {
 
       if (model->textures.contains(materialName)) {
         model->textures[materialName]->bind();
-        mShaderProgram.setUniformValue("textureSampler", 0);
+        mModelShader->setUniformValue("textureSampler", 0);
       }
 
       // 绘制该材质组
@@ -208,7 +289,7 @@ void MyOpenGLWidget::paintGL() {
   }
 
   // 解绑着色器程序
-  mShaderProgram.release();
+  mModelShader->release();
   drawBasePlane();
   if (m_routePlanner) {
     drawControlPoints();
@@ -225,39 +306,29 @@ void MyOpenGLWidget::resizeGL(int w, int h) {
   mProjection.perspective(45.0f, w / (float)h, 1.0f, 100000.0f);
 }
 
-void MyOpenGLWidget::initShaders() {
-  if (!mShaderProgram.addShaderFromSourceFile(QOpenGLShader::Vertex,
-                                              ":/shaders/vshader.glsl")) {
-    logMessage(mShaderProgram.log(), Qgis::MessageLevel::Info);
-    logMessage(QString("Vertex Shader Error:") + mShaderProgram.log(), Qgis::MessageLevel::Critical);
-  }
-  if (!mShaderProgram.addShaderFromSourceFile(QOpenGLShader::Fragment,
-                                              ":/shaders/fshader.glsl")) {
-    logMessage(mShaderProgram.log(), Qgis::MessageLevel::Info);
-    logMessage(QString("Fragment Shader Error:") + mShaderProgram.log(), Qgis::MessageLevel::Critical);
-  }
-  if (!mShaderProgram.link()) {
-    logMessage(mShaderProgram.log(), Qgis::MessageLevel::Info);
-    logMessage(QString("Shader Link Error:") + mShaderProgram.log(), Qgis::MessageLevel::Critical);
-  }
-}
-
 void MyOpenGLWidget::initBuffers() {
+  m_pointVAO.create();
+  m_hullVAO.create();
+  m_routeVAO.create();
+
+  m_pointVBO.create();
+  m_hullVBO.create();
+  m_routeVBO.create();
+
+  const float size = 1000.0f;
+  const float step = 50.0f;
+  QVector<float> vertices;
+  for (float x = -size; x <= size; x += step) {
+    vertices << x << -size << 0.0f << x << size << 0.0f;
+  }
+  for (float y = -size; y <= size; y += step) {
+    vertices << -size << y << 0.0f << size << y << 0.0f;
+  }
+
   mVAO.create();
   QOpenGLVertexArrayObject::Binder vaoBinder(&mVAO);
   mVBO.create();
   mVBO.bind();
-  mShaderProgram.bind();
-
-  // 在初始化时绑定顶点属性
-  mShaderProgram.enableAttributeArray(0);
-  mShaderProgram.setAttributeBuffer(0, GL_FLOAT, offsetof(Vertex, position), 3,
-                                    sizeof(Vertex));
-
-  mShaderProgram.enableAttributeArray(1);
-  mShaderProgram.setAttributeBuffer(1, GL_FLOAT, offsetof(Vertex, texCoord), 2,
-                                    sizeof(Vertex));
-
   mVAO.release();
   mVBO.release();
 }
@@ -545,8 +616,8 @@ void MyOpenGLWidget::drawControlPoints() {
   if (!m_routePlanner || m_routePlanner->controlPoints().isEmpty())
     return;
 
-  if (!m_lineShader.bind()) {
-    qDebug() << "Failed to bind line shader";
+  if (!mLineShader->bind()) {
+    logMessage("Failed to bind line shader", Qgis::MessageLevel::Critical);
     return;
   }
 
@@ -555,7 +626,7 @@ void MyOpenGLWidget::drawControlPoints() {
   view.translate(0, 0, mfDistance);
   view.translate(m_viewTranslation); // 添加平移
   QMatrix4x4 mvp = mProjection * view * mModelView;
-  m_lineShader.setUniformValue("mvp", mvp);
+  mLineShader->setUniformValue("mvp", mvp);
 
   // 绘制控制点
   QVector<QVector3D> points = m_routePlanner->controlPoints();
@@ -580,14 +651,14 @@ void MyOpenGLWidget::drawControlPoints() {
   }
 
   // 绘制所有控制点
-  m_lineShader.setUniformValue("color",
+  mLineShader->setUniformValue("color",
                                QVector4D(1.0f, 0.0f, 0.0f, 1.0f)); // 红色
   glDrawArrays(GL_POINTS, 0, points.size());
 
   // 绘制选中的点（黄色）
   int selectedIndex = m_routePlanner->selectedPointIndex();
   if (selectedIndex >= 0 && selectedIndex < points.size()) {
-    m_lineShader.setUniformValue("color",
+    mLineShader->setUniformValue("color",
                                  QVector4D(1.0f, 1.0f, 0.0f, 1.0f)); // 黄色
     glDrawArrays(GL_POINTS, selectedIndex, 1);
   }
@@ -598,7 +669,7 @@ void MyOpenGLWidget::drawControlPoints() {
     QVector<float> homeVertex;
     homeVertex << homePoint.x() << homePoint.y() << homePoint.z();
 
-    m_lineShader.setUniformValue("color",
+    mLineShader->setUniformValue("color",
                                  QVector4D(0.5f, 0.0f, 0.5f, 1.0f)); // 紫色
     m_pointVBO.allocate(homeVertex.constData(),
                         homeVertex.size() * sizeof(float));
@@ -608,7 +679,7 @@ void MyOpenGLWidget::drawControlPoints() {
   // 清理状态并恢复深度测试
   m_pointVBO.release();
   m_pointVAO.release();
-  m_lineShader.release();
+  mLineShader->release();
   glEnable(GL_DEPTH_TEST);
 }
 
@@ -617,12 +688,12 @@ void MyOpenGLWidget::drawConvexHull() {
   if (!m_routePlanner || m_routePlanner->convexHull().size() < 2)
     return;
 
-  m_lineShader.bind();
+  mLineShader->bind();
   QMatrix4x4 view;
   view.translate(0, 0, mfDistance);
   QMatrix4x4 mvp = mProjection * view * mModelView;
-  m_lineShader.setUniformValue("mvp", mvp);
-  m_lineShader.setUniformValue("color",
+  mLineShader->setUniformValue("mvp", mvp);
+  mLineShader->setUniformValue("color",
                                QVector4D(0.0f, 1.0f, 0.0f, 1.0f)); // 绿色
 
   // 准备顶点数据
@@ -647,7 +718,7 @@ void MyOpenGLWidget::drawConvexHull() {
   // 清理状态
   m_hullVAO.release();
   m_hullVBO.release();
-  m_lineShader.release();
+  mLineShader->release();
 }
 
 void MyOpenGLWidget::drawRoutePath() {
@@ -658,12 +729,12 @@ void MyOpenGLWidget::drawRoutePath() {
   if (route.size() < 2)
     return;
   QMatrix4x4 model = mModelView; // 获取当前模型矩阵
-  m_lineShader.setUniformValue("model", model);
-  m_lineShader.bind();
+  mLineShader->setUniformValue("model", model);
+  mLineShader->bind();
   QMatrix4x4 view;
   view.translate(0, 0, mfDistance);
   QMatrix4x4 mvp = mProjection * view * mModelView;
-  m_lineShader.setUniformValue("mvp", mvp);
+  mLineShader->setUniformValue("mvp", mvp);
 
   // 绘制主路径（实线）
   if (route.size() > 2) {
@@ -679,7 +750,7 @@ void MyOpenGLWidget::drawRoutePath() {
     drawPathSection(endLine, QVector4D(1.0f, 0.5f, 0.0f, 1.0f), 2.0f, true);
   }
 
-  m_lineShader.release();
+  mLineShader->release();
 }
 
 void MyOpenGLWidget::drawPathSection(const QVector<QVector3D> &points,
@@ -689,7 +760,7 @@ void MyOpenGLWidget::drawPathSection(const QVector<QVector3D> &points,
     return;
 
   // 设置绘制参数
-  m_lineShader.setUniformValue("color", color);
+  mLineShader->setUniformValue("color", color);
   glLineWidth(lineWidth);
 
   if (dashed) {
@@ -831,43 +902,19 @@ void MyOpenGLWidget::generateFlightRoute(float height) // 生成航线
 }; // 生成航线
 
 void MyOpenGLWidget::drawBasePlane() {
-  if (!m_lineShader.bind())
+  if (!m_basePlaneVAO.isCreated() || !m_basePlaneVBO.isCreated()){
+    logMessage("Base plane VAO or VBO is not created, drawBasePlane failed", Qgis::MessageLevel::Critical);
     return;
-
-  // 设置矩阵和颜色
-  QMatrix4x4 view;
-  view.translate(0, 0, mfDistance);
-  view.translate(m_viewTranslation); // 添加这行
-  QMatrix4x4 mvp = mProjection * view * mModelView;
-  m_lineShader.setUniformValue("mvp", mvp);
-  m_lineShader.setUniformValue("color", QVector4D(0.6f, 0.6f, 0.6f, 0.5f));
-
-  // 生成网格顶点数据
-  const float size = 1000.0f;
-  const float step = 50.0f;
-  QVector<float> vertices;
-  for (float x = -size; x <= size; x += step) {
-    vertices << x << -size << m_baseHeight << x << size << m_baseHeight;
   }
-  for (float y = -size; y <= size; y += step) {
-    vertices << -size << y << m_baseHeight << size << y << m_baseHeight;
+  if (!mLineShader->bind()){
+    logMessage("Failed to bind line shader, drawBasePlane failed", Qgis::MessageLevel::Critical);
+    return;
   }
 
-  // 上传并绘制数据
   m_basePlaneVAO.bind();
   m_basePlaneVBO.bind();
-  m_basePlaneVBO.allocate(vertices.constData(),
-                          vertices.size() * sizeof(float));
-
-  glEnableVertexAttribArray(0);
-  glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, nullptr);
   glDrawArrays(GL_LINES, 0, vertices.size() / 3);
-
   m_basePlaneVBO.release();
-  m_basePlaneVAO.release();
-  m_lineShader.release();
-
-  qDebug() << "drawBasePlane";
 }
 
 void MyOpenGLWidget::setBaseHeight(double height) {
@@ -930,7 +977,7 @@ void MyOpenGLWidget::updateAnimation() {
 
 void MyOpenGLWidget::drawAircraft(const QVector3D &position,
                                   const QQuaternion &orientation) {
-  mShaderProgram.bind();
+  mModelShader->bind();
 
   QMatrix4x4 model;
   model.translate(position);
@@ -956,7 +1003,7 @@ void MyOpenGLWidget::drawAircraft(const QVector3D &position,
 
   QMatrix4x4 mvp = mProjection * view * model; // 确保应用模型矩阵
 
-  mShaderProgram.setUniformValue("mvp", mvp);
+  mModelShader->setUniformValue("mvp", mvp);
 
   // 使用简单立方体作为临时飞机模型
   static QVector<Vertex> aircraftVertices = createAircraftModel();
@@ -970,7 +1017,7 @@ void MyOpenGLWidget::drawAircraft(const QVector3D &position,
   glDrawArrays(GL_TRIANGLES, 0, aircraftVertices.size());
 
   mVBO.release();
-  mShaderProgram.release();
+  mModelShader->release();
 }
 
 QVector<MyOpenGLWidget::Vertex> MyOpenGLWidget::createAircraftModel() {

@@ -4,7 +4,9 @@ Author:wkj
 Date:2025.3.13
 ****************************************************************************/
 #pragma once
+#include "qgis_debug.h"
 #include "RoutePlanner.h"
+#include <GL/gl.h>
 #include <QOpenGLBuffer>
 #include <QOpenGLFunctions>
 #include <QOpenGLShaderProgram>
@@ -16,6 +18,56 @@ Date:2025.3.13
 #include <QVector>
 #include <QtMath>
 #include <cfloat>
+#include <memory>
+
+namespace gl{
+class Primitive{
+protected:
+  QOpenGLVertexArrayObject vao;
+  QOpenGLBuffer vbo;
+  QMatrix4x4 modelMatrix;
+  std::shared_ptr<QOpenGLShaderProgram> shader;
+  GLenum primitiveType;
+  GLfloat* vertices;
+  GLuint vertexNum;
+public:
+  Primitive(GLenum primitiveType, GLfloat* vertices, GLuint vertexNum);
+  void setModelMatrix(const QMatrix4x4 &matrix);
+  void setShader(std::shared_ptr<QOpenGLShaderProgram> shader);
+  virtual ~Primitive();
+  virtual void draw()=0;
+};
+
+class ColorPrimitive : public Primitive{
+  QVector3D color;
+  constexpr static int stride = 3;
+  public:
+  ColorPrimitive(GLenum primitiveType, GLfloat* vertices, GLuint vertexNum, const QVector3D& color=QVector3D(1.0f, 1.0f, 1.0f));
+  void setColor(const QVector3D& color){this->color = color;}
+  QVector3D getColor() const{return this->color;}
+  void draw() override;
+};
+
+class BasePlane : public ColorPrimitive{
+  public:
+  BasePlane(GLfloat* vertices, GLuint vertexNum, const QVector3D& color=QVector3D(1.0f, 1.0f, 1.0f));
+};
+
+class HomePoint : public ColorPrimitive{
+  public:
+  HomePoint(GLfloat* vertices, const QVector3D& color=QVector3D(1.0f, 1.0f, 1.0f));
+};
+
+class Model : public Primitive{
+  std::shared_ptr<QOpenGLTexture> texture;
+  constexpr static int stride = 5;
+  public:
+  Model(GLfloat* vertices, GLuint vertexNum, std::shared_ptr<QOpenGLTexture> texture);
+  void draw() override;
+};
+
+
+}
 
 class RoutePlanner;
 class MyOpenGLWidget : public QOpenGLWidget, protected QOpenGLFunctions {
@@ -44,26 +96,19 @@ protected:
   void drawConvexHull();
   void drawRoutePath();
   void drawBasePlane();
-  struct Vertex {
-    QVector3D position;
-    QVector2D texCoord;
-    // 默认构造函数
-    Vertex() : position(QVector3D(0, 0, 0)), texCoord(QVector3D(0, 0, 0)) {}
 
-    Vertex(QVector3D pos, QVector2D tex) : position(pos), texCoord(tex) {}
-  };
-
+private:
+  void setupOpenGLContext();
+  void initShaders();
+  void initCanvas();
+  void initBasePlane();
+  void initBuffers();
+  std::shared_ptr<QOpenGLShaderProgram> constructShader(const QString& vertexShaderPath, const QString& fragmentShaderPath);
+  
 private:
   RoutePlanner *m_routePlanner = nullptr;
   QMatrix4x4 mViewMatrix;
 
-  // struct ModelData {
-  //      QVector<Vertex> vertices;          // 存储顶点
-  //      QOpenGLTexture* texture = nullptr; // 存储纹理
-  //      QOpenGLVertexArrayObject vao;      // VAO
-  //      QOpenGLBuffer vbo;                 // VBO
-  //  };
-  //  添加ModelData结构体存储模型信息
   struct Material {
     QString name;
     QVector3D ambient = QVector3D(0.2f, 0.2f, 0.2f);
@@ -85,8 +130,6 @@ private:
     QMap<QString, QVector<Vertex>> materialGroups;
   };
   QList<ModelData *> m_models; // 存储模型数据
-  void initShaders();
-  void initBuffers();
   QVector<Vertex> m_vertices;                 // 修改后的顶点数据
   QOpenGLTexture *m_currentTexture = nullptr; // 当前使用的纹理
   QVector<QVector<Vertex>> m_allVertices; // 存储所有模型的顶点数据
@@ -94,7 +137,6 @@ private:
   QVector<QVector2D> m_texCoords;         // 存储纹理坐标
   QOpenGLBuffer mVBO;
   QOpenGLVertexArrayObject mVAO;
-  QOpenGLShaderProgram mShaderProgram;
   QOpenGLTexture *m_texture = nullptr;
   QMatrix4x4 mProjection;
   QMatrix4x4 mModelView;
@@ -110,8 +152,8 @@ private:
   QOpenGLVertexArrayObject m_hullVAO;
   QOpenGLVertexArrayObject m_routeVAO;
 
-  // 绘制线
-  QOpenGLShaderProgram m_lineShader;
+  std::shared_ptr<QOpenGLShaderProgram> mLineShader;
+  std::shared_ptr<QOpenGLShaderProgram> mModelShader;
   QVector3D calculateRayIntersection(const QVector3D &origin,
                                      const QVector3D &direction);
   float m_baseHeight = 25.0f; // 初始标准高度

@@ -2,12 +2,13 @@
 <RCC>
     <qresource prefix="/">
         <file>plugin.svg</file>
-        <file>shaders/fshader.glsl</file>
-        <file>shaders/line_vshader.glsl</file>
-        <file>shaders/line_fshader.glsl</file>
-        <file>shaders/fragment_shader.glsl</file>
-        <file>shaders/vertex_shader.glsl</file>
-        <file>shaders/vshader.glsl</file>
+        <file>shaders/line.vs</file>
+        <file>shaders/line.fs</file>
+        <file>shaders/point.vs</file>
+        <file>shaders/point.fs</file>
+        <file>shaders/point.gs</file>
+        <file>shaders/model.vs</file>
+        <file>shaders/model.fs</file>
         <file>map/capture.png</file>
     </qresource>
 </RCC> 
