@@ -31,11 +31,9 @@ public:
   void setRoutePlanner(RoutePlanner *planner);
   void drawPathSection(const QVector<QVector3D> &points, const QVector4D &color,
                        float lineWidth, bool dashed);
-  double currentSpeed;
-  void initializeGL() override;
 
 protected:
-  //void initializeGL() override;
+  void initializeGL() override;
   void paintGL() override;
   void resizeGL(int w, int h) override;
   void mousePressEvent(QMouseEvent *event) override;

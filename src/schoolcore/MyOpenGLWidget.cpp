@@ -20,8 +20,6 @@ MyOpenGLWidget::MyOpenGLWidget(QWidget *parent)
   
   mfDistance = -1100.0f; // 增大距离确保模型可见
   RoutePlanner *routePlanner = new RoutePlanner(this);
-  currentSpeed = 10;
-
   m_animationTimer = new QTimer(this);
   connect(m_animationTimer, &QTimer::timeout, this,
           &MyOpenGLWidget::updateAnimation);

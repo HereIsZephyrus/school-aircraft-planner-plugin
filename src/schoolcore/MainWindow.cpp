@@ -690,9 +690,9 @@ void MainWindow::resetView() {
 // add new slot function at the end of the file
 void MainWindow::queryFlightParameters() {
     logMessage("generate random flight parameters", Qgis::MessageLevel::Info);
-    double speed = mpOpenGLWidget->currentSpeed;
-    double altitude = QRandomGenerator::global()->bounded(ws::FlightManager::minFlightAltitude, ws::FlightManager::maxFlightAltitude);
-    double battery = QRandomGenerator::global()->bounded(ws::FlightManager::minFlightBattery, ws::FlightManager::maxFlightBattery);
+    double speed = ws::FlightManager::getInstance().getFlightSpeed();
+    double altitude = ws::FlightManager::getInstance().getFlightAltitude();
+    double battery = ws::FlightManager::getInstance().getFlightBattery();
     double latitude = QRandomGenerator::global()->bounded(-90, 90);
     double longitude = QRandomGenerator::global()->bounded(-180, 180);
 
