@@ -72,12 +72,11 @@ private:
   QPushButton *mpBtnReset;
   QPushButton *mpBtnSwitchTo3D;
   QPushButton *mpBtnSwitchTo2D;
-  QString mPath3D;
-  QString mPathTexture;
-  QList<QString> mObjPaths;
-  QList<QString> mTexturePaths;
   void onSelectDirectoryClicked();
   void loadDirectoryFiles(const QString &path);
+  void loadDirectoryLevel(QTreeWidgetItem *parentItem, const QString &path, int level, int maxLevel);
+  void onTreeItemExpanded(QTreeWidgetItem *item);
+  QString getItemFullPath(QTreeWidgetItem *item);
   std::unique_ptr<RoutePlanner> mpRoutePlanner;
   std::unique_ptr<MyOpenGLWidget> mpOpenGLWidget;
   void resetView();

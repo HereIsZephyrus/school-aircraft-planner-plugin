@@ -8,5 +8,6 @@
         <file>shaders/fragment_shader.glsl</file>
         <file>shaders/vertex_shader.glsl</file>
         <file>shaders/vshader.glsl</file>
+        <file>map/capture.png</file>
     </qresource>
 </RCC> 

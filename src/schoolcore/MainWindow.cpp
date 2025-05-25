@@ -1,5 +1,6 @@
 ﻿#include "MainWindow.h"
 #include "StyleManager.h"
+#include "WorkspaceState.h"
 #include "qgsmessagelog.h"
 #include <memory>
 #include <QAction>
@@ -32,6 +33,7 @@
 MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent) {
     logMessage("Application started", Qgis::MessageLevel::Info);
     initWindowStatus();
+    ws::initializeWorkspaceState();
     logMessage("MainWindow constructor called", Qgis::MessageLevel::Success);
 
     mpRoutePlanner = std::make_unique<RoutePlanner>(this);
@@ -70,6 +72,7 @@ void MainWindow::initWindowStatus(){
     move(x, y);
 
     setWindowFlags(Qt::Window);
+    setWindowTitle("3D Flight Simulation");
 }
 
 void MainWindow::Unrealized() {}
@@ -77,19 +80,20 @@ void MainWindow::Unrealized() {}
 void MainWindow::open3D() {
     logMessage("Start loading 3D models", Qgis::MessageLevel::Info);
 
-    // 设置根目录路径
-    QString rootDir = "/mnt/repo/comprehensive3S/";
-    //   通过对话框选择文件夹路径
-    /* rootDir = QFileDialog::getExistingDirectory(this,
-        tr("选择obj格式3D文件根目录"), QString(), QFileDialog::ShowDirsOnly |
-        QFileDialog::DontResolveSymlinks);*/
-
-    logMessage("rootDir: " + rootDir, Qgis::MessageLevel::NoLevel);
-    if (rootDir.isEmpty()) {
-        logMessage("No valid path selected", Qgis::MessageLevel::Warning);
+    ws::PathManager& pathManager = ws::PathManager::getInstance();
+    QString rootDir = pathManager.getRootDir();
+    logMessage("rootDir: " + rootDir, Qgis::MessageLevel::Info);
+    if (pathManager.getObjTexturePairs().isEmpty()) {
+        logMessage("No 3D models found", Qgis::MessageLevel::Info);
         return;
     }
-
+    QList<ObjTexturePair> objTexturePairs = pathManager.getObjTexturePairs();
+    for (const ObjTexturePair& objTexturePair : objTexturePairs) {
+        static_cast<MyOpenGLWidget *>(mpOpenGLWidget.get())->loadObjModel(objTexturePair.first, objTexturePair.second);
+    }
+    static_cast<MyOpenGLWidget*>(mpOpenGLWidget.get())->applyGlobalCentering();
+    update();
+/*
     QDir dir(rootDir);
     logMessage("dir: " + dir.path(), Qgis::MessageLevel::NoLevel);
     // retrive all subfolders
@@ -110,17 +114,15 @@ void MainWindow::open3D() {
         QString texPath = folderPath + "/" + jpgFiles.first(); // get the first .jpg
         logMessage("objPath: " + objPath, Qgis::MessageLevel::NoLevel);
         logMessage("texPath: " + texPath, Qgis::MessageLevel::NoLevel);
-        mObjPaths.append(objPath);
-        mTexturePaths.append(texPath);
+        pathManager.addObjPath(objPath);
+        pathManager.addTexturePath(texPath);
         logMessage("load model: " + objPath, Qgis::MessageLevel::Info);
-        static_cast<MyOpenGLWidget *>(mpOpenGLWidget.get())->loadObjModel(objPath, texPath);
-        static_cast<MyOpenGLWidget*>(mpOpenGLWidget.get())->applyGlobalCentering();
+        
         logMessage("All models loaded. Applying global centering...", Qgis::MessageLevel::Info);
     }
 
-    static_cast<MyOpenGLWidget *>(mpOpenGLWidget.get())->applyGlobalCentering();
-    update();
     logMessage("Global centering applied", Qgis::MessageLevel::Success);
+*/
 }
 
 void MainWindow::createMenu() {
@@ -403,7 +405,7 @@ void MainWindow::createRightDockWidget() {
     container->setLayout(layout);
     pRightDockWidget->setWidget(container);
     // load file list of specified directory to tree widget
-    QString dirPath = "C:/20250109/Data"; // directory path to load
+    QString dirPath = ws::PathManager::getInstance().getRootDir();
     loadDirectoryFiles(dirPath);
     logMessage("load file list of specified directory to tree widget", Qgis::MessageLevel::Success);
     ////
@@ -528,9 +530,9 @@ void MainWindow::createCanvas() {
     mpOpenGLWidget->show();
     mpOpenGLWidget->update();
 
-    connect(mpOpenGLWidget.get(), &MyOpenGLWidget::glInitialized, this,
-            &MainWindow::open3D);
-    logMessage("connect open 3D to glInitialized", Qgis::MessageLevel::Info);
+    connect(mpOpenGLWidget.get(), &MyOpenGLWidget::glInitialized, this, &MainWindow::open3D);
+    //logMessage("connect open 3D to glInitialized", Qgis::MessageLevel::Info);
+
     // create QLabel to display local image
     mpImageLabel = new QLabel(this);
     QPixmap mapImage(":/map/capture.png"); // use resource path to load image
@@ -624,54 +626,46 @@ void MainWindow::createMainWindow() {
 
 void MainWindow::onSelectDirectoryClicked() {
     // open folder selection dialog
+    QString currentDir = ws::PathManager::getInstance().getRootDir();
     QString dirPath = QFileDialog::getExistingDirectory(
-        this, tr("Select Directory"), "C:/20250109/Data");
+        this, tr("Select Directory"), currentDir);
     if (!dirPath.isEmpty()) {
-    loadDirectoryFiles(dirPath); // call loadDirectoryFiles to load selected directory
+        loadDirectoryFiles(dirPath); // call loadDirectoryFiles to load selected directory
     }
     logMessage("select file list directory", Qgis::MessageLevel::Success);
 }
 // load file list of specified directory to QTreeWidget
 void MainWindow::loadDirectoryFiles(const QString &path) {
     QDir dir(path);
-    if (!dir.exists())
-    return;
+    if (!dir.exists()) return;
 
-    mpFileTreeWidget->clear(); // clear current tree
+    mpFileTreeWidget->clear();
 
-    QQueue<QTreeWidgetItem *> parentQueue; // for storing parent node of each directory
-    QQueue<QString> directoriesQueue; // for storing directory path to be processed
-    logMessage("initialize queue", Qgis::MessageLevel::Success);
-
-    directoriesQueue.enqueue(path); // enqueue root directory
     QTreeWidgetItem *rootItem = new QTreeWidgetItem(mpFileTreeWidget);
-    rootItem->setText(0, dir.dirName()); // set root directory name
-    parentQueue.enqueue(rootItem);       // root directory's parent is root node
-    logMessage("load file list of specified directory to QTreeWidget", Qgis::MessageLevel::Success);
+    rootItem->setText(0, dir.dirName());
+    loadDirectoryLevel(rootItem, path, 1, 3);
 
-    logMessage("load file list of specified directory to QTreeWidget", Qgis::MessageLevel::Info);
-    while (!directoriesQueue.isEmpty()) {
-        QString currentDir = directoriesQueue.dequeue(); // dequeue a directory from queue
-        QDir dir(currentDir);
-        QFileInfoList files = dir.entryInfoList(
-            QDir::Files | QDir::Dirs | QDir::NoDotAndDotDot); // get file and directory list
+    connect(mpFileTreeWidget, &QTreeWidget::itemExpanded, this, &MainWindow::onTreeItemExpanded);
+}
 
-        QTreeWidgetItem *currentParentItem =
-            parentQueue.dequeue(); // fetch current directory's parent
+void MainWindow::loadDirectoryLevel(QTreeWidgetItem *parentItem, const QString &path, int level, int maxLevel) {
+    if (level > maxLevel) return;
 
-        foreach (const QFileInfo &fileInfo, files) {
-            QTreeWidgetItem *item = new QTreeWidgetItem(currentParentItem); // set file or subdirectory as current directory's child item
-            item->setText(0, fileInfo.fileName());
+    QDir dir(path);
+    QFileInfoList files = dir.entryInfoList(QDir::Files | QDir::Dirs | QDir::NoDotAndDotDot);
 
-            // if it is a directory, enqueue it to be processed
-            if (fileInfo.isDir()) {
-                directoriesQueue.enqueue(
-                    fileInfo.absoluteFilePath()); // enqueue subdirectory
-                parentQueue.enqueue(item); // subdirectory's parent is current directory's item
+    foreach (const QFileInfo &fileInfo, files) {
+        QTreeWidgetItem *item = new QTreeWidgetItem(parentItem);
+        item->setText(0, fileInfo.fileName());
+
+        if (fileInfo.isDir()) {
+            if (level < maxLevel) {
+                loadDirectoryLevel(item, fileInfo.absoluteFilePath(), level + 1, maxLevel);
+            } else if (level == maxLevel) {
+                new QTreeWidgetItem(item);
             }
         }
     }
-    logMessage("load file list of specified directory to QTreeWidget", Qgis::MessageLevel::Success);
 }
 
 // switch to 3D
@@ -1046,4 +1040,23 @@ void MainWindow::createDockWidgets() {
 
     controlDock->setWidget(controlPanel);
     addDockWidget(Qt::RightDockWidgetArea, controlDock);
+}
+
+void MainWindow::onTreeItemExpanded(QTreeWidgetItem *item) {
+    if (item->childCount() == 1 && item->child(0)->text(0).isEmpty()) {
+        QString path = getItemFullPath(item);
+        item->removeChild(item->child(0));
+        loadDirectoryLevel(item, path, 1, 1);
+    }
+}
+
+QString MainWindow::getItemFullPath(QTreeWidgetItem *item) {
+    QStringList pathParts;
+    while (item && item->parent()) {
+        pathParts.prepend(item->text(0));
+        item = item->parent();
+    }
+    if (item) pathParts.prepend(item->text(0));
+    QString rootPath = ws::PathManager::getInstance().getRootDir();
+    return QDir(rootPath).filePath(pathParts.join("/"));
 }
