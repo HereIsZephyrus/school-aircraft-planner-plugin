@@ -35,68 +35,39 @@ MyOpenGLWidget::MyOpenGLWidget(QWidget *parent)
 }
 
 MyOpenGLWidget::~MyOpenGLWidget() {
+  logMessage("ready to destroy MyOpenGLWidget", Qgis::MessageLevel::Info);
   makeCurrent();
   modelWidget = nullptr;
   basePlaneWidget = nullptr;
   ControlPointsWidget = nullptr;
   doneCurrent();
+  logMessage("MyOpenGLWidget destroyed", Qgis::MessageLevel::Success);
 }
 
 void MyOpenGLWidget::initCanvas() {
-  basePlaneWidget = initBasePlane();
+  basePlaneWidget = std::make_shared<gl::BasePlane>();
   // ControlPointsWidget = initControlPoints();
 }
 
-std::shared_ptr<gl::BasePlane> MyOpenGLWidget::initBasePlane() {
-  const GLfloat size = 1000.0f;
-  const GLfloat step = 50.0f;
-  QVector<GLfloat> vertices;
-  GLuint vertexNum = 0;
-  double baseHeight = ws::FlightManager::getInstance().getBaseHeight();
-  for (GLfloat x = -size; x <= size; x += step) {
-    vertices << x << -size << baseHeight << x << size << baseHeight;
-    vertexNum += 2;
-  }
-  for (float y = -size; y <= size; y += step) {
-    vertices << -size << y << baseHeight << size << y << baseHeight;
-    vertexNum += 2;
-  }
-
-  QVector4D initColor = QVector4D(0.6f, 0.6f, 0.6f, 0.5f);
-  logMessage("set base plane datas", Qgis::MessageLevel::Info);
-  std::shared_ptr<gl::BasePlane> basePlane =
-      std::make_shared<gl::BasePlane>(vertices.data(), vertexNum, initColor);
-  logMessage("base plane initialized", Qgis::MessageLevel::Info);
-  return basePlane;
-}
-
 void MyOpenGLWidget::initializeGL() {
-  // 1. 设置 QGIS OpenGL 属性
   QgsApplication::setAttribute(Qt::AA_UseDesktopOpenGL);
   QgsApplication::setAttribute(Qt::AA_ShareOpenGLContexts);
   
-  
-  // 3. 初始化 OpenGL 函数
   initializeOpenGLFunctions();
   logMessage("initialize opengl functions", Qgis::MessageLevel::Info);
   
-  
-  // 4. 检查 OpenGL 上下文
   if (!QOpenGLContext::currentContext()) {
     logMessage("No OpenGL context available", Qgis::MessageLevel::Critical);
     return;
   }
   
-  // 5. 检查 OpenGL 版本
   QString version = QString::fromUtf8((const char *)glGetString(GL_VERSION));
   logMessage("OpenGL Version: " + version, Qgis::MessageLevel::Info);
   
-  // 6. 设置 OpenGL 状态
   glEnable(GL_DEPTH_TEST);
   glEnable(GL_BLEND);
   glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
   
-  // 7. 初始化画布
   makeCurrent();
   initCanvas();
   doneCurrent();
@@ -104,9 +75,6 @@ void MyOpenGLWidget::initializeGL() {
   emit glInitialized();
 }
 /*
-  // 解绑着色器程序
-  mModelShader->release();
-  drawBasePlane();
   if (m_routePlanner) {
     drawControlPoints();
     drawConvexHull();
@@ -133,6 +101,7 @@ void MyOpenGLWidget::paintGL() {
   glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
   glEnable(GL_DEPTH_TEST);
+  
   if (basePlaneWidget)
     basePlaneWidget->draw();
   if (modelWidget)

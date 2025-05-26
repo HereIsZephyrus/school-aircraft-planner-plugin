@@ -9,7 +9,7 @@ class Camera {
 private:
     // initial camera parameters
     static constexpr float DEFAULT_FOV = 45.0f;
-    static constexpr float DEFAULT_ASPECT_RATIO = 1.0f;
+    static constexpr float DEFAULT_ASPECT_RATIO = 16.0f / 9.0f;
     static constexpr float DEFAULT_NEAR_PLANE = 0.1f;
     static constexpr float DEFAULT_FAR_PLANE = 1000.0f;
     static constexpr float DEFAULT_YAW = -90.0f;

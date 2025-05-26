@@ -1,11 +1,14 @@
 #include "camera.h"
+#include "../log/qgis_debug.h"
 #include <QtMath>
 
 Camera::Camera(){
   resetView();
   updateCameraVectors();
 }
-Camera::~Camera(){}
+Camera::~Camera(){
+  logMessage("Camera destroyed", Qgis::MessageLevel::Info);
+}
 void Camera::setPosition(const QVector3D &position) {
   mPosition = position;
   updateCameraVectors();

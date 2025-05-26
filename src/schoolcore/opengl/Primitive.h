@@ -38,16 +38,21 @@ public:
 
 class ColorPrimitive : public Primitive{
     QVector4D color;
+    static constexpr QVector4D DEFAULT_COLOR = QVector4D(1.0f, 1.0f, 1.0f, 1.0f);
 public:
-    ColorPrimitive(GLenum primitiveType, GLfloat* vertices, GLuint vertexNum, const QVector4D& color=QVector4D(1.0f, 1.0f, 1.0f, 1.0f));
+    ColorPrimitive(GLenum primitiveType, GLfloat* vertices, GLuint vertexNum, const QVector4D& color=DEFAULT_COLOR);
+    ColorPrimitive(GLenum primitiveType, const QVector4D& color=DEFAULT_COLOR);
     void setColor(const QVector4D& color){this->color = color;}
     QVector4D getColor() const{return this->color;}
     void draw() override;
 };
 
 class BasePlane : public ColorPrimitive{
+    static constexpr GLfloat DEFAULT_SIZE = 1000.0f;
+    static constexpr GLfloat DEFAULT_STEP = 50.0f;
+    static constexpr QVector4D DEFAULT_COLOR = QVector4D(0.6f, 0.6f, 0.6f, 0.5f);
 public:
-  BasePlane(GLfloat* vertices, GLuint vertexNum, const QVector4D& color=QVector4D(1.0f, 1.0f, 1.0f, 1.0f));
+  BasePlane(const QVector4D& color=DEFAULT_COLOR);
 };
 
 class RoutePath : public ColorPrimitive{

@@ -77,7 +77,9 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent) {
     logMessage("create dock widgets", Qgis::MessageLevel::Success);
 }
 
-MainWindow::~MainWindow() {}
+MainWindow::~MainWindow() {
+    logMessage("MainWindow destroyed", Qgis::MessageLevel::Info);
+}
 
 static QSize setWindowSize(QRect screenGeometry, int maxWidth, int maxHeight, int minWidth, int minHeight){
     // calc current screen size
