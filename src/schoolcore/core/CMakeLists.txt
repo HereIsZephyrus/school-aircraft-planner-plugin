@@ -6,7 +6,7 @@ file(GLOB CORE_HEADERS
     "*.h"
 )
 
-add_library(core STATIC
+add_library(core SHARED
     ${CORE_SOURCES}
     ${CORE_HEADERS}
 )

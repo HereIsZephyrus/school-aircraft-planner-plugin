@@ -46,7 +46,7 @@ void MainWindow::init3DWidget(){
 void MainWindow::init2DWidget(){
     // create QLabel to display local image
     mpImageLabel = new QLabel(this);
-    QPixmap mapImage(":/resources/map/capture.png"); // use resource path to load image
+    QPixmap mapImage(":/schoolcore/map/capture.png"); // use resource path to load image
     if (mapImage.isNull()) {
         logMessage("failed to load local map image", Qgis::MessageLevel::Critical);
         return;

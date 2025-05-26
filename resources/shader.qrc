@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <RCC>
-    <qresource prefix="/">
+    <qresource prefix="/schoolcore">
         <file>shaders/line.vs</file>
         <file>shaders/line.fs</file>
         <file>shaders/point.vs</file>

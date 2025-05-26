@@ -10,15 +10,19 @@ set(UI_FILES
     MainWindow.ui
 )
 
-set(RESOURCES
+set(RESOURCES_FILE
     ${CMAKE_SOURCE_DIR}/resources/resources.qrc
+    ${CMAKE_SOURCE_DIR}/resources/shader.qrc
 )
 
-add_library(schoolcore STATIC
+qt5_add_resources(RESOURCE_SOURCES
+    ${RESOURCES_FILE}
+)
+add_library(schoolcore SHARED
     ${MAINWINDOW_SOURCES}
     ${MAINWINDOW_HEADERS}
     ${UI_FILES}
-    ${RESOURCES}
+    ${RESOURCE_SOURCES}
 )
 
 target_include_directories(schoolcore PUBLIC

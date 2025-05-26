@@ -6,7 +6,7 @@ file(GLOB GUI_HEADERS
     "*.h"
 )
 
-add_library(gui STATIC
+add_library(gui SHARED
     ${GUI_SOURCES}
     ${GUI_HEADERS}
 )

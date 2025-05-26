@@ -9,7 +9,7 @@ const QString s_name = QStringLiteral("3D school airspace simulation");
 const QString s_description = QStringLiteral("3D school airspace simulation");
 const QString s_category = QStringLiteral("Plugins");
 const QString s_version = QStringLiteral("Version 0.0.1");
-const QString s_icon = QStringLiteral(":/plugin.svg");
+const QString s_icon = QStringLiteral(":/schoolcore/plugin.svg");
 const QgisPlugin::PluginType s_type = QgisPlugin::UI;
 } // namespace
 
@@ -66,7 +66,7 @@ void SchoolPlugin3D ::initGui() {
                             Qgis::MessageLevel::Info);
 
   // add an action to the menu
-  m_menu_action = new QAction(QIcon(":/plugin.svg"), QString("3D school-model"), this);
+  m_menu_action = new QAction(QIcon(":/schoolcore/plugin.svg"), QString("3D school-model"), this);
   connect(m_menu_action, SIGNAL(triggered()), this, SLOT(menu_button_action()));
   if (m_qgis_if == nullptr) {
     QgsMessageLog::logMessage(

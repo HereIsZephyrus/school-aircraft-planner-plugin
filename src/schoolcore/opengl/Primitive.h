@@ -27,7 +27,7 @@ protected:
     GLuint vertexNum;
     GLuint stride;
     void checkGLError(const QString& funcName);
-    std::shared_ptr<QOpenGLShaderProgram> constructShader(const QString& vertexShaderPath, const QString& fragmentShaderPath, const QString& geometryShaderPath="");
+    bool constructShader(const QString& vertexShaderPath, const QString& fragmentShaderPath, const QString& geometryShaderPath="");
 public:
     Primitive(GLenum primitiveType, GLfloat* vertices, GLuint vertexNum, GLuint stride); // RAII constructor
     Primitive(GLenum primitiveType, GLuint stride); // no init data constructor
