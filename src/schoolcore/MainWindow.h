@@ -7,6 +7,7 @@ Date:2025.1.6
 #include "MyOpenGLWidget.h"
 #include "RoutePlanner.h"
 #include "WorkspaceState.h"
+#include "WorkspaceState.h"
 #include "qgisinterface.h"
 #include "qgisplugin.h"
 #include "qgsmapcanvas.h"
@@ -63,8 +64,10 @@ private:
   void createMenu();
   void createMainWindow();
   void createJoyDockWidgets();
+  void createJoyDockWidgets();
   void createLeftDockWidget();
   void createRightDockWidget();
+  void createSlots();
   void createSlots();
   void createCanvas();
   QMenuBar *mpMenuBar;
@@ -84,6 +87,17 @@ private:
   std::unique_ptr<MyOpenGLWidget> mpOpenGLWidget;
   void resetView();
   void initWindowStatus();
+  void init3DWidget();
+  void init2DWidget();
+  template <typename Tp> // Tp is the pointer type
+  Tp safeFindChild(const QString &name) {
+    Tp pWidget = this->findChild<Tp>(name);
+    if (pWidget == nullptr){
+      logMessage("findChild: " + name + " not found", Qgis::MessageLevel::Critical);
+      return dynamic_cast<Tp>(ws::WindowManager::getInstance().getDefaultObject());
+    }
+    return pWidget;
+  }
   void init3DWidget();
   void init2DWidget();
   template <typename Tp> // Tp is the pointer type
