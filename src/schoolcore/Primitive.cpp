@@ -326,7 +326,6 @@ TexturePair ModelData::loadMtl(const QString &mtlPath) {
   return std::make_pair(materials, textures);
 }
 
-// 计算单个模型包围盒
 Bounds ModelData::calculateModelBounds() {
   Bounds bounds;
   bounds.min = QVector3D(FLT_MAX, FLT_MAX, FLT_MAX);
