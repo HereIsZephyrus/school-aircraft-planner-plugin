@@ -1,7 +1,7 @@
 #include "Primitive.h"
 #include "WorkspaceState.h"
 #include "qgis_debug.h"
-
+#include "camera.h"
 namespace gl {
 using Material = ModelData::Material;
 using Texture = QOpenGLTexture;
@@ -72,8 +72,11 @@ void ColorPrimitive::draw() {
     logMessage("Shader is not set", Qgis::MessageLevel::Critical);
     return;
   }
+  Camera& camera = Camera::getInstance();
   this->shader->bind();
-  this->shader->setUniformValue("modelMatrix", this->modelMatrix);
+  this->shader->setUniformValue("model", this->modelMatrix);
+  this->shader->setUniformValue("view", camera.viewMatrix());
+  this->shader->setUniformValue("projection", camera.projectionMatrix());
   this->shader->setUniformValue("vColor", this->color);
   this->vao.bind();
   glDrawArrays(this->primitiveType, 0, this->vertexNum);
@@ -139,10 +142,13 @@ void Model::draw() {
         logMessage("Shader is not set", Qgis::MessageLevel::Critical);
         return;
     }
+    Camera& camera = Camera::getInstance();
     this->shader->bind();
-    this->shader->setUniformValue("modelMatrix", this->modelMatrix);
+    this->shader->setUniformValue("model", this->modelMatrix);
+    this->shader->setUniformValue("view", camera.viewMatrix());
+    this->shader->setUniformValue("projection", camera.projectionMatrix());
     this->vao.bind();
-    glDrawArrays(GL_TRIANGLES, 0, this->vertexNum);
+    glDrawArrays(this->primitiveType, 0, this->vertexNum);
     this->vao.release();
     this->shader->release();
     checkGLError("Model::draw");

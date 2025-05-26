@@ -1,21 +1,24 @@
-set(CMAKE_AUTOUIC ON)
-
-file(GLOB CORE_SOURCES
-    "*.cpp"
+file(GLOB MAINWINDOW_SOURCES
+    "MainWindow.cpp"
 )
 
-file(GLOB CORE_HEADERS
-    "*.h"
+file(GLOB MAINWINDOW_HEADERS
+    "MainWindow.h"
 )
 
 set(UI_FILES
     MainWindow.ui
 )
 
+set(RESOURCES
+    ../../resources/resources.qrc
+)
+
 add_library(schoolcore STATIC
-    ${CORE_SOURCES}
-    ${CORE_HEADERS}
+    ${MAINWINDOW_SOURCES}
+    ${MAINWINDOW_HEADERS}
     ${UI_FILES}
+    ${RESOURCES}
 )
 
 target_include_directories(schoolcore PUBLIC
@@ -25,5 +28,13 @@ target_include_directories(schoolcore PUBLIC
 
 target_link_libraries(schoolcore
     ${LIBS}
+    core
+    gui
+    log
+    opengl
 )
 
+add_subdirectory(core)
+add_subdirectory(gui)
+add_subdirectory(log)
+add_subdirectory(opengl)

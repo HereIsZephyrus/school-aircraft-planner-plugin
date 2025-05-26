@@ -19,6 +19,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 # Enable Qt-specific extensions
 set(CMAKE_AUTOMOC ON)
 set(CMAKE_AUTORCC ON)
+set(CMAKE_AUTOUIC ON)
 
 find_package(QGIS REQUIRED)
 find_package(Qt5 COMPONENTS Core Widgets Xml Gui WebEngineWidgets REQUIRED)

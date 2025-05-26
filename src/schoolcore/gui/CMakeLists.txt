@@ -1,0 +1,21 @@
+file(GLOB GUI_SOURCES
+    "*.cpp"
+)
+
+file(GLOB GUI_HEADERS
+    "*.h"
+)
+
+add_library(gui STATIC
+    ${GUI_SOURCES}
+    ${GUI_HEADERS}
+)
+
+target_include_directories(gui PUBLIC
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${INCLUDES}
+)
+
+target_link_libraries(gui
+    ${LIBS}
+)

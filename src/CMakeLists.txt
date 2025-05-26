@@ -1,6 +1,5 @@
 add_library(3Dschool MODULE
   qgis_plugin_main.cpp
-  ../resources/resources.qrc
 )
 
 target_link_libraries(3Dschool
