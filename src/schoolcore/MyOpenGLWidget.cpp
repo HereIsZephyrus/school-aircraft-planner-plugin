@@ -62,8 +62,6 @@ void MyOpenGLWidget::setupOpenGLContext(){
 
   QString version = QString::fromUtf8((const char*)glGetString(GL_VERSION));
   logMessage("OpenGL Version: " + version, Qgis::MessageLevel::Info);
-  glEnable(GL_DEPTH_TEST);
-  logMessage("depth test enabled", Qgis::MessageLevel::Info);
 }
 
 void MyOpenGLWidget::initCanvas(){
@@ -88,7 +86,6 @@ std::shared_ptr<gl::BasePlane> MyOpenGLWidget::initBasePlane(){
 
   QVector4D initColor = QVector4D(0.6f, 0.6f, 0.6f, 0.5f);
   std::shared_ptr<gl::BasePlane> basePlane = std::make_shared<gl::BasePlane>(vertices, vertexNum, initColor);
-  basePlane->setShader(gl::constructShader(":/shaders/line.vs", ":/shaders/line.fs"));
   logMessage("base plane initialized", Qgis::MessageLevel::Info);
   return basePlane;
 }
@@ -112,6 +109,19 @@ void MyOpenGLWidget::initializeGL() {
 
   emit glInitialized();
 }
+/*
+  // 解绑着色器程序
+  mModelShader->release();
+  drawBasePlane();
+  if (m_routePlanner) {
+    drawControlPoints();
+    drawConvexHull();
+    drawRoutePath();
+  }
+  if (m_isAnimating || m_animationProgress > 0) {
+    drawAircraft(m_aircraftPosition, m_aircraftOrientation);
+  }
+  */
 /*
 void MyOpenGLWidget::paintGL() {
   qDebug() << "paintGL";
@@ -200,11 +210,48 @@ void MyOpenGLWidget::resizeGL(int w, int h) {
   mProjection.setToIdentity();
   mProjection.perspective(45.0f, w / (float)h, 1.0f, 100000.0f);
 }
+
+void MyOpenGLWidget::initBuffers() {
+  m_pointVAO.create();
+  m_hullVAO.create();
+  m_routeVAO.create();
+
+  m_pointVBO.create();
+  m_hullVBO.create();
+  m_routeVBO.create();
+
+  const float size = 1000.0f;
+  const float step = 50.0f;
+  QVector<float> vertices;
+  for (float x = -size; x <= size; x += step) {
+    vertices << x << -size << 0.0f << x << size << 0.0f;
+  }
+  for (float y = -size; y <= size; y += step) {
+    vertices << -size << y << 0.0f << size << y << 0.0f;
+  }
+
+  mVAO.create();
+  QOpenGLVertexArrayObject::Binder vaoBinder(&mVAO);
+  mVBO.create();
+  mVBO.bind();
+  mVAO.release();
+  mVBO.release();
+}
 */
 void MyOpenGLWidget::paintGL(){
+  if (!isValid()){
+    logMessage("MyOpenGLWidget is not valid", Qgis::MessageLevel::Critical);
+    return;
+  }
+  if (!isVisible())
+    return;
   glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-  basePlaneWidget->draw();
+  glEnable(GL_DEPTH_TEST);
+  if (basePlaneWidget)
+    basePlaneWidget->draw();
+  if (modelWidget)
+    modelWidget->draw();
 }
 
 void MyOpenGLWidget::mousePressEvent(QMouseEvent *event) {
@@ -273,7 +320,7 @@ void MyOpenGLWidget::mousePressEvent(QMouseEvent *event) {
   }
 
   // 默认处理：视图旋转
-  mLastMousePos = event->pos();
+  m_lastMousePos = event->pos();
 }
 
 void MyOpenGLWidget::mouseMoveEvent(QMouseEvent *event) {
@@ -298,8 +345,8 @@ void MyOpenGLWidget::mouseMoveEvent(QMouseEvent *event) {
       handleMouseMove(event);
     } else {
       // 默认处理：视图旋转
-      float dx = event->x() - mLastMousePos.x();
-      float dy = event->y() - mLastMousePos.y();
+      float dx = event->x() - m_lastMousePos.x();
+      float dy = event->y() - m_lastMousePos.y();
       if (event->buttons() & Qt::LeftButton) {
         QMatrix4x4 rotation;
         rotation.rotate(dx, QVector3D(0, 1, 0));
@@ -307,7 +354,7 @@ void MyOpenGLWidget::mouseMoveEvent(QMouseEvent *event) {
         mModelView = rotation * mModelView;
         update();
       }
-      mLastMousePos = event->pos();
+      m_lastMousePos = event->pos();
     }
   }
 }
@@ -775,4 +822,11 @@ void MyOpenGLWidget::keyPressEvent(QKeyEvent *event) {
       return;
     }
   }
+}
+
+void MyOpenGLWidget::stopSimulation() {
+  m_animationTimer->stop();
+  m_isAnimating = false;
+  m_animationProgress = 0.0f;
+  update();
 }

@@ -171,7 +171,5 @@ private:
     bool m_cameraFollowAircraft; // 跟随摄像机
     void keyPressEvent(QKeyEvent *event);
     QVector3D m_viewTranslation; // 图平移
-public slots:
-    void stopSimulation();
 };
 }

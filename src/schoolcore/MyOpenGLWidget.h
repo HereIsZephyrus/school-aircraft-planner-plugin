@@ -53,7 +53,6 @@ private:
   void setupOpenGLContext();
   void initCanvas();
   std::shared_ptr<gl::BasePlane> initBasePlane();
-  void initBuffers();
   
 private:
   RoutePlanner *m_routePlanner = nullptr;
@@ -70,7 +69,7 @@ public slots:
   void pauseSimulation();                 // 暂停模拟
   void resumeSimulation();                // 继续模拟
   void returnToHome();                    // 自动返回
-
+  void stopSimulation();
 signals:
   void glInitialized();
 };

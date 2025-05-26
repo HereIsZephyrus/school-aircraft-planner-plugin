@@ -10,5 +10,6 @@
         <file>shaders/model.vs</file>
         <file>shaders/model.fs</file>
         <file>map/capture.png</file>
+        <file>style/joyDockStyle.qss</file>
     </qresource>
 </RCC> 

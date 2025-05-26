@@ -1,0 +1,166 @@
+/* 基础样式 */
+QMainWindow {
+    background-color: #2D2D2D;
+    font-size: 9pt;  /* 设置主窗口字体大小 */
+}
+
+/* Dock 标题栏样式 */
+QDockWidget::title {
+    background: #404040;
+    padding: 6px;
+    border: 1px solid #555;
+    font-size: 9pt;  /* 设置Dock标题栏字体大小 */
+}
+
+/* 按钮通用样式 */
+QPushButton {
+    background-color: #505050;
+    border: 1px solid #606060;
+    border-radius: 4px;
+    color: #DDD;
+    padding: 5px 10px;
+    min-width: 80px;
+    font-size: 9pt;  /* 设置按钮字体大小 */
+}
+
+QPushButton:hover {
+    background-color: #606060;
+    font-size: 9pt;  /* 设置按钮字体大小 */
+}
+
+QPushButton:pressed {
+    background-color: #404040;
+    font-size: 9pt;  /* 设置按钮字体大小 */
+}
+
+/* QToolButton 样式 */
+QToolButton {
+    background-color: #505050;
+    border: 1px solid #606060;
+    border-radius: 4px;
+    color: #DDD;
+    padding: 5px 10px;
+    font-size: 9pt;  /* 设置工具按钮字体大小 */
+}
+
+QToolButton:hover {
+    background-color: #606060;
+    font-size: 9pt;  /* 设置工具按钮字体大小 */
+}
+
+QToolButton:pressed {
+    background-color: #404040;
+    font-size: 9pt;  /* 设置工具按钮字体大小 */
+}
+
+/* 分组框样式 */
+QGroupBox {
+    border: 1px solid #555;
+    border-radius: 4px;
+    margin-top: 1ex;
+    padding-top: 10px;
+    color: #AAA;
+    font-size: 9pt;  /* 设置分组框字体大小 */
+}
+
+QGroupBox::title {
+    subcontrol-origin: margin;
+    left: 10px;
+    padding: 0 3px;
+    font-size: 9pt;  /* 设置分组框标题字体大小 */
+}
+
+/* 树形控件样式 */
+QTreeWidget {
+    background-color: #353535;
+    color: #DDD;
+    border: 1px solid #444;
+    font-size: 9pt;  /* 设置树形控件字体大小 */
+}
+
+QTreeWidget::item:hover {
+    background-color: #454545;
+    font-size: 9pt;  /* 设置树形控件项 hover 时的字体大小 */
+}
+
+/* 旋钮控件样式 */
+QDoubleSpinBox {
+    background-color: #404040;
+    color: #EEE;
+    border: 1px solid #555;
+    padding: 2px;
+    font-size: 9pt;  /* 设置旋钮控件字体大小 */
+}
+
+QFormLayout {
+    font-size: 9pt;  /* 设置表单布局字体大小 */
+}
+
+/* 其他可能需要调整字体的控件 */
+QLabel {
+    font-size: 9pt;  /* 设置标签字体大小 */
+    color: #FFF;  /* 设置标签字体颜色为白色 */
+}
+
+QLineEdit {
+    background-color: #404040;
+    color: #EEE;
+    border: 1px solid #555;
+    padding: 2px;
+    font-size: 9pt;  /* 设置文本框字体大小 */
+}
+
+QComboBox {
+    background-color: #404040;
+    color: #EEE;
+    border: 1px solid #555;
+    padding: 2px;
+    font-size: 9pt;  /* 设置下拉框字体大小 */
+}
+
+QCheckBox {
+    font-size: 9pt;  /* 设置复选框字体大小 */
+}
+
+/* 弹出框样式 */
+QDialog {
+    background-color: #000000;  /* 设置弹出框背景为黑色 */
+    color: #FFF;  /* 设置文本颜色为白色 */
+    font-size: 9pt;  /* 设置弹出框字体大小 */
+}
+
+/* 表单布局中的控件样式 */
+QFormLayout {
+    font-size: 9pt;  /* 设置表单布局字体大小 */
+    color: #FFF;  /* 设置表单中控件的字体颜色为白色 */
+}
+
+QDoubleSpinBox, QComboBox, QLineEdit {
+    background-color: #404040;  /* 保持与其他控件一致的背景颜色 */
+    color: #EEE;  /* 设置文字颜色 */
+    border: 1px solid #555;  /* 设置边框颜色 */
+    padding: 2px;
+    font-size: 9pt;  /* 设置控件字体大小 */
+}
+
+QDialogButtonBox {
+    background-color: #404040;  /* 按钮盒的背景颜色 */
+    color: #EEE;  /* 按钮文字颜色 */
+    font-size: 9pt;  /* 设置按钮字体大小 */
+}
+
+QDialogButtonBox::button {
+    background-color: #505050;  /* 设置按钮背景颜色 */
+    border: 1px solid #606060;
+    color: #DDD;
+    font-size: 9pt;  /* 设置按钮字体大小 */
+}
+
+QDialogButtonBox::button:hover {
+    background-color: #606060;
+}
+
+QDialogButtonBox::button:pressed {
+    background-color: #404040;
+}
+

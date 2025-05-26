@@ -668,7 +668,7 @@ void MainWindow::createSlots() {
     connect(pBtnStop, &QPushButton::clicked, mpOpenGLWidget.get(),
             &MyOpenGLWidget::stopSimulation);
     connect(pBaseHeightSpin, SIGNAL(valueChanged(double)), mpOpenGLWidget.get(),
-            SLOT(setBaseHeight(double)));
+            SLOT(ws::FlightManager::getInstance().setBaseHeight(double)));
     logMessage("connected all slots on main window", Qgis::MessageLevel::Success);
 }
 void MainWindow::createMainWindow() {
@@ -993,9 +993,6 @@ void MainWindow::showFlightParamsDialog() {
         flightManager.setFlightAltitude(altitudeSpin->value());
         flightManager.setFlightBattery(batterySpin->value());
 
-        // 更新仿真参数
-        //mpOpenGLWidget->setMaxAltitude(flightManager.getFlightAltitude());
-        // 更新显示
         queryFlightParameters(); // 刷新飞行参数显示
     }
     logMessage("show flight parameters dialog", Qgis::MessageLevel::Success);

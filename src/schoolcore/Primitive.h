@@ -13,9 +13,9 @@
 #include <memory>
 #include "WorkspaceState.h"
 namespace gl{
-std::shared_ptr<QOpenGLShaderProgram> constructShader(const QString& vertexShaderPath, const QString& fragmentShaderPath, const QString& geometryShaderPath="");
 
 class Primitive{
+    
 protected:
     QOpenGLVertexArrayObject vao;
     QOpenGLBuffer vbo;
@@ -24,17 +24,19 @@ protected:
     GLenum primitiveType;
     GLfloat* vertices;
     GLuint vertexNum;
+    GLuint stride;
+    void checkGLError(const QString& funcName);
+    std::shared_ptr<QOpenGLShaderProgram> constructShader(const QString& vertexShaderPath, const QString& fragmentShaderPath, const QString& geometryShaderPath="");
 public:
-    Primitive(GLenum primitiveType, GLfloat* vertices, GLuint vertexNum);
+    Primitive(GLenum primitiveType, GLfloat* vertices, GLuint vertexNum, GLuint stride); // RAII constructor
+    Primitive(GLenum primitiveType, GLuint stride); // no init data constructor
     void setModelMatrix(const QMatrix4x4 &matrix);
-    void setShader(std::shared_ptr<QOpenGLShaderProgram> shader);
     virtual ~Primitive();
     virtual void draw()=0;
 };
 
 class ColorPrimitive : public Primitive{
     QVector4D color;
-    constexpr static int stride = 3;
 public:
     ColorPrimitive(GLenum primitiveType, GLfloat* vertices, GLuint vertexNum, const QVector4D& color=QVector4D(1.0f, 1.0f, 1.0f, 1.0f));
     void setColor(const QVector4D& color){this->color = color;}
@@ -69,7 +71,7 @@ public:
     using pMaterialGroupMap = std::shared_ptr<QMap<QString, pMaterialGroup>>;
     using TexturePair = std::pair<pMaterialVector, pTextureMap>;
 public:
-    ModelData(pMaterialVector materials = nullptr, pTextureMap textures = nullptr, pMaterialGroupMap materialGroups = nullptr);
+    ModelData(pMaterialVector materials = nullptr, pTextureMap textures = nullptr, pMaterialGroupMap materialGroups = nullptr, GLuint totalVertices = 0);
     ~ModelData();
     struct Material {
         QString name;
@@ -98,19 +100,19 @@ public:
     pMaterialGroupMap materialGroups;
     static std::shared_ptr<ModelData> loadObjModel(const QString &objFilePath);
     static QString retriveMtlPath(const QString &objfilePath);
-    static pMaterialGroupMap loadMaterialGroups(const QString &filePath);
+    static std::pair<pMaterialGroupMap, GLuint> loadMaterialGroups(const QString &filePath);
     static TexturePair loadMtl(const QString &mtlPath);
-    void calculateModelBounds(ModelData *modelData,Bounds &bounds);
+    Bounds calculateModelBounds();
     void updateGlobalBounds(const Bounds &bounds);
     void applyGlobalCentering();
     QVector3D calculateModelCenter();
     Bounds mBounds;
+    GLuint totalVertices;
 };
 class Model : public Primitive{
-    constexpr static int stride = 5;
     std::shared_ptr<ModelData> modelData;
 public:
-    Model(GLfloat* vertices, GLuint vertexNum, std::shared_ptr<ModelData> modelData);
+    Model(std::shared_ptr<ModelData> modelData);
     void draw() override;
     QVector3D getModelCenter() const{return modelData->calculateModelCenter();}
     const Bounds& getBounds() const{return modelData->mBounds;}
