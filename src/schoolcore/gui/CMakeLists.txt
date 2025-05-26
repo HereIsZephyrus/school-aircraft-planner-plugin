@@ -16,6 +16,8 @@ target_include_directories(gui PUBLIC
     ${INCLUDES}
 )
 
+find_package(Qt5 COMPONENTS Core Widgets Gui OpenGL REQUIRED)
+
 target_link_libraries(gui
     ${LIBS}
 )

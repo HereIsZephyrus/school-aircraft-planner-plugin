@@ -6,6 +6,8 @@ file(GLOB OPENGL_HEADERS
     "*.h"
 )
 
+find_package(Qt5 COMPONENTS Core Widgets Gui OpenGL REQUIRED)
+
 add_library(opengl STATIC
     ${OPENGL_SOURCES}
     ${OPENGL_HEADERS}
@@ -16,6 +18,6 @@ target_include_directories(opengl PUBLIC
     ${INCLUDES}
 )
 
-target_link_libraries(core
+target_link_libraries(opengl
     ${LIBS}
 )

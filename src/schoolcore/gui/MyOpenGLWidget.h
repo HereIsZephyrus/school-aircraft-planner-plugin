@@ -4,9 +4,9 @@ Author:wkj
 Date:2025.3.13
 ****************************************************************************/
 #pragma once
-#include "qgis_debug.h"
-#include "Primitive.h"
-#include "RoutePlanner.h"
+#include "../log/qgis_debug.h"
+#include "../opengl/Primitive.h"
+#include "../core/RoutePlanner.h"
 #include <GL/gl.h>
 #include <QOpenGLBuffer>
 #include <QOpenGLFunctions>
@@ -38,6 +38,7 @@ protected:
   void resizeGL(int w, int h) override;
   void mousePressEvent(QMouseEvent *event) override;
   void mouseMoveEvent(QMouseEvent *event) override;
+  void keyPressEvent(QKeyEvent *event) override;
   void wheelEvent(QWheelEvent *event) override;
 
 private:

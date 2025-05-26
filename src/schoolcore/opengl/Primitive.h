@@ -1,3 +1,4 @@
+#pragma once
 #include <GL/gl.h>
 #include <QOpenGLBuffer>
 #include <QOpenGLFunctions>
@@ -11,7 +12,7 @@
 #include <QtMath>
 #include <cfloat>
 #include <memory>
-#include "WorkspaceState.h"
+#include "../core/WorkspaceState.h"
 namespace gl{
 
 class Primitive{

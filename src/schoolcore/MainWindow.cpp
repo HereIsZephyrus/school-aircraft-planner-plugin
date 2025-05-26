@@ -2,6 +2,7 @@
 #include "MyOpenGLWidget.h"
 #include "StyleManager.h"
 #include "WorkspaceState.h"
+#include "camera.h"
 #include "qgsmessagelog.h"
 #include <memory>
 #include <QAction>
@@ -38,10 +39,10 @@ void MainWindow::init3DWidget(){
     //mpOpenGLWidget->show();
     //mpOpenGLWidget->update();
 
-    connect(mpOpenGLWidget.get(), &MyOpenGLWidget::glInitialized, this, &MainWindow::open3D);
+    connect(mpOpenGLWidget.get(), &MyOpenGLWidget::glInitialized, this, &MainWindow::switchTo3D);
 
     // pass RoutePlanner instance to OpenGLWidget
-    mpOpenGLWidget->setRoutePlanner(mpRoutePlanner.get());
+    //mpOpenGLWidget->setRoutePlanner(mpRoutePlanner.get());
 }
 void MainWindow::init2DWidget(){
     // create QLabel to display local image
@@ -105,63 +106,13 @@ void MainWindow::initWindowStatus(){
 
 void MainWindow::Unrealized() {}
 
-void MainWindow::open3D() {
-    if (!ws::WindowManager::getInstance().get3DMapInited()) {
-        init3DWidget();
-    }
-
-    //ws::PathManager& pathManager = ws::PathManager::getInstance();
-    //QString rootDir = pathManager.getRootDir();
-    //logMessage("rootDir: " + rootDir, Qgis::MessageLevel::Info);
-    //if (pathManager.getObjTexturePairs().isEmpty()) {
-    //    logMessage("No 3D models found", Qgis::MessageLevel::Info);
-    //    return;
-    //}
-    //QList<ObjTexturePair> objTexturePairs = pathManager.getObjTexturePairs();
-    //for (const ObjTexturePair& objTexturePair : objTexturePairs) {
-    //    static_cast<MyOpenGLWidget *>(mpOpenGLWidget.get())->loadObjModel(objTexturePair.first, objTexturePair.second);
-    //}
-    //static_cast<MyOpenGLWidget*>(mpOpenGLWidget.get())->applyGlobalCentering();
-    update();
-/*
-    QDir dir(rootDir);
-    logMessage("dir: " + dir.path(), Qgis::MessageLevel::NoLevel);
-    // retrive all subfolders
-    QStringList folders = dir.entryList(QDir::Dirs | QDir::NoDotAndDotDot);
-    logMessage("folders: " + folders.first(), Qgis::MessageLevel::NoLevel);
-    // iterate over each subfolder
-    for (const QString &folder : folders) {
-        QString folderPath = dir.filePath(folder); // subfolder full path
-        logMessage("processing folder: " + folderPath, Qgis::MessageLevel::NoLevel);
-        QDir subDir(folderPath);
-        QStringList objFiles = subDir.entryList(QStringList() << "*.obj", QDir::Files);
-        QStringList jpgFiles = subDir.entryList(QStringList() << "*.jpg", QDir::Files);
-        if (objFiles.isEmpty() || jpgFiles.isEmpty()) {
-            logMessage("Missing .obj or .jpg in folder: " + folderPath, Qgis::MessageLevel::Critical);
-            continue;
-        }
-        QString objPath = folderPath + "/" + objFiles.first(); // get the first .obj
-        QString texPath = folderPath + "/" + jpgFiles.first(); // get the first .jpg
-        logMessage("objPath: " + objPath, Qgis::MessageLevel::NoLevel);
-        logMessage("texPath: " + texPath, Qgis::MessageLevel::NoLevel);
-        pathManager.addObjPath(objPath);
-        pathManager.addTexturePath(texPath);
-        logMessage("load model: " + objPath, Qgis::MessageLevel::Info);
-        
-        logMessage("All models loaded. Applying global centering...", Qgis::MessageLevel::Info);
-    }
-
-    logMessage("Global centering applied", Qgis::MessageLevel::Success);
-*/
-}
-
 void MainWindow::createMenu() {
     logMessage("create menu bar", Qgis::MessageLevel::Info);
     mpMenuBar = new QMenuBar(this);
 
     // ================ Project menu ================
     QMenu *pProjectMenu = mpMenuBar->addMenu(tr("Project"));
-    pProjectMenu->addAction(tr("Open 3D File"), this, &MainWindow::open3D);
+    pProjectMenu->addAction(tr("Open 3D File"), this, &MainWindow::switchTo3D);
     logMessage("create project menu", Qgis::MessageLevel::Success);
 
     // ================ View menu ================
@@ -206,7 +157,7 @@ void MainWindow::createMenu() {
         QAction* resumeAction = pSimulationMenu->addAction(tr("Resume Simulation"));
         QAction* returnAction = pSimulationMenu->addAction(tr("Return Home"));
         QAction* stopAction = pSimulationMenu->addAction(tr("Stop Simulation"));
-
+/*
         connect(startAction, &QAction::triggered, mpOpenGLWidget.get(),
                 &MyOpenGLWidget::startSimulation);
         connect(pauseAction, &QAction::triggered, mpOpenGLWidget.get(),
@@ -217,6 +168,7 @@ void MainWindow::createMenu() {
                 &MyOpenGLWidget::returnToHome);
         connect(stopAction, &QAction::triggered, mpOpenGLWidget.get(),
                 &MyOpenGLWidget::stopSimulation);
+*/
     } else {
         logMessage("OpenGLWidget not initialized", Qgis::MessageLevel::Critical);
     }
@@ -645,7 +597,7 @@ void MainWindow::createSlots() {
     });
     logMessage("connect edit point button to enter edit point mode", Qgis::MessageLevel::Info);
     connect(pBtnGenerate, &QPushButton::clicked, [=]() {
-    mpOpenGLWidget->generateFlightRoute(pHeightSpin->value());
+    //mpOpenGLWidget->generateFlightRoute(pHeightSpin->value());
     });
     logMessage("connect generate flight route button to generate flight route", Qgis::MessageLevel::Info);
 
@@ -656,6 +608,7 @@ void MainWindow::createSlots() {
             SLOT(setScanSpacing(double))); //传递航带宽度到RoutePlanner类中
     logMessage("connect width spin box to set scan spacing", Qgis::MessageLevel::Info);
 
+    /*
     // flight simulation related connections
     connect(pBtnStart, &QPushButton::clicked,
             [=]() { mpOpenGLWidget->startSimulation(pSpeedSpin->value()); });
@@ -670,6 +623,7 @@ void MainWindow::createSlots() {
     connect(pBaseHeightSpin, SIGNAL(valueChanged(double)), mpOpenGLWidget.get(),
             SLOT(ws::FlightManager::getInstance().setBaseHeight(double)));
     logMessage("connected all slots on main window", Qgis::MessageLevel::Success);
+    */
 }
 void MainWindow::createMainWindow() {
     logMessage("create main window", Qgis::MessageLevel::Info);
@@ -730,13 +684,22 @@ void MainWindow::loadDirectoryLevel(QTreeWidgetItem *parentItem, const QString &
 
 // switch to 3D
 void MainWindow::switchTo3D() {
-    logMessage("switch to 3D model view", Qgis::MessageLevel::Info);
+    if (!ws::WindowManager::getInstance().get3DMapInited()) {
+        logMessage("3D map not initialized", Qgis::MessageLevel::Info);
+        init3DWidget();
+        logMessage("3D map initialized", Qgis::MessageLevel::Success);
+    }
     mpStackedWidget->setCurrentWidget(mpOpenGLWidget.get()); // switch to 3D model view
     ws::WindowManager::getInstance().setCurrentCanvas(ws::CanvasType::ThreeD);
     logMessage("switch to 3D model view", Qgis::MessageLevel::Success);
 }
 // switch to 2D
 void MainWindow::switchTo2D() {
+    if (!ws::WindowManager::getInstance().get2DMapInited()) {
+        logMessage("2D map not initialized", Qgis::MessageLevel::Info);
+        init2DWidget();
+        logMessage("2D map initialized", Qgis::MessageLevel::Success);
+    }
     logMessage("switch to 2D map view", Qgis::MessageLevel::Info);
     mpStackedWidget->setCurrentWidget(mpImageLabel); // switch to 2D map view
     ws::WindowManager::getInstance().setCurrentCanvas(ws::CanvasType::TwoD);
@@ -744,8 +707,7 @@ void MainWindow::switchTo2D() {
 }
 
 void MainWindow::resetView() {
-    logMessage("reset view", Qgis::MessageLevel::Info);
-    mpOpenGLWidget->resetView();
+    Camera::getInstance().resetView();
     logMessage("reset view", Qgis::MessageLevel::Success);
 }
 

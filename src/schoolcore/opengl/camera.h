@@ -17,6 +17,7 @@ private:
     static constexpr QVector3D DEFAULT_POSITION = QVector3D(0.0f, 0.0f, 5.0f);
     static constexpr QVector3D DEFAULT_TARGET = QVector3D(0.0f, 0.0f, 0.0f);
     static constexpr QVector3D DEFAULT_UP = QVector3D(0.0f, 1.0f, 0.0f);
+    static constexpr float ZOOM_FACTOR = 0.1f;
     
     Camera();
 public:
@@ -45,6 +46,7 @@ public:
     float farPlane() const { return mFarPlane; }
     QMatrix4x4 viewMatrix() const;
     QMatrix4x4 projectionMatrix() const;
+    float zoomFactor() const { return ZOOM_FACTOR; }
 
     void moveForward(float distance);
     void moveRight(float distance);

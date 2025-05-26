@@ -16,6 +16,8 @@ target_include_directories(log PUBLIC
     ${INCLUDES}
 )
 
+find_package(QGIS REQUIRED)
+
 target_link_libraries(log
     ${LIBS}
 )

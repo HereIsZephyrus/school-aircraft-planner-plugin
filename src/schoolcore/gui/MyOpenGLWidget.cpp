@@ -1,8 +1,6 @@
 ﻿#include "MyOpenGLWidget.h"
-#include "MainWindow.h"
-#include "WorkspaceState.h"
-#include "qgis_debug.h"
-#include "camera.h"
+#include "../opengl/camera.h"
+#include "../log/qgis_debug.h"
 #include <QDebug>
 #include <QFile>
 #include <QFileInfo>
@@ -12,15 +10,16 @@
 #include <QTransform>
 #include <QWheelEvent>
 #include <memory>
-#include <qtimer.h>
-#include <qgsapplication.h>
 #include <qgis.h>
+#include <qgsapplication.h>
+#include <qtimer.h>
 #include <qvector4d.h>
 
+
 MyOpenGLWidget::MyOpenGLWidget(QWidget *parent)
-    : QOpenGLWidget(parent), m_routePlanner(new RoutePlanner(this)){
+    : QOpenGLWidget(parent) {
   logMessage("MyOpenGLWidget constructor", Qgis::MessageLevel::Info);
-  
+
   setFocusPolicy(Qt::StrongFocus); // 设置为强焦点模式
   setFocus();                      // 主动获取焦点
   modelWidget = nullptr;
@@ -34,10 +33,10 @@ MyOpenGLWidget::~MyOpenGLWidget() {
   ControlPointsWidget = nullptr;
 }
 
-void MyOpenGLWidget::setupOpenGLContext(){
+void MyOpenGLWidget::setupOpenGLContext() {
   QgsApplication::setAttribute(Qt::AA_UseDesktopOpenGL);
   QgsApplication::setAttribute(Qt::AA_ShareOpenGLContexts);
-  
+
   QSurfaceFormat format;
   format.setVersion(3, 3);
   format.setProfile(QSurfaceFormat::CoreProfile);
@@ -47,16 +46,16 @@ void MyOpenGLWidget::setupOpenGLContext(){
   QSurfaceFormat::setDefaultFormat(format);
   setFormat(format);
 
-  QString version = QString::fromUtf8((const char*)glGetString(GL_VERSION));
+  QString version = QString::fromUtf8((const char *)glGetString(GL_VERSION));
   logMessage("OpenGL Version: " + version, Qgis::MessageLevel::Info);
 }
 
-void MyOpenGLWidget::initCanvas(){
+void MyOpenGLWidget::initCanvas() {
   basePlaneWidget = initBasePlane();
-  //ControlPointsWidget = initControlPoints();
+  // ControlPointsWidget = initControlPoints();
 }
 
-std::shared_ptr<gl::BasePlane> MyOpenGLWidget::initBasePlane(){
+std::shared_ptr<gl::BasePlane> MyOpenGLWidget::initBasePlane() {
   const GLfloat size = 1000.0f;
   const GLfloat step = 50.0f;
   QVector<GLfloat> vertices;
@@ -72,7 +71,8 @@ std::shared_ptr<gl::BasePlane> MyOpenGLWidget::initBasePlane(){
   }
 
   QVector4D initColor = QVector4D(0.6f, 0.6f, 0.6f, 0.5f);
-  std::shared_ptr<gl::BasePlane> basePlane = std::make_shared<gl::BasePlane>(vertices.data(), vertexNum, initColor);
+  std::shared_ptr<gl::BasePlane> basePlane =
+      std::make_shared<gl::BasePlane>(vertices.data(), vertexNum, initColor);
   logMessage("base plane initialized", Qgis::MessageLevel::Info);
   return basePlane;
 }
@@ -81,10 +81,8 @@ void MyOpenGLWidget::initializeGL() {
   initializeOpenGLFunctions();
   setupOpenGLContext();
   logMessage("OpenGL context initialized", Qgis::MessageLevel::Success);
-  ws::WindowManager::getInstance().setProjection(45.0f, static_cast<double>(width()), static_cast<double>(height()), 0.1f, 1000.0f);
   initCanvas();
-  logMessage("buffers initialized", Qgis::MessageLevel::Success);
-  logMessage("projection initialized", Qgis::MessageLevel::Success);
+  logMessage("canvas initialized", Qgis::MessageLevel::Success);
 
   emit glInitialized();
 }
@@ -103,12 +101,12 @@ void MyOpenGLWidget::initializeGL() {
   */
 
 void MyOpenGLWidget::resizeGL(int w, int h) {
-  mProjection.setToIdentity();
-  mProjection.perspective(45.0f, w / (float)h, 1.0f, 100000.0f);
+  double aspectRatio = static_cast<double>(w) / static_cast<double>(h);
+  Camera::getInstance().setAspectRatio(aspectRatio);
 }
 
-void MyOpenGLWidget::paintGL(){
-  if (!isValid()){
+void MyOpenGLWidget::paintGL() {
+  if (!isValid()) {
     logMessage("MyOpenGLWidget is not valid", Qgis::MessageLevel::Critical);
     return;
   }
@@ -121,10 +119,11 @@ void MyOpenGLWidget::paintGL(){
     basePlaneWidget->draw();
   if (modelWidget)
     modelWidget->draw();
+  update();
 }
 
 void MyOpenGLWidget::mousePressEvent(QMouseEvent *event) {
-
+/*
   if (m_routePlanner && m_routePlanner->mCreateRoute) {
     // 优先处理添加控制点模式
     if (m_routePlanner->isSettingControlPointsMode() &&
@@ -190,9 +189,11 @@ void MyOpenGLWidget::mousePressEvent(QMouseEvent *event) {
 
   // 默认处理：视图旋转
   m_lastMousePos = event->pos();
+*/
 }
 
 void MyOpenGLWidget::mouseMoveEvent(QMouseEvent *event) {
+  /*
   if (m_cameraFollowAircraft) {
     return; // 跟随视角下不处理旋转
   }
@@ -226,10 +227,20 @@ void MyOpenGLWidget::mouseMoveEvent(QMouseEvent *event) {
       m_lastMousePos = event->pos();
     }
   }
+  */
 }
 
 void MyOpenGLWidget::wheelEvent(QWheelEvent *event) {
-  Camera::getInstance().zoom(event->angleDelta().y() > 0 ? 0.9f : 1.1f);
+  Camera &camera = Camera::getInstance();
+  float currentFov = camera.fieldOfView();
+  float zoomFactor = camera.zoomFactor();
+
+  if (event->angleDelta().y() > 0)
+    currentFov = qMax(currentFov - zoomFactor, 10.0f);
+  else
+    currentFov = qMin(currentFov + zoomFactor, 120.0f);
+
+  camera.setFieldOfView(currentFov);
   update();
 }
 /*
@@ -520,7 +531,7 @@ MyOpenGLWidget::calculateRayIntersection(const QVector3D &rayOrigin,
 }
 */
 void MyOpenGLWidget::handleMouseMove(QMouseEvent *event) {
-
+/*
   QPoint screenPos = event->pos(); // 从 QMouseEvent 获取鼠标位置
   if (m_routePlanner->selectedPointIndex() >= 0) {
     QVector3D surfacePoint = getSurfacePointFromMouse();
@@ -528,128 +539,11 @@ void MyOpenGLWidget::handleMouseMove(QMouseEvent *event) {
         surfacePoint;
     m_routePlanner->handleMouseMove(event);
   }
-}
-void MyOpenGLWidget::generateFlightRoute(float height) // 生成航线
-{
-  m_routePlanner->m_editingMode = false;
-}; // 生成航线
-
-void MyOpenGLWidget::startSimulation(float speed) {
-  if (!m_routePlanner)
-    return;
-
-  m_flightPath = m_routePlanner->routePath();
-  if (m_flightPath.size() < 2)
-    return;
-
-  m_animationProgress = 0.0f;
-  m_isAnimating = true;
-  m_animationTimer->start(16); // ~60 FPS
-}
-
-void MyOpenGLWidget::pauseSimulation() { m_animationTimer->stop(); }
-
-void MyOpenGLWidget::resumeSimulation() { m_animationTimer->start(); }
-
-void MyOpenGLWidget::returnToHome() {
-  m_animationTimer->stop();
-  m_animationProgress = 0.0f;
-  update();
-}
-
-void MyOpenGLWidget::updateAnimation() {
-  if (!m_isAnimating)
-    return;
-
-  // 计算新进度（示例使用固定速度，可根据实际速度参数调整）
-  m_animationProgress += 0.002f;
-
-  if (m_animationProgress >= 1.0f) {
-    m_animationProgress = 1.0f;
-    m_animationTimer->stop();
-  }
-  double baseHeight = ws::FlightManager::getInstance().getBaseHeight();
-  float currentHeight = baseHeight + mfFlightHight + baseHeight;
-  // 计算当前路径位置
-  int index = static_cast<int>((m_flightPath.size() - 1) * m_animationProgress);
-  float t = (m_flightPath.size() - 1) * m_animationProgress - index;
-  index = qMin(index, m_flightPath.size() - 2);
-
-  //   // 计算当前路径位置时应用模型旋转
-  QVector3D start = mModelView * m_flightPath[index];   // 应用旋转
-  QVector3D end = mModelView * m_flightPath[index + 1]; // 应用旋转
-  m_aircraftPosition = start + t * (end - start);
-  m_aircraftPosition.setZ(currentHeight);
-  // 计算方向
-  QVector3D direction = (end - start).normalized();
-  float yaw = qRadiansToDegrees(atan2(direction.y(), direction.x()));
-  m_aircraftOrientation = QQuaternion::fromEulerAngles(0, 0, -yaw);
-
-  update();
-}
-
-void MyOpenGLWidget::drawAircraft(const QVector3D &position,
-                                  const QQuaternion &orientation) {
-  mModelShader->bind();
-
-  QMatrix4x4 model;
-  model.translate(position);
-  model.rotate(orientation);
-  model.scale(5.0f); // 调整飞机大小
-
-  QMatrix4x4 view;
-  if (m_cameraFollowAircraft) {
-    // 调整相机位置到无人机后上方，实现倾斜视角
-    QVector3D cameraOffset =
-        QVector3D(0, 30, 50); // Y分量控制高度，Z分量控制距离
-    QVector3D cameraPosition =
-        m_aircraftPosition + m_aircraftOrientation * cameraOffset;
-
-    view.lookAt(cameraPosition,     // 相机位置
-                m_aircraftPosition, // 目标点（无人机位置）
-                m_aircraftOrientation *
-                    QVector3D(0, 1, 1)); // 保持相机的上方向与无人机一致
-  } else {
-    view.translate(0, 0, mfDistance);
-    view = view * mModelView;
-  }
-
-  QMatrix4x4 mvp = mProjection * view * model; // 确保应用模型矩阵
-
-  mModelShader->setUniformValue("mvp", mvp);
-
-  // 使用简单立方体作为临时飞机模型
-  static QVector<Vertex> aircraftVertices = createAircraftModel();
-
-  // 创建并绑定临时VAO/VBO
-  QOpenGLVertexArrayObject::Binder vaoBinder(&mVAO);
-  mVBO.bind();
-  mVBO.allocate(aircraftVertices.constData(),
-                aircraftVertices.size() * sizeof(Vertex));
-
-  glDrawArrays(GL_TRIANGLES, 0, aircraftVertices.size());
-
-  mVBO.release();
-  mModelShader->release();
-}
-
-QVector<MyOpenGLWidget::Vertex> MyOpenGLWidget::createAircraftModel() {
-  QVector<Vertex> vertices;
-
-  // 机身（使用红色纹理坐标区域）
-  vertices << Vertex(QVector3D(-0.5, -0.5, 0.0), QVector2D(1.0, 0.0)) // 右下红
-           << Vertex(QVector3D(0.5, -0.5, 0.0), QVector2D(1.0, 0.0)) // 左下红
-           << Vertex(QVector3D(0.0, 1.0, 0.0), QVector2D(1.0, 0.0)); // 顶部红
-
-  // 机翼（使用蓝色纹理坐标区域）
-  vertices << Vertex(QVector3D(-1.0, 0.0, 0.0), QVector2D(0.0, 1.0)) // 左翼蓝
-           << Vertex(QVector3D(1.0, 0.0, 0.0), QVector2D(0.0, 1.0)) // 右翼蓝
-           << Vertex(QVector3D(0.0, 0.0, 1.0), QVector2D(0.0, 1.0)); // 顶部蓝
-
-  return vertices;
+*/
 }
 
 void MyOpenGLWidget::keyPressEvent(QKeyEvent *event) {
+  /*
   if (event->key() == Qt::Key_Space) {
     m_cameraFollowAircraft = !m_cameraFollowAircraft;
     qDebug() << "  m_cameraFollowAircraft=" << m_cameraFollowAircraft;
@@ -678,11 +572,5 @@ void MyOpenGLWidget::keyPressEvent(QKeyEvent *event) {
       return;
     }
   }
-}
-
-void MyOpenGLWidget::stopSimulation() {
-  m_animationTimer->stop();
-  m_isAnimating = false;
-  m_animationProgress = 0.0f;
-  update();
+  */
 }
