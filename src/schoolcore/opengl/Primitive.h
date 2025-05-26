@@ -119,9 +119,12 @@ class Model : public Primitive{
     std::shared_ptr<ModelData> modelData;
 public:
     Model(std::shared_ptr<ModelData> modelData);
+    Model(const QString& objFilePath);
     void draw() override;
-    QVector3D getModelCenter() const{return modelData->calculateModelCenter();}
+    QVector3D getModelCenter() const{return modelData->mBounds.center;}
     const Bounds& getBounds() const{return modelData->mBounds;}
     void setBounds(const Bounds& bounds){modelData->mBounds = bounds;}
+protected:
+    void loadModel(const QString& objFilePath);
 };
 }

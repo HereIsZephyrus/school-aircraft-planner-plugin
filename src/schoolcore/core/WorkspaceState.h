@@ -183,7 +183,6 @@ private:
     void drawAircraft(const QVector3D &position, const QQuaternion &orientation);
     QVector<Vertex> createAircraftModel();
     bool m_cameraFollowAircraft; // 跟随摄像机
-    void keyPressEvent(QKeyEvent *event);
     QVector3D m_viewTranslation; // 图平移
 };
 */

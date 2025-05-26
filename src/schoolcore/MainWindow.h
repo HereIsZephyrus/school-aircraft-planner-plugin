@@ -78,6 +78,7 @@ private:
   void loadDirectoryFiles(const QString &path);
   void loadDirectoryLevel(QTreeWidgetItem *parentItem, const QString &path, int level, int maxLevel);
   void onTreeItemExpanded(QTreeWidgetItem *item);
+  void onTreeItemDoubleClicked(QTreeWidgetItem *item, int column);
   QString getItemFullPath(QTreeWidgetItem *item);
   std::unique_ptr<RoutePlanner> mpRoutePlanner;
   std::unique_ptr<MyOpenGLWidget> mpOpenGLWidget;
@@ -98,6 +99,7 @@ private:
 private slots:
   void queryFlightParameters();
   void refreshBasicData();
+  void loadModel(const QString& objFilePath);
 
 private:
   QLabel *m_pFlightParamsDisplay;

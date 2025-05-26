@@ -1,7 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <RCC>
     <qresource prefix="/">
-        <file>map/capture.png</file>
-        <file>style/joyDockStyle.qss</file>
+        <file>plugin.svg</file>
     </qresource>
 </RCC> 

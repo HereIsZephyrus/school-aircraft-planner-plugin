@@ -5,7 +5,7 @@ Camera::Camera(){
   resetView();
   updateCameraVectors();
 }
-
+Camera::~Camera(){}
 void Camera::setPosition(const QVector3D &position) {
   mPosition = position;
   updateCameraVectors();

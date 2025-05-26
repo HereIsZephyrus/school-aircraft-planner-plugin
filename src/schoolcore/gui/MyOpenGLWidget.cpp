@@ -18,36 +18,28 @@
 
 MyOpenGLWidget::MyOpenGLWidget(QWidget *parent)
     : QOpenGLWidget(parent) {
-  logMessage("MyOpenGLWidget constructor", Qgis::MessageLevel::Info);
-
-  setFocusPolicy(Qt::StrongFocus); // 设置为强焦点模式
-  setFocus();                      // 主动获取焦点
-  modelWidget = nullptr;
-  basePlaneWidget = nullptr;
-  ControlPointsWidget = nullptr;
-}
-
-MyOpenGLWidget::~MyOpenGLWidget() {
-  modelWidget = nullptr;
-  basePlaneWidget = nullptr;
-  ControlPointsWidget = nullptr;
-}
-
-void MyOpenGLWidget::setupOpenGLContext() {
-  QgsApplication::setAttribute(Qt::AA_UseDesktopOpenGL);
-  QgsApplication::setAttribute(Qt::AA_ShareOpenGLContexts);
-
   QSurfaceFormat format;
   format.setVersion(3, 3);
   format.setProfile(QSurfaceFormat::CoreProfile);
   format.setDepthBufferSize(24);
   format.setStencilBufferSize(8);
   format.setSamples(4);
-  QSurfaceFormat::setDefaultFormat(format);
   setFormat(format);
+  
+  setFocusPolicy(Qt::StrongFocus);
+  setFocus();
+  
+  modelWidget = nullptr;
+  basePlaneWidget = nullptr;
+  ControlPointsWidget = nullptr;
+}
 
-  QString version = QString::fromUtf8((const char *)glGetString(GL_VERSION));
-  logMessage("OpenGL Version: " + version, Qgis::MessageLevel::Info);
+MyOpenGLWidget::~MyOpenGLWidget() {
+  makeCurrent();
+  modelWidget = nullptr;
+  basePlaneWidget = nullptr;
+  ControlPointsWidget = nullptr;
+  doneCurrent();
 }
 
 void MyOpenGLWidget::initCanvas() {
@@ -71,6 +63,7 @@ std::shared_ptr<gl::BasePlane> MyOpenGLWidget::initBasePlane() {
   }
 
   QVector4D initColor = QVector4D(0.6f, 0.6f, 0.6f, 0.5f);
+  logMessage("set base plane datas", Qgis::MessageLevel::Info);
   std::shared_ptr<gl::BasePlane> basePlane =
       std::make_shared<gl::BasePlane>(vertices.data(), vertexNum, initColor);
   logMessage("base plane initialized", Qgis::MessageLevel::Info);
@@ -78,12 +71,36 @@ std::shared_ptr<gl::BasePlane> MyOpenGLWidget::initBasePlane() {
 }
 
 void MyOpenGLWidget::initializeGL() {
+  // 1. 设置 QGIS OpenGL 属性
+  QgsApplication::setAttribute(Qt::AA_UseDesktopOpenGL);
+  QgsApplication::setAttribute(Qt::AA_ShareOpenGLContexts);
+  
+  
+  // 3. 初始化 OpenGL 函数
   initializeOpenGLFunctions();
-  setupOpenGLContext();
-  logMessage("OpenGL context initialized", Qgis::MessageLevel::Success);
+  logMessage("initialize opengl functions", Qgis::MessageLevel::Info);
+  
+  
+  // 4. 检查 OpenGL 上下文
+  if (!QOpenGLContext::currentContext()) {
+    logMessage("No OpenGL context available", Qgis::MessageLevel::Critical);
+    return;
+  }
+  
+  // 5. 检查 OpenGL 版本
+  QString version = QString::fromUtf8((const char *)glGetString(GL_VERSION));
+  logMessage("OpenGL Version: " + version, Qgis::MessageLevel::Info);
+  
+  // 6. 设置 OpenGL 状态
+  glEnable(GL_DEPTH_TEST);
+  glEnable(GL_BLEND);
+  glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+  
+  // 7. 初始化画布
+  makeCurrent();
   initCanvas();
-  logMessage("canvas initialized", Qgis::MessageLevel::Success);
-
+  doneCurrent();
+  logMessage("OpenGL context initialized", Qgis::MessageLevel::Success);
   emit glInitialized();
 }
 /*
@@ -112,6 +129,7 @@ void MyOpenGLWidget::paintGL() {
   }
   if (!isVisible())
     return;
+  makeCurrent();
   glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
   glEnable(GL_DEPTH_TEST);
@@ -119,6 +137,7 @@ void MyOpenGLWidget::paintGL() {
     basePlaneWidget->draw();
   if (modelWidget)
     modelWidget->draw();
+  doneCurrent();
   update();
 }
 
@@ -242,6 +261,11 @@ void MyOpenGLWidget::wheelEvent(QWheelEvent *event) {
 
   camera.setFieldOfView(currentFov);
   update();
+}
+
+void MyOpenGLWidget::loadModel(const QString& objFilePath){
+  modelWidget = std::make_shared<gl::Model>(objFilePath);
+  logMessage("Model loaded", Qgis::MessageLevel::Success);
 }
 /*
 void MyOpenGLWidget::setRoutePlanner(RoutePlanner *planner) {

@@ -36,10 +36,9 @@ void MainWindow::init3DWidget(){
     mpRoutePlanner = std::make_unique<RoutePlanner>(this);
     mpOpenGLWidget = std::make_unique<MyOpenGLWidget>(this);
 
-    //mpOpenGLWidget->show();
-    //mpOpenGLWidget->update();
+    //connect(mpOpenGLWidget.get(), &MyOpenGLWidget::glInitialized, this, &MainWindow::switchTo3D);
 
-    connect(mpOpenGLWidget.get(), &MyOpenGLWidget::glInitialized, this, &MainWindow::switchTo3D);
+    logMessage("canvas initialized", Qgis::MessageLevel::Success);
 
     // pass RoutePlanner instance to OpenGLWidget
     //mpOpenGLWidget->setRoutePlanner(mpRoutePlanner.get());
@@ -47,7 +46,7 @@ void MainWindow::init3DWidget(){
 void MainWindow::init2DWidget(){
     // create QLabel to display local image
     mpImageLabel = new QLabel(this);
-    QPixmap mapImage(":/map/capture.png"); // use resource path to load image
+    QPixmap mapImage(":/resources/map/capture.png"); // use resource path to load image
     if (mapImage.isNull()) {
         logMessage("failed to load local map image", Qgis::MessageLevel::Critical);
         return;
@@ -112,7 +111,14 @@ void MainWindow::createMenu() {
 
     // ================ Project menu ================
     QMenu *pProjectMenu = mpMenuBar->addMenu(tr("Project"));
-    pProjectMenu->addAction(tr("Open 3D File"), this, &MainWindow::switchTo3D);
+    QAction* loadAction = pProjectMenu->addAction(tr("load 3D file"));
+    connect(loadAction, &QAction::triggered, this, [this]() {
+        QString filePath = QFileDialog::getOpenFileName(this, tr("Open OBJ File"), "", tr("OBJ Files (*.obj)"));
+        if (filePath.isEmpty())
+            logMessage("no file selected", Qgis::MessageLevel::Critical);
+        else
+            loadModel(filePath);
+    });
     logMessage("create project menu", Qgis::MessageLevel::Success);
 
     // ================ View menu ================
@@ -377,6 +383,9 @@ void MainWindow::createRightDockWidget() {
     connect(mpFileTreeWidget, &QTreeWidget::customContextMenuRequested, this,
             &MainWindow::Unrealized);
     logMessage("connect file tree to unrealized", Qgis::MessageLevel::Info);
+    // add double click event processing
+    connect(mpFileTreeWidget, &QTreeWidget::itemDoubleClicked, this,
+            &MainWindow::onTreeItemDoubleClicked);
 
     // create select directory button
     QToolButton *selectDirectoryButton = new QToolButton(pRightDockWidget);
@@ -400,7 +409,7 @@ void MainWindow::createRightDockWidget() {
     QString dirPath = ws::PathManager::getInstance().getRootDir();
     loadDirectoryFiles(dirPath);
     logMessage("load file list of specified directory to tree widget", Qgis::MessageLevel::Success);
-    ////
+
     ///create right bottom tool box sidebar------------------------------------------------------------------------------------
     QDockWidget *mpRightDock = new QDockWidget(tr("tool box"), pRightDockWidget);
     mpRightDock->setObjectName("mpRightDock");
@@ -838,7 +847,7 @@ void MainWindow::showUserManual() {
 
         "【核心功能指南】\n"
         "▶ 加载3D模型：\n"
-        "   1. 点击菜单栏 Project -> Open 3D File\n"
+        "   1. 点击菜单栏 Project -> load 3D file\n"
         "   2. 选择包含.obj和.jpg的文件夹\n"
         "   3. 模型将自动加载到3D视图\n\n"
 
@@ -1071,6 +1080,16 @@ void MainWindow::onTreeItemExpanded(QTreeWidgetItem *item) {
         QString path = getItemFullPath(item);
         item->removeChild(item->child(0));
         loadDirectoryLevel(item, path, 1, 1);
+        
+        for (int i = 0; i < item->childCount(); ++i) {
+            QTreeWidgetItem *child = item->child(i);
+            QFileInfo fileInfo(getItemFullPath(child));
+
+            if (fileInfo.isDir())
+                child->setHidden(false);
+            else
+                child->setHidden(!child->text(0).endsWith(".obj")); // only show obj file
+        }
     }
 }
 
@@ -1083,4 +1102,19 @@ QString MainWindow::getItemFullPath(QTreeWidgetItem *item) {
     if (item) pathParts.prepend(item->text(0));
     QString rootPath = ws::PathManager::getInstance().getRootDir();
     return QDir(rootPath).filePath(pathParts.join("/"));
+}
+
+void MainWindow::onTreeItemDoubleClicked(QTreeWidgetItem *item, int column) {
+    if (!item) return;
+    
+    QString filePath = getItemFullPath(item);
+    QFileInfo fileInfo(filePath);
+    
+    if (fileInfo.isFile() && fileInfo.suffix().toLower() == "obj") {
+        mpOpenGLWidget->loadModel(filePath);
+    }
+}
+
+void MainWindow::loadModel(const QString& objFilePath){
+    mpOpenGLWidget->loadModel(objFilePath);
 }

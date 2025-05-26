@@ -27,6 +27,7 @@ Primitive::Primitive(GLenum primitiveType, GLfloat *vertices, GLuint vertexNum,
   this->vbo.create();
   this->modelMatrix.setToIdentity();
   shader = nullptr;
+  logMessage("Primitive created", Qgis::MessageLevel::Info);
   this->vao.bind();
   this->vbo.bind();
   this->vbo.setUsagePattern(QOpenGLBuffer::StaticDraw);
@@ -34,6 +35,7 @@ Primitive::Primitive(GLenum primitiveType, GLfloat *vertices, GLuint vertexNum,
                      this->vertexNum * this->stride * sizeof(GLfloat));
   this->vbo.release();
   this->vao.release();
+  logMessage("Primitive data initialized", Qgis::MessageLevel::Info);
 }
 Primitive::Primitive(GLenum primitiveType, GLuint stride)
     : shader(nullptr), stride(stride) {
@@ -87,30 +89,40 @@ void ColorPrimitive::draw() {
 BasePlane::BasePlane(GLfloat *vertices, GLuint vertexNum,
                      const QVector4D &color)
     : ColorPrimitive(GL_LINES, vertices, vertexNum, color) {
-  this->shader = constructShader(":/shaders/line.vs", ":/shaders/line.fs");
+  logMessage("start constructing shader", Qgis::MessageLevel::Info);
+  this->shader = constructShader(":/resources/shaders/line.vs", ":/resources/shaders/line.fs");
+  logMessage("BasePlane initialized", Qgis::MessageLevel::Info);
 }
 
 RoutePath::RoutePath(GLfloat *vertices, GLuint vertexNum,
                      const QVector4D &color)
     : ColorPrimitive(GL_LINE_STRIP, vertices, vertexNum, color) {
-  this->shader = constructShader(":/shaders/line.vs", ":/shaders/line.fs");
+  logMessage("start constructing shader", Qgis::MessageLevel::Info);
+  this->shader = constructShader(":/resources/shaders/line.vs", ":/resources/shaders/line.fs");
+  logMessage("RoutePath initialized", Qgis::MessageLevel::Info);
 }
 
 ControlPoints::ControlPoints(GLfloat *vertices, GLuint vertexNum,
                              const QVector4D &color)
     : ColorPrimitive(GL_POINTS, vertices, vertexNum, color) {
-  this->shader = constructShader(":/shaders/point.vs", ":/shaders/point.fs");
+  logMessage("start constructing shader", Qgis::MessageLevel::Info);
+  this->shader = constructShader(":/resources/shaders/point.vs", ":/resources/shaders/point.fs");
+  logMessage("ControlPoints initialized", Qgis::MessageLevel::Info);
 }
 
 ConvexHull::ConvexHull(GLfloat *vertices, GLuint vertexNum,
                        const QVector4D &color)
     : ColorPrimitive(GL_LINE_LOOP, vertices, vertexNum, color) {
-  this->shader = constructShader(":/shaders/line.vs", ":/shaders/line.fs");
+  logMessage("start constructing shader", Qgis::MessageLevel::Info);
+  this->shader = constructShader(":/resources/shaders/line.vs", ":/resources/shaders/line.fs");
+  logMessage("ConvexHull initialized", Qgis::MessageLevel::Info);
 }
 
 Model::Model(std::shared_ptr<ModelData> modelData)
     : Primitive(GL_TRIANGLES, 5), modelData(modelData) {
-  this->shader = constructShader(":/shaders/model.vs", ":/shaders/model.fs");
+  logMessage("start constructing shader", Qgis::MessageLevel::Info);
+  this->shader = constructShader(":/resources/shaders/model.vs", ":/resources/shaders/model.fs");
+  logMessage("Model initialized", Qgis::MessageLevel::Info);
   this->vao.bind();
   this->vbo.bind();
   this->vbo.setUsagePattern(QOpenGLBuffer::StaticDraw);
@@ -162,8 +174,16 @@ void Model::draw() {
 std::shared_ptr<QOpenGLShaderProgram> constructShader(
     const QString &vertexShaderPath, const QString &fragmentShaderPath,
     const QString &geometryShaderPath) {
+  // check if opengl context is current
+  logMessage("start constructing shader(inside)", Qgis::MessageLevel::Info);
+  if (!QOpenGLContext::currentContext()) {
+    logMessage("OpenGL context is not current", Qgis::MessageLevel::Critical);
+    return nullptr;
+  }
+  logMessage("OpenGL context is current", Qgis::MessageLevel::Info);
   std::shared_ptr<QOpenGLShaderProgram> shader =
       std::make_shared<QOpenGLShaderProgram>();
+  logMessage(QString("Constructing shader from %1 and %2").arg(vertexShaderPath).arg(fragmentShaderPath), Qgis::MessageLevel::Info);
   if (!shader->addShaderFromSourceFile(QOpenGLShader::Vertex,
                                        vertexShaderPath)) {
     logMessage(QString("Shader Error:") + shader->log(),
@@ -287,8 +307,11 @@ std::pair<pMaterialGroupMap, GLuint> ModelData::loadMaterialGroups(const QString
 std::shared_ptr<ModelData> ModelData::loadObjModel(
     const QString &objFilePath) {
   QString mtlPath = retriveMtlPath(objFilePath);
-  if (mtlPath.isEmpty())
+  if (mtlPath.isEmpty()){
+    logMessage("Mtl file not found", Qgis::MessageLevel::Critical);
     return nullptr;
+  }
+
   TexturePair mtlResource = loadMtl(mtlPath);
   auto materialGroupPair = loadMaterialGroups(objFilePath);
 
@@ -379,4 +402,11 @@ QVector3D ModelData::calculateModelCenter() {
   return QVector3D((minX + maxX) / 2.0f, (minY + maxY) / 2.0f,
                    (minZ + maxZ) / 2.0f);
 }
+
+Model::Model(const QString& objFilePath):Primitive(GL_TRIANGLES, 5){
+  loadModel(objFilePath);
+  logMessage("Model loaded", Qgis::MessageLevel::Success);
+}
+
+void Model::loadModel(const QString& objFilePath){this->modelData = ModelData::loadObjModel(objFilePath);}
 }

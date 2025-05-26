@@ -42,7 +42,6 @@ protected:
   void wheelEvent(QWheelEvent *event) override;
 
 private:
-  void setupOpenGLContext();
   void initCanvas();
   std::shared_ptr<gl::BasePlane> initBasePlane();
   
@@ -50,6 +49,7 @@ private:
   QPoint mLastMousePos;
 public slots:
   void handleMouseMove(QMouseEvent *event);
+  void loadModel(const QString& objFilePath);
 signals:
   void glInitialized();
 };

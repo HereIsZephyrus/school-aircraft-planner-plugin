@@ -42,11 +42,13 @@ ws::FlightManager::FlightManager() {
 }
 ws::FlightManager::~FlightManager() {}
 
+QObject* ws::WindowManager::pDefaultObject = nullptr;
 ws::WindowManager::WindowManager() {
     mCurrentCanvas = CanvasType::ThreeD;
-    pDefaultObject = new QObject();
     is3DMapInited = false;
     is2DMapInited = false;
+    if (!pDefaultObject)
+        pDefaultObject = new QObject();
     mBounds = Bounds();
 }
 ws::WindowManager::~WindowManager() {

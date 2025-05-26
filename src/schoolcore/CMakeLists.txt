@@ -11,7 +11,7 @@ set(UI_FILES
 )
 
 set(RESOURCES
-    ../../resources/resources.qrc
+    ${CMAKE_SOURCE_DIR}/resources/resources.qrc
 )
 
 add_library(schoolcore STATIC

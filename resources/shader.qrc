@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<RCC>
+    <qresource prefix="/">
+        <file>shaders/line.vs</file>
+        <file>shaders/line.fs</file>
+        <file>shaders/point.vs</file>
+        <file>shaders/point.fs</file>
+        <file>shaders/point.gs</file>
+        <file>shaders/model.vs</file>
+        <file>shaders/model.fs</file>
+    </qresource>
+</RCC> 
