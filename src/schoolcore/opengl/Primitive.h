@@ -49,6 +49,11 @@ public:
   BasePlane(GLfloat* vertices, GLuint vertexNum, const QVector4D& color=QVector4D(1.0f, 1.0f, 1.0f, 1.0f));
 };
 
+class RoutePath : public ColorPrimitive{
+public:
+  RoutePath(GLfloat* vertices, GLuint vertexNum, const QVector4D& color=QVector4D(1.0f, 1.0f, 1.0f, 1.0f));
+};
+
 class ControlPoints : public ColorPrimitive{
 public:
   ControlPoints(GLfloat* vertices, GLuint vertexNum=1, const QVector4D& color=QVector4D(1.0f, 1.0f, 1.0f, 1.0f));

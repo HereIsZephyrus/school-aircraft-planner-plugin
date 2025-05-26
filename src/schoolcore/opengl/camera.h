@@ -4,19 +4,21 @@
 #include <QVector3D>
 #include <QMatrix4x4>
 #include <QQuaternion>
-#include <qvector3d.h>
 
 class Camera {
 private:
-    Camera(QVector3D initalPosition = QVector3D(0.0f, 0.0f, 5.0f),
-           QVector3D initalTarget = QVector3D(0.0f, 0.0f, 0.0f),
-           QVector3D initalUp = QVector3D(0.0f, 1.0f, 0.0f),
-           float initalFov = 45.0f,
-           float initalAspectRatio = 1.0f,
-           float initalNearPlane = 0.1f,
-           float initalFarPlane = 1000.0f,
-           float initalYaw = -90.0f,
-           float initalPitch = 0.0f);
+    // initial camera parameters
+    static constexpr float DEFAULT_FOV = 45.0f;
+    static constexpr float DEFAULT_ASPECT_RATIO = 1.0f;
+    static constexpr float DEFAULT_NEAR_PLANE = 0.1f;
+    static constexpr float DEFAULT_FAR_PLANE = 1000.0f;
+    static constexpr float DEFAULT_YAW = -90.0f;
+    static constexpr float DEFAULT_PITCH = 0.0f;
+    static constexpr QVector3D DEFAULT_POSITION = QVector3D(0.0f, 0.0f, 5.0f);
+    static constexpr QVector3D DEFAULT_TARGET = QVector3D(0.0f, 0.0f, 0.0f);
+    static constexpr QVector3D DEFAULT_UP = QVector3D(0.0f, 1.0f, 0.0f);
+    
+    Camera();
 public:
     static Camera& getInstance() {
         static Camera instance;
@@ -50,7 +52,7 @@ public:
     void rotate(float yaw, float pitch);
     void handleMouseMove(const QPoint& delta);
     void handleMouseWheel(int delta);
-
+    void resetView();
 private:
     QVector3D mPosition, mTarget;      
     QVector3D mUp,mRight, mFront;       

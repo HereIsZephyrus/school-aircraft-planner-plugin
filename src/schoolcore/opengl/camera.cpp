@@ -1,14 +1,8 @@
 #include "camera.h"
 #include <QtMath>
 
-Camera::Camera(QVector3D initalPosition, QVector3D initalTarget,
-               QVector3D initalUp, float initalFov, float initalAspectRatio,
-               float initalNearPlane, float initalFarPlane,
-               float initalYaw, float initalPitch)
-    : mPosition(initalPosition), mTarget(initalTarget), mUp(initalUp),
-      mFov(initalFov), mAspectRatio(initalAspectRatio),
-      mNearPlane(initalNearPlane), mFarPlane(initalFarPlane),
-      mYaw(initalYaw), mPitch(initalPitch) {
+Camera::Camera(){
+  resetView();
   updateCameraVectors();
 }
 
@@ -78,4 +72,16 @@ void Camera::updateCameraVectors() {
   mFront = front.normalized();
   mRight = QVector3D::crossProduct(mFront, mUp).normalized();
   mUp = QVector3D::crossProduct(mRight, mFront).normalized();
+}
+
+void Camera::resetView() {
+  mPosition = DEFAULT_POSITION;
+  mTarget = DEFAULT_TARGET;
+  mUp = DEFAULT_UP;
+  mFov = DEFAULT_FOV;
+  mAspectRatio = DEFAULT_ASPECT_RATIO;
+  mNearPlane = DEFAULT_NEAR_PLANE;
+  mFarPlane = DEFAULT_FAR_PLANE;
+  mYaw = DEFAULT_YAW;
+  mPitch = DEFAULT_PITCH;
 }

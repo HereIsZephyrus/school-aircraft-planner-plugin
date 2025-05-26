@@ -91,6 +91,12 @@ BasePlane::BasePlane(GLfloat *vertices, GLuint vertexNum,
   this->shader = constructShader(":/shaders/line.vs", ":/shaders/line.fs");
 }
 
+RoutePath::RoutePath(GLfloat *vertices, GLuint vertexNum,
+                     const QVector4D &color)
+    : ColorPrimitive(GL_LINE_STRIP, vertices, vertexNum, color) {
+  this->shader = constructShader(":/shaders/line.vs", ":/shaders/line.fs");
+}
+
 ControlPoints::ControlPoints(GLfloat *vertices, GLuint vertexNum,
                              const QVector4D &color)
     : ColorPrimitive(GL_POINTS, vertices, vertexNum, color) {

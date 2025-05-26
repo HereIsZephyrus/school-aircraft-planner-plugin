@@ -128,6 +128,9 @@ public:
     double getFlightBattery() const {return mFlightBattery;}
     void setBaseHeight(double height) {mBaseHeight = height;}
     double getBaseHeight() const {return mBaseHeight;}
+    void setCurrentHeight(double height) {mCurrentHeight = height - mBaseHeight;}
+    double getCurrentHeight() const {return mCurrentHeight;}
+    //void generateFlightRoute(float height);
     static constexpr int minFlightSpeed = 1;
     static constexpr int maxFlightSpeed = 50;
     static constexpr int minFlightAltitude = 50;
@@ -137,13 +140,14 @@ public:
     static constexpr int minBaseHeight = 0;
     static constexpr int maxBaseHeight = 100;
 private:
-    double mFlightSpeed,mFlightAltitude,mFlightBattery,mBaseHeight;
+    double mFlightSpeed,mFlightAltitude,mFlightBattery;
+    double mBaseHeight, mCurrentHeight;
     QVector3D mAircraftPosition;
     QQuaternion mAircraftOrientation;
     QVector<QVector3D> mFlightPath;
     QVector3D mHomePosition;
 };
-
+/*
 class AnimationManager{
 private:
     AnimationManager();
@@ -159,9 +163,19 @@ public:
     double getAnimationSpeed() const {return mAnimationSpeed;}
     void setAnimationDirection(AnimationDirection direction) {mAnimationDirection = direction;}
     AnimationDirection getAnimationDirection() const {return mAnimationDirection;}
+    
+    void startSimulation(float speed);      // 开始模拟
+    void pauseSimulation();                 // 暂停模拟
+    void resumeSimulation();                // 继续模拟
+    void returnToHome();                    // 自动返回
+    void stopSimulation();
 private:
     double mAnimationSpeed;
-    AnimationDirection mAnimationDirection;
+    QTimer mAnimationDirection;
+    m_animationTimer = new QTimer(this);
+  connect(m_animationTimer, &QTimer::timeout, this,
+          &MyOpenGLWidget::updateAnimation);
+  logMessage("m_animationTimer connected", Qgis::MessageLevel::Info);
     QTimer *m_animationTimer;
     float m_animationProgress; // 0~1之间的进度值
     bool m_isAnimating;
@@ -172,4 +186,5 @@ private:
     void keyPressEvent(QKeyEvent *event);
     QVector3D m_viewTranslation; // 图平移
 };
+*/
 }

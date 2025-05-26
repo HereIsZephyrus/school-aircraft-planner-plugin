@@ -23,6 +23,10 @@ add_library(schoolcore STATIC
 
 target_include_directories(schoolcore PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}
+    ${CMAKE_CURRENT_SOURCE_DIR}/core
+    ${CMAKE_CURRENT_SOURCE_DIR}/gui
+    ${CMAKE_CURRENT_SOURCE_DIR}/opengl
+    ${CMAKE_CURRENT_SOURCE_DIR}/log
     ${INCLUDES}
 )
 
