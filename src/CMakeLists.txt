@@ -8,15 +8,26 @@ file(MAKE_DIRECTORY ${CMAKE_SOURCE_DIR}/app/bin)
 file(MAKE_DIRECTORY ${CMAKE_SOURCE_DIR}/app/lib)
 file(MAKE_DIRECTORY ${CMAKE_SOURCE_DIR}/app/include)
 
-# Set RPATH settings
-set(CMAKE_SKIP_BUILD_RPATH FALSE)
-set(CMAKE_BUILD_WITH_INSTALL_RPATH FALSE)
-set(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
+# Set RPATH settings based on build type
+if(CMAKE_BUILD_TYPE STREQUAL "Release")
+    set(CMAKE_SKIP_BUILD_RPATH FALSE)
+    set(CMAKE_BUILD_WITH_INSTALL_RPATH FALSE)
+    set(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
 
-if(APPLE)
-    set(CMAKE_INSTALL_RPATH "@executable_path/../lib")
+    if(APPLE)
+        set(CMAKE_INSTALL_RPATH "@executable_path/../lib")
+    else()
+        set(CMAKE_INSTALL_RPATH "$ORIGIN/../lib")
+    endif()
 else()
-    set(CMAKE_INSTALL_RPATH "$ORIGIN/../lib")
+    # Debug build - use system libraries directly
+    set(CMAKE_SKIP_BUILD_RPATH FALSE)
+    set(CMAKE_BUILD_WITH_INSTALL_RPATH TRUE)
+    if(APPLE)
+        set(CMAKE_INSTALL_RPATH "@executable_path/../lib")
+    else()
+        set(CMAKE_INSTALL_RPATH "$ORIGIN/../lib")
+    endif()
 endif()
 
 set(AVATAR_RESOURCES
@@ -48,7 +59,7 @@ else()
         ${AVATAR_RESOURCES}
     )
 
-    if(NOT APPLE)
+    if(NOT APPLE AND CMAKE_BUILD_TYPE STREQUAL "Release")
         set_target_properties(3Dschool_app PROPERTIES
             INSTALL_RPATH "$ORIGIN/../lib"
             BUILD_WITH_INSTALL_RPATH TRUE
@@ -75,8 +86,10 @@ else()
         RUNTIME DESTINATION ${CMAKE_SOURCE_DIR}/app/bin
     )
 
-    # Create copy_deps script
-    file(WRITE ${CMAKE_BINARY_DIR}/copy_deps.sh
+    if(CMAKE_BUILD_TYPE STREQUAL "Release")
+        message(STATUS "Building Release build")
+        # Create copy_deps script for Release build only
+        file(WRITE ${CMAKE_BINARY_DIR}/copy_deps.sh
 "#!/bin/bash
 echo 'Copying system dependencies...'
 TARGET=\"$1\"
@@ -88,84 +101,84 @@ ldd \"$TARGET\" | grep '=>' | awk '{print $3}' | while read -r lib; do
 done
 ")
 
-    # Make copy_deps script executable
-    file(CHMOD ${CMAKE_BINARY_DIR}/copy_deps.sh
-        PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_READ GROUP_EXECUTE WORLD_READ WORLD_EXECUTE
-    )
-
-    # Add custom command to copy dependencies after build
-    add_custom_command(TARGET 3Dschool_app POST_BUILD
-        COMMAND ${CMAKE_COMMAND} -E echo "Copying system dependencies..."
-        COMMAND bash ${CMAKE_BINARY_DIR}/copy_deps.sh $<TARGET_FILE:3Dschool_app> ${CMAKE_SOURCE_DIR}/app/lib
-    )
-
-    # For Qt dependencies
-    if(Qt5_FOUND)
-        # Create plugins directory
-        file(MAKE_DIRECTORY ${CMAKE_SOURCE_DIR}/app/bin/platforms)
-        file(MAKE_DIRECTORY ${CMAKE_SOURCE_DIR}/app/bin/imageformats)
-        file(MAKE_DIRECTORY ${CMAKE_SOURCE_DIR}/app/bin/iconengines)
-
-        # Copy Qt libraries
-        foreach(QtModule Core Widgets Gui DBus XcbQpa)
-            if(TARGET Qt5::${QtModule})
-                get_target_property(QT_LIB_PATH Qt5::${QtModule} LOCATION)
-                if(QT_LIB_PATH)
-                    add_custom_command(TARGET 3Dschool_app POST_BUILD
-                        COMMAND ${CMAKE_COMMAND} -E copy_if_different
-                            ${QT_LIB_PATH}
-                            ${CMAKE_SOURCE_DIR}/app/lib/
-                    )
-                endif()
-            endif()
-        endforeach()
-
-        # Get Qt plugins directory
-        get_target_property(QT_QPA_PLUGIN_PATH Qt5::QXcbIntegrationPlugin LOCATION)
-        if(QT_QPA_PLUGIN_PATH)
-            get_filename_component(QT_PLUGIN_DIR ${QT_QPA_PLUGIN_PATH} DIRECTORY)
-            get_filename_component(QT_PLUGIN_DIR ${QT_PLUGIN_DIR}/.. ABSOLUTE)
-        else()
-            set(QT_PLUGIN_DIR "${_qt5Core_install_prefix}/plugins")
-        endif()
-
-        # Install Qt plugins
-        set(QT_PLUGIN_DIRS
-            ${QT_PLUGIN_DIR}/platforms
-            ${QT_PLUGIN_DIR}/imageformats
-            ${QT_PLUGIN_DIR}/iconengines
-            ${QT_PLUGIN_DIR}/xcbglintegrations
+        # Make copy_deps script executable
+        file(CHMOD ${CMAKE_BINARY_DIR}/copy_deps.sh
+            PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_READ GROUP_EXECUTE WORLD_READ WORLD_EXECUTE
         )
-        
-        foreach(PLUGIN_DIR ${QT_PLUGIN_DIRS})
-            if(EXISTS ${PLUGIN_DIR})
-                file(GLOB PLUGIN_FILES "${PLUGIN_DIR}/*")
-                foreach(PLUGIN ${PLUGIN_FILES})
-                    if(PLUGIN MATCHES ".*\\.so$")
-                        get_filename_component(PLUGIN_NAME ${PLUGIN} NAME)
-                        get_filename_component(PLUGIN_DIR_NAME ${PLUGIN_DIR} NAME)
+
+        # Add custom command to copy dependencies after build
+        add_custom_command(TARGET 3Dschool_app POST_BUILD
+            COMMAND ${CMAKE_COMMAND} -E echo "Copying system dependencies..."
+            COMMAND bash ${CMAKE_BINARY_DIR}/copy_deps.sh $<TARGET_FILE:3Dschool_app> ${CMAKE_SOURCE_DIR}/app/lib
+        )
+
+        # For Qt dependencies
+        if(Qt5_FOUND)
+            # Create plugins directory
+            file(MAKE_DIRECTORY ${CMAKE_SOURCE_DIR}/app/bin/platforms)
+            file(MAKE_DIRECTORY ${CMAKE_SOURCE_DIR}/app/bin/imageformats)
+            file(MAKE_DIRECTORY ${CMAKE_SOURCE_DIR}/app/bin/iconengines)
+
+            # Copy Qt libraries
+            foreach(QtModule Core Widgets Gui DBus XcbQpa)
+                if(TARGET Qt5::${QtModule})
+                    get_target_property(QT_LIB_PATH Qt5::${QtModule} LOCATION)
+                    if(QT_LIB_PATH)
                         add_custom_command(TARGET 3Dschool_app POST_BUILD
-                            COMMAND ${CMAKE_COMMAND} -E make_directory
-                                ${CMAKE_SOURCE_DIR}/app/bin/${PLUGIN_DIR_NAME}
                             COMMAND ${CMAKE_COMMAND} -E copy_if_different
-                                ${PLUGIN}
-                                ${CMAKE_SOURCE_DIR}/app/bin/${PLUGIN_DIR_NAME}/
+                                ${QT_LIB_PATH}
+                                ${CMAKE_SOURCE_DIR}/app/lib/
                         )
                     endif()
-                endforeach()
-            endif()
-        endforeach()
+                endif()
+            endforeach()
 
-        # Create qt.conf with correct plugin path
-        file(WRITE ${CMAKE_SOURCE_DIR}/app/bin/qt.conf
+            # Get Qt plugins directory
+            get_target_property(QT_QPA_PLUGIN_PATH Qt5::QXcbIntegrationPlugin LOCATION)
+            if(QT_QPA_PLUGIN_PATH)
+                get_filename_component(QT_PLUGIN_DIR ${QT_QPA_PLUGIN_PATH} DIRECTORY)
+                get_filename_component(QT_PLUGIN_DIR ${QT_PLUGIN_DIR}/.. ABSOLUTE)
+            else()
+                set(QT_PLUGIN_DIR "${_qt5Core_install_prefix}/plugins")
+            endif()
+
+            # Install Qt plugins
+            set(QT_PLUGIN_DIRS
+                ${QT_PLUGIN_DIR}/platforms
+                ${QT_PLUGIN_DIR}/imageformats
+                ${QT_PLUGIN_DIR}/iconengines
+                ${QT_PLUGIN_DIR}/xcbglintegrations
+            )
+            
+            foreach(PLUGIN_DIR ${QT_PLUGIN_DIRS})
+                if(EXISTS ${PLUGIN_DIR})
+                    file(GLOB PLUGIN_FILES "${PLUGIN_DIR}/*")
+                    foreach(PLUGIN ${PLUGIN_FILES})
+                        if(PLUGIN MATCHES ".*\\.so$")
+                            get_filename_component(PLUGIN_NAME ${PLUGIN} NAME)
+                            get_filename_component(PLUGIN_DIR_NAME ${PLUGIN_DIR} NAME)
+                            add_custom_command(TARGET 3Dschool_app POST_BUILD
+                                COMMAND ${CMAKE_COMMAND} -E make_directory
+                                    ${CMAKE_SOURCE_DIR}/app/bin/${PLUGIN_DIR_NAME}
+                                COMMAND ${CMAKE_COMMAND} -E copy_if_different
+                                    ${PLUGIN}
+                                    ${CMAKE_SOURCE_DIR}/app/bin/${PLUGIN_DIR_NAME}/
+                            )
+                        endif()
+                    endforeach()
+                endif()
+            endforeach()
+
+            # Create qt.conf with correct plugin path
+            file(WRITE ${CMAKE_SOURCE_DIR}/app/bin/qt.conf
 "[Paths]
 Plugins = .
 Libraries = ../lib
 ")
-    endif()
+        endif()
 
-    # Create run script with proper environment setup
-    file(WRITE ${CMAKE_SOURCE_DIR}/app/bin/run.sh
+        # Create run script with proper environment setup
+        file(WRITE ${CMAKE_SOURCE_DIR}/app/bin/run.sh
 "#!/bin/bash
 SCRIPT_DIR=\"\$(cd \"\$(dirname \"\${BASH_SOURCE[0]}\")\" && pwd)\"
 export LD_LIBRARY_PATH=\"\${SCRIPT_DIR}/../lib:\${LD_LIBRARY_PATH}\"
@@ -173,9 +186,22 @@ export QT_PLUGIN_PATH=\"\${SCRIPT_DIR}\"
 export QT_DEBUG_PLUGINS=1
 \${SCRIPT_DIR}/3Dschool_app \"$@\"
 ")
-    
-    # Make run script executable
-    file(CHMOD ${CMAKE_SOURCE_DIR}/app/bin/run.sh
-        PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_READ GROUP_EXECUTE WORLD_READ WORLD_EXECUTE
-    )
+        
+        # Make run script executable
+        file(CHMOD ${CMAKE_SOURCE_DIR}/app/bin/run.sh
+            PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_READ GROUP_EXECUTE WORLD_READ WORLD_EXECUTE
+        )
+    else()
+        # Create simple run script for Debug build
+        file(WRITE ${CMAKE_SOURCE_DIR}/app/bin/run.sh
+"#!/bin/bash
+SCRIPT_DIR=\"\$(cd \"\$(dirname \"\${BASH_SOURCE[0]}\")\" && pwd)\"
+\${SCRIPT_DIR}/3Dschool_app \"$@\"
+")
+        
+        # Make run script executable
+        file(CHMOD ${CMAKE_SOURCE_DIR}/app/bin/run.sh
+            PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_READ GROUP_EXECUTE WORLD_READ WORLD_EXECUTE
+        )
+    endif()
 endif()

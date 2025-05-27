@@ -1,5 +1,10 @@
 cmake_minimum_required(VERSION 3.16)
 
+# Set default build type if not specified
+if(NOT CMAKE_BUILD_TYPE)
+  set(CMAKE_BUILD_TYPE "Debug")
+endif()
+
 project(
   3Dschool
   VERSION 0.1
@@ -15,7 +20,10 @@ if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
   set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 endif()
 
-set(CMAKE_CXX_STANDARD 20)
+# Print build type
+message(STATUS "Build type: ${CMAKE_BUILD_TYPE}")
+
+set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 # Enable Qt-specific extensions

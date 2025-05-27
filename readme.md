@@ -21,17 +21,26 @@ cd 3Dschool_app
 ``` bash
 mkdir build
 cd build
-cmake ..
-cmake --build . --parallel --config release
+cmake -DCMAKE_BUILD_TYPE=Debug ..
+cmake --build . --parallel
 ```
 
 the executable will be output to `build/app/bin/3Dschool_app`
+
+** If you want to build a release version, you can use the following command: **
+
+``` bash
+cmake -DCMAKE_BUILD_TYPE=Release ..
+cmake --build . --parallel
+```
+
+This will build a release version of the application for distribution.
 
 ### Install as a QGIS plugin
 ``` bash
 mkdir build
 cd build
-cmake .. -DBUILD_AS_PLUGIN=ON
+cmake -DBUILD_AS_PLUGIN=ON ..
 cmake --build . --parallel --config release
 ```
 the plugin will be output to `build/src/3Dschool_app.so(3Dschool_app.dll for Windows)
