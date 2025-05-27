@@ -6,7 +6,8 @@ project(
   DESCRIPTION "3D school airspace simulation"
   LANGUAGES CXX)
 
-set(CMAKE_PREFIX_PATH ${CMAKE_SOURCE_DIR}/dependencies)
+# Add build option
+option(BUILD_AS_PLUGIN "Build as QGIS plugin" OFF)
 
 if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
   set(CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/cmake ${CMAKE_MODULE_PATH})
@@ -22,7 +23,7 @@ set(CMAKE_AUTOMOC ON)
 set(CMAKE_AUTORCC ON)
 set(CMAKE_AUTOUIC ON)
 
-find_package(QGISDEP REQUIRED)
+find_package(QGIS REQUIRED)
 find_package(Qt5 COMPONENTS Core Widgets Xml Gui WebEngineWidgets REQUIRED)
 
 set(LIBS

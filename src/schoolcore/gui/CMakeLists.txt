@@ -21,3 +21,19 @@ find_package(Qt5 COMPONENTS Core Widgets Gui OpenGL REQUIRED)
 target_link_libraries(gui
     ${LIBS}
 )
+
+if(NOT BUILD_AS_PLUGIN)
+    # Install headers to include directory
+    foreach(HEADER ${GUI_HEADERS})
+        get_filename_component(HEADER_NAME ${HEADER} NAME)
+        configure_file(${HEADER} ${CMAKE_SOURCE_DIR}/app/include/gui/${HEADER_NAME} COPYONLY)
+    endforeach()
+    
+    message(STATUS "Installing gui headers to ${CMAKE_SOURCE_DIR}/app/include/gui")
+
+    # Install library
+    install(TARGETS gui
+        LIBRARY DESTINATION ${CMAKE_SOURCE_DIR}/app/lib
+        ARCHIVE DESTINATION ${CMAKE_SOURCE_DIR}/app/lib
+    )
+endif()

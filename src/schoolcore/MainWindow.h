@@ -57,7 +57,6 @@ private slots:
   void Unrealized();
   void switchTo3D();
   void switchTo2D();
-  void open3D();
   void showUserManual();
 
 private:
