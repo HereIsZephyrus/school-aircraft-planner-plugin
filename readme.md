@@ -1,15 +1,26 @@
 # 2025 Spring 3S综合实习QGIS插件
 
-## Dependencies
+## Install
+
+### Dependencies
+
+At first, you need to install the dependencies.
 
 - QGIS3
 - Qt 5.15.x
 
-## Install
+Then clone the repository into your local machine.
+
+``` bash
+git clone https://github.com/OSWGeo4W/3Dschool_app.git
+cd 3Dschool_app
+```
 
 ### Install as a standalone application
 
 ``` bash
+mkdir build
+cd build
 cmake ..
 cmake --build . --parallel --config release
 ```
