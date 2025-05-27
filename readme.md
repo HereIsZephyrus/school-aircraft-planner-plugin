@@ -1,5 +1,7 @@
 # 2025 Spring 3S综合实习 校园三维无人机模拟平台
 
+Author: 万科君 童川博 张佳俊 邱馨 王芊卓
+
 ## Install
 
 ### Dependencies
