@@ -6,6 +6,8 @@ project(
   DESCRIPTION "3D school airspace simulation"
   LANGUAGES CXX)
 
+# Add build option
+option(BUILD_AS_PLUGIN "Build as QGIS plugin" OFF)
 
 if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
   set(CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/cmake ${CMAKE_MODULE_PATH})

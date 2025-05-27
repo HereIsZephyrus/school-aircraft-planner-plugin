@@ -19,8 +19,7 @@
 # # QGIS_MAC_PATH         = /path/to/any/QGIS.app/Contents
 # # QGIS_BUILD_PATH       = [A-Z:]/path/to/QGIS/build/directory
 # #
-# # Tim Sutton
-# # Larry Shaffer (2017-01-31)
+# # Tim Sutton + ChanningTong
 
 IF(WIN32)
     # OSGEO4W_QGIS_SUBDIR relative install: qgis[-rel|-ltr][-dev], etc.
@@ -230,6 +229,6 @@ ENDIF(NOT QGIS_FIND_QUIETLY)
 
 IF(NOT QGIS_FOUND)
     IF(QGIS_FIND_REQUIRED)
-        MESSAGE(FATAL_ERROR "Could not find QGIS. Please set 'OSGEO4W_ROOT' envvar (currently set to: $ENV{OSGEO4W_ROOT}).")
+        MESSAGE(FATAL_ERROR "Could not find QGIS. Please check if QGIS is installed in ${LOCAL_QGIS_PATH} or set 'OSGEO4W_ROOT' envvar.")
     ENDIF(QGIS_FIND_REQUIRED)
 ENDIF(NOT QGIS_FOUND)
