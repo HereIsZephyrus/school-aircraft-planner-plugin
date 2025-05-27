@@ -20,7 +20,6 @@ target_include_directories(opengl PUBLIC
 
 target_link_libraries(opengl
     ${LIBS}
-    Qt5::OpenGL
 )
 
 if(NOT BUILD_AS_PLUGIN)

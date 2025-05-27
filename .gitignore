@@ -1,6 +1,7 @@
 # Prerequisites
 /20250106
 /build
+/app
 /.cache
 *.d
 
