@@ -48,8 +48,8 @@ public:
 };
 
 class BasePlane : public ColorPrimitive{
-    static constexpr GLfloat DEFAULT_SIZE = 1000.0f;
-    static constexpr GLfloat DEFAULT_STEP = 50.0f;
+    static constexpr GLfloat DEFAULT_SIZE = 100.0f;
+    static constexpr GLfloat DEFAULT_STEP = 2.0f;
     static constexpr QVector4D DEFAULT_COLOR = QVector4D(0.6f, 0.6f, 0.6f, 0.5f);
 public:
   BasePlane(const QVector4D& color=DEFAULT_COLOR);

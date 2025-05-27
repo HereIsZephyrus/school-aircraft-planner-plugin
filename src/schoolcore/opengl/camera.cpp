@@ -7,7 +7,7 @@ Camera::Camera(){
   updateCameraVectors();
 }
 Camera::~Camera(){
-  logMessage("Camera destroyed", Qgis::MessageLevel::Info);
+  logMessage("Camera destroyed", Qgis::MessageLevel::Success);
 }
 void Camera::setPosition(const QVector3D &position) {
   mPosition = position;

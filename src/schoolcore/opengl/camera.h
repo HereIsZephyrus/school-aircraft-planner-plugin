@@ -14,7 +14,7 @@ private:
     static constexpr float DEFAULT_FAR_PLANE = 1000.0f;
     static constexpr float DEFAULT_YAW = -90.0f;
     static constexpr float DEFAULT_PITCH = 0.0f;
-    static constexpr QVector3D DEFAULT_POSITION = QVector3D(0.0f, 0.0f, 5.0f);
+    static constexpr QVector3D DEFAULT_POSITION = QVector3D(0.0f, 0.0f, 50.0f);
     static constexpr QVector3D DEFAULT_TARGET = QVector3D(0.0f, 0.0f, 0.0f);
     static constexpr QVector3D DEFAULT_UP = QVector3D(0.0f, 1.0f, 0.0f);
     static constexpr float ZOOM_FACTOR = 0.1f;

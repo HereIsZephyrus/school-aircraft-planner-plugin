@@ -94,6 +94,7 @@ BasePlane::BasePlane(const QVector4D &color)
     : ColorPrimitive(GL_LINES, color) {
   logMessage("start constructing shader", Qgis::MessageLevel::Info);
   constructShader(QStringLiteral(":/schoolcore/shaders/line.vs"), QStringLiteral(":/schoolcore/shaders/line.fs"));
+  this->shader->bind();
   this->shader->enableAttributeArray(0);
   this->shader->setAttributeBuffer(0, GL_FLOAT, 0, 3, this->stride * sizeof(GLfloat));
   const GLfloat size = DEFAULT_SIZE;
@@ -101,6 +102,7 @@ BasePlane::BasePlane(const QVector4D &color)
   this->vertexNum = (2 * size / step + 1) * 2 * 2; // (x + y) * ((size - (-size)) / step + 1) * 2 points(stand for one line)
   this->vertices = new GLfloat[this->vertexNum * 3];
   double baseHeight = ws::FlightManager::getInstance().getBaseHeight();
+  logMessage(QString("Base height: %1").arg(baseHeight), Qgis::MessageLevel::Info);
   GLuint index = 0;
   for (GLfloat x = -size; x <= size; x += step) {
     this->vertices[index++] = x;

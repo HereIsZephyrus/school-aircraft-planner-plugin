@@ -40,6 +40,7 @@ protected:
   void mouseMoveEvent(QMouseEvent *event) override;
   void keyPressEvent(QKeyEvent *event) override;
   void wheelEvent(QWheelEvent *event) override;
+  std::unique_ptr<QTimer> updateTimer;
 
 private:
   void initCanvas();

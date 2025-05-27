@@ -35,6 +35,9 @@ private:
   QVector<QVector3D> generateSpiral();
   QVector<QVector3D> optimizePath(const QVector<QVector3D> &path);
 
+signals:
+  void dataUpdated();
+
 public:
   explicit RoutePlanner(QObject *parent = nullptr);
 
@@ -43,7 +46,6 @@ public:
   // generate flight path
   void generateFlightPath();
   QVector<QVector3D> generateScanLines(float spacing);
-  void dataUpdated(){};
   // control points
   const QVector<QVector3D> &controlPoints() const { return m_controlPoints; }
   // convex hull

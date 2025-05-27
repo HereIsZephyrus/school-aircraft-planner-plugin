@@ -2,6 +2,6 @@
 <RCC>
     <qresource prefix="/schoolcore">
         <file>map/capture.png</file>
-        <file>style/joyDockStyle.qss</file>
+        <file>style/my.qss</file>
     </qresource>
 </RCC> 

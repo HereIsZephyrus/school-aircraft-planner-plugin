@@ -6,7 +6,7 @@
 #include <QApplication>
 
 void StyleManager::initializeStyle() {
-    qApp->setStyleSheet(loadQSS(":/style/my.qss"));
+    qApp->setStyleSheet(loadQSS(":/schoolcore/style/my.qss"));
 }
 
 QString StyleManager::loadQSS(const QString& path) {

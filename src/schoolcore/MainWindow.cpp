@@ -224,9 +224,9 @@ void MainWindow::createLeftDockWidget() {
     logMessage("create view switch group", Qgis::MessageLevel::Success);
 
     // ===== route planning group =====
-    QGroupBox *pRouteGroup = new QGroupBox("Route Planning", pDockContent);
+    QGroupBox *pRouteGroup = new QGroupBox("Route Planning");
     pRouteGroup->setObjectName("pRouteGroup");
-    QFormLayout *pRouteLayout = new QFormLayout(pRouteGroup);
+    QFormLayout *pRouteLayout = new QFormLayout();
     pRouteLayout->setObjectName("pRouteLayout");
     logMessage("create route planning group", Qgis::MessageLevel::Success);
 
@@ -269,22 +269,23 @@ void MainWindow::createLeftDockWidget() {
     QPushButton *pBtnGenerate = new QPushButton("Generate Route", pRouteGroup); // generate route
     pBtnGenerate->setObjectName("pBtnGenerate");
 
-    QVBoxLayout *pBtnColumn =
-        new QVBoxLayout(pRouteGroup); // use QVBoxLayout instead of QHBoxLayout
+    QWidget *buttonContainer = new QWidget(pRouteGroup);
+    QVBoxLayout *pBtnColumn = new QVBoxLayout(buttonContainer);
     pBtnColumn->setObjectName("pBtnColumn");
     pBtnColumn->setContentsMargins(0, 0, 0, 0);
     pBtnColumn->addWidget(pBtnCreateRoute);
     pBtnColumn->addWidget(pBtnSetHome);
-    pBtnColumn->addWidget(pBtnAddControlPoint); // add "add control point" button
+    pBtnColumn->addWidget(pBtnAddControlPoint);
     pBtnColumn->addWidget(pBtnEditPoint);
     pBtnColumn->addWidget(pBtnGenerate);
-    pRouteLayout->addRow(pBtnColumn);
+    pRouteLayout->addRow(buttonContainer);
+    pRouteGroup->setLayout(pRouteLayout);
     pMainLayout->addWidget(pRouteGroup);
 
     logMessage("create route planning group", Qgis::MessageLevel::Success);
 
     // ===== flight simulation group =====
-    QGroupBox *pSimGroup = new QGroupBox("Flight Simulation", pDockContent);
+    QGroupBox *pSimGroup = new QGroupBox("Flight Simulation");
     pSimGroup->setObjectName("pSimGroup");
     QFormLayout *pSimLayout = new QFormLayout(pSimGroup);
     pSimLayout->setObjectName("pSimLayout");
@@ -308,15 +309,15 @@ void MainWindow::createLeftDockWidget() {
     pBtnReturn->setObjectName("pBtnReturn");
     QPushButton *pBtnStop = new QPushButton("Stop Simulation", pSimGroup);
     pBtnStop->setObjectName("pBtnStop");
-    QHBoxLayout *pControlRow1 = new QHBoxLayout(pSimGroup);
+    QHBoxLayout *pControlRow1 = new QHBoxLayout();
     pControlRow1->setObjectName("pControlRow1");
     pControlRow1->addWidget(pBtnStart);
     pControlRow1->addWidget(pBtnPause);
-    QHBoxLayout *pControlRow2 = new QHBoxLayout(pSimGroup);
+    QHBoxLayout *pControlRow2 = new QHBoxLayout();
     pControlRow2->setObjectName("pControlRow2");
     pControlRow2->addWidget(pBtnResume);
     pControlRow2->addWidget(pBtnReturn);
-    QHBoxLayout *pControlRow3 = new QHBoxLayout(pSimGroup);
+    QHBoxLayout *pControlRow3 = new QHBoxLayout();
     pControlRow3->setObjectName("pControlRow3");
     pControlRow3->addWidget(pBtnStop);
     logMessage("create flight simulation group", Qgis::MessageLevel::Success);
@@ -368,60 +369,65 @@ void MainWindow::createLeftDockWidget() {
 }
 void MainWindow::createRightDockWidget() {
     // initialize right dock widget
-    QDockWidget *pRightDockWidget = new QDockWidget(tr("Property Panel"), this);
+    QDockWidget *pRightDockWidget = new QDockWidget(tr("Property Panel"));
     pRightDockWidget->setObjectName("pRightDockWidget");
     pRightDockWidget->setAllowedAreas(Qt::RightDockWidgetArea);
     pRightDockWidget->setFeatures(QDockWidget::DockWidgetMovable |
                                 QDockWidget::DockWidgetFloatable);
     addDockWidget(Qt::RightDockWidgetArea, pRightDockWidget);
     logMessage("create right dock widget", Qgis::MessageLevel::Success);
+
+    // Create a main container widget for the right dock
+    QWidget *mainContainer = new QWidget(pRightDockWidget);
+    QVBoxLayout *mainLayout = new QVBoxLayout(mainContainer);
+
     // create file tree
-    mpFileTreeWidget = new QTreeWidget(pRightDockWidget);
+    mpFileTreeWidget = new QTreeWidget();
     mpFileTreeWidget->setObjectName("mpFileTreeWidget");
     mpFileTreeWidget->setHeaderLabel(tr("File List"));
     logMessage("create file tree", Qgis::MessageLevel::Success);
+    
     // set right-click menu
     mpFileTreeWidget->setContextMenuPolicy(Qt::CustomContextMenu);
     connect(mpFileTreeWidget, &QTreeWidget::customContextMenuRequested, this,
             &MainWindow::Unrealized);
     logMessage("connect file tree to unrealized", Qgis::MessageLevel::Info);
+    
     // add double click event processing
     connect(mpFileTreeWidget, &QTreeWidget::itemDoubleClicked, this,
             &MainWindow::onTreeItemDoubleClicked);
 
     // create select directory button
-    QToolButton *selectDirectoryButton = new QToolButton(pRightDockWidget);
+    QToolButton *selectDirectoryButton = new QToolButton();
     selectDirectoryButton->setObjectName("selectDirectoryButton");
     selectDirectoryButton->setText(tr("Select Directory"));
     connect(selectDirectoryButton, &QToolButton::clicked, this,
             &MainWindow::onSelectDirectoryClicked);
     logMessage("connect select directory button to onSelectDirectoryClicked", Qgis::MessageLevel::Info);
 
-    // add button and file tree widget to vertical layout
-    QVBoxLayout *layout = new QVBoxLayout(pRightDockWidget);
-    layout->setObjectName("layout");
-    layout->addWidget(selectDirectoryButton);
-    layout->addWidget(mpFileTreeWidget);
+    // Add widgets to main layout
+    mainLayout->addWidget(selectDirectoryButton);
+    mainLayout->addWidget(mpFileTreeWidget);
 
-    QWidget *container = new QWidget(pRightDockWidget);
-    container->setLayout(layout);
-    container->setObjectName("container");
-    pRightDockWidget->setWidget(container);
+    // Set the main container as the dock widget's widget
+    pRightDockWidget->setWidget(mainContainer);
+
     // load file list of specified directory to tree widget
     QString dirPath = ws::PathManager::getInstance().getRootDir();
     loadDirectoryFiles(dirPath);
     logMessage("load file list of specified directory to tree widget", Qgis::MessageLevel::Success);
 
-    ///create right bottom tool box sidebar------------------------------------------------------------------------------------
-    QDockWidget *mpRightDock = new QDockWidget(tr("tool box"), pRightDockWidget);
+    // Create right bottom tool box sidebar
+    QDockWidget *mpRightDock = new QDockWidget(tr("tool box"), this);
     mpRightDock->setObjectName("mpRightDock");
     mpRightDock->setAllowedAreas(Qt::RightDockWidgetArea);
     addDockWidget(Qt::RightDockWidgetArea, mpRightDock);
-    QVBoxLayout *mpToolLayout = new QVBoxLayout(pRightDockWidget);
-    mpToolLayout->setObjectName("mpToolLayout");
-    QWidget *toolWidget = new QWidget(pRightDockWidget);
-    toolWidget->setObjectName("toolWidget");
-    QTreeWidget *mpToolTree = new QTreeWidget(toolWidget);
+
+    // Create tool box container
+    QWidget *toolWidget = new QWidget(mpRightDock);
+    QVBoxLayout *toolLayout = new QVBoxLayout(toolWidget);
+    
+    QTreeWidget *mpToolTree = new QTreeWidget();
     mpToolTree->setHeaderHidden(true); // hide header
     logMessage("create tool tree", Qgis::MessageLevel::Success);
 
@@ -482,8 +488,7 @@ void MainWindow::createRightDockWidget() {
     QTreeWidgetItem *pRefreshDataItem = new QTreeWidgetItem(pEnvDataItem);
     pRefreshDataItem->setText(0, tr("Refresh Data"));
 
-    mpToolLayout->addWidget(mpToolTree);
-    toolWidget->setLayout(mpToolLayout);
+    toolLayout->addWidget(mpToolTree);
     mpRightDock->setWidget(toolWidget);
     logMessage("create tool box", Qgis::MessageLevel::Success);
 
@@ -503,6 +508,7 @@ void MainWindow::createRightDockWidget() {
     QPushButton *pBtnSetHome = this->safeFindChild<QPushButton*>("pBtnSetHome");
     QPushButton *pBtnStart = this->safeFindChild<QPushButton*>("pBtnStart");
     QPushButton *pBtnStop = this->safeFindChild<QPushButton*>("pBtnStop");
+
     connect(mpToolTree, &QTreeWidget::itemClicked, this,
         [=](QTreeWidgetItem *item, int) {
             if (item == pPaintItem) {   Unrealized();}
@@ -611,14 +617,14 @@ void MainWindow::createSlots() {
     //mpOpenGLWidget->generateFlightRoute(pHeightSpin->value());
     });
     logMessage("connect generate flight route button to generate flight route", Qgis::MessageLevel::Info);
-
+/*
     connect(pHeightSpin, SIGNAL(valueChanged(double)), mpOpenGLWidget.get(),
             SLOT(updateFlightHeight(double))); //传递行高到MyOpenGLWidget类中
     logMessage("connect height spin box to update flight height", Qgis::MessageLevel::Info);
     connect(pWidthSpin, SIGNAL(valueChanged(double)), mpRoutePlanner.get(),
             SLOT(setScanSpacing(double))); //传递航带宽度到RoutePlanner类中
     logMessage("connect width spin box to set scan spacing", Qgis::MessageLevel::Info);
-
+*/
     /*
     // flight simulation related connections
     connect(pBtnStart, &QPushButton::clicked,

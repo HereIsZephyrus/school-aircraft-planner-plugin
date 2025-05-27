@@ -38,7 +38,7 @@ ws::FlightManager::FlightManager() {
     mFlightSpeed = 10.0;
     mFlightAltitude = 100.0;
     mFlightBattery = 100.0;
-    mBaseHeight = 25.0;
+    mBaseHeight = 0.0;
 }
 ws::FlightManager::~FlightManager() {}
 

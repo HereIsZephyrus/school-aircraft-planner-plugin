@@ -14,12 +14,12 @@
 #include <qgsapplication.h>
 #include <qtimer.h>
 #include <qvector4d.h>
-
+#include <QOpenGLFunctions_4_1_Core>
 
 MyOpenGLWidget::MyOpenGLWidget(QWidget *parent)
     : QOpenGLWidget(parent) {
   QSurfaceFormat format;
-  format.setVersion(3, 3);
+  format.setVersion(4, 1);
   format.setProfile(QSurfaceFormat::CoreProfile);
   format.setDepthBufferSize(24);
   format.setStencilBufferSize(8);
@@ -29,6 +29,12 @@ MyOpenGLWidget::MyOpenGLWidget(QWidget *parent)
   setFocusPolicy(Qt::StrongFocus);
   setFocus();
   
+  // set timer
+  updateTimer = std::make_unique<QTimer>();
+  updateTimer->setInterval(16);
+  connect(updateTimer.get(), &QTimer::timeout, this, QOverload<>::of(&QOpenGLWidget::update));
+  updateTimer->start();
+
   modelWidget = nullptr;
   basePlaneWidget = nullptr;
   ControlPointsWidget = nullptr;
@@ -41,6 +47,7 @@ MyOpenGLWidget::~MyOpenGLWidget() {
   basePlaneWidget = nullptr;
   ControlPointsWidget = nullptr;
   doneCurrent();
+  updateTimer->stop();
   logMessage("MyOpenGLWidget destroyed", Qgis::MessageLevel::Success);
 }
 
@@ -50,8 +57,6 @@ void MyOpenGLWidget::initCanvas() {
 }
 
 void MyOpenGLWidget::initializeGL() {
-  QgsApplication::setAttribute(Qt::AA_UseDesktopOpenGL);
-  QgsApplication::setAttribute(Qt::AA_ShareOpenGLContexts);
   
   initializeOpenGLFunctions();
   logMessage("initialize opengl functions", Qgis::MessageLevel::Info);
@@ -101,13 +106,12 @@ void MyOpenGLWidget::paintGL() {
   glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
   glEnable(GL_DEPTH_TEST);
-  
+
   if (basePlaneWidget)
     basePlaneWidget->draw();
   if (modelWidget)
     modelWidget->draw();
   doneCurrent();
-  update();
 }
 
 void MyOpenGLWidget::mousePressEvent(QMouseEvent *event) {
