@@ -78,13 +78,13 @@ void Camera::updateCameraVectors() {
 }
 
 void Camera::resetView() {
-  mPosition = DEFAULT_POSITION;
-  mTarget = DEFAULT_TARGET;
-  mUp = DEFAULT_UP;
-  mFov = DEFAULT_FOV;
-  mAspectRatio = DEFAULT_ASPECT_RATIO;
-  mNearPlane = DEFAULT_NEAR_PLANE;
-  mFarPlane = DEFAULT_FAR_PLANE;
-  mYaw = DEFAULT_YAW;
-  mPitch = DEFAULT_PITCH;
+  mFov = 45.0f;
+  mAspectRatio = 16.0f / 9.0f;
+  mNearPlane = 0.1f;
+  mFarPlane = 1000.0f;
+  mYaw = -90.0f;
+  mPitch = 0.0f;
+  mPosition = QVector3D(0.0f, 0.0f, 50.0f);
+  mTarget = QVector3D(0.0f, 0.0f, 0.0f);
+  mUp = QVector3D(0.0f, 1.0f, 0.0f);
 }

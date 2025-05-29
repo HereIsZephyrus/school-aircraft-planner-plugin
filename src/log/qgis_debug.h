@@ -1,7 +1,8 @@
 #pragma once
 #include <QString>
 #include <qdebug.h>
-#include <qfiledialog.h>
+//#include <qfiledialog.h>
+#include <qgis.h>
 #include <qgsmessagelog.h>
 #include <QDir>
 #include <QDateTime>

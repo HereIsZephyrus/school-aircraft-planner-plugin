@@ -1,5 +1,6 @@
 #include "qgis_debug.h"
 
+
 void logMessage(const QString &message, Qgis::MessageLevel level) {
     QgsMessageLog::logMessage(message, "SchoolPlugin3D", level);
     

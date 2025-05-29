@@ -40,7 +40,9 @@ ws::FlightManager::FlightManager() {
     mFlightBattery = 100.0;
     mBaseHeight = 0.0;
 }
-ws::FlightManager::~FlightManager() {}
+ws::FlightManager::~FlightManager() {
+  mFlightPath.clear();
+}
 
 QObject* ws::WindowManager::pDefaultObject = nullptr;
 ws::WindowManager::WindowManager() {

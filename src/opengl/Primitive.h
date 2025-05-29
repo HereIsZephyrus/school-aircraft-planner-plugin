@@ -1,5 +1,5 @@
 #pragma once
-#include <GL/gl.h>
+//#include <GL/gl.h>
 #include <QOpenGLBuffer>
 #include <QOpenGLFunctions>
 #include <QOpenGLShaderProgram>
@@ -15,8 +15,8 @@
 #include "../core/WorkspaceState.h"
 namespace gl{
 
-class Primitive{
-    
+class Primitive : protected QOpenGLFunctions{
+
 protected:
     QOpenGLVertexArrayObject vao;
     QOpenGLBuffer vbo;

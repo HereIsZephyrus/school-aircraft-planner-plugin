@@ -18,6 +18,14 @@ git clone https://github.com/OSWGeo4W/3Dschool_app.git
 cd 3Dschool_app
 ```
 
+```bash
+$exe = 'osgeo4w-setup.exe'
+        $url = 'http://download.osgeo.org/osgeo4w/v2/' + $exe
+        (New-Object System.Net.WebClient).DownloadFile($url, $exe)
+        Start-Process ('.\'+$exe) -ArgumentList '--advanced --autoaccept --quiet-mode --only-site -s http://download.osgeo.org/osgeo4w/v2/ -P qt5-devel,qt5-libs,qt5-tools,qt5-libs-symbols' -Wait -NoNewWindow
+
+```
+
 ### Install as a standalone application
 
 ``` bash

@@ -1,6 +1,9 @@
 ﻿#include "MyOpenGLWidget.h"
-#include "../opengl/camera.h"
 #include "../log/qgis_debug.h"
+#include "../core/RoutePlanner.h"
+#include <QApplication>
+#include <QOpenGLWidget>
+#include <QOpenGLFunctions>
 #include <QDebug>
 #include <QFile>
 #include <QFileInfo>

@@ -1,6 +1,5 @@
 cmake_minimum_required(VERSION 3.16)
 
-# Set default build type if not specified
 if(NOT CMAKE_BUILD_TYPE)
   set(CMAKE_BUILD_TYPE "Debug")
 endif()
@@ -20,19 +19,21 @@ if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
   set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 endif()
 
-# Print build type
-message(STATUS "Build type: ${CMAKE_BUILD_TYPE}")
+
+set(CMAKE_AUTOUIC ON)
+set(CMAKE_AUTOMOC ON)
+set(CMAKE_AUTORCC ON)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-# Enable Qt-specific extensions
-set(CMAKE_AUTOMOC ON)
-set(CMAKE_AUTORCC ON)
-set(CMAKE_AUTOUIC ON)
+message(STATUS "Build type: ${CMAKE_BUILD_TYPE}")
 
 find_package(QGIS REQUIRED)
-find_package(Qt5 COMPONENTS Core Widgets Xml Gui WebEngineWidgets REQUIRED)
+find_package(QT NAMES Qt6 Qt5 REQUIRED COMPONENTS Core Widgets Xml Gui OpenGL REQUIRED)
+find_package(Qt${QT_VERSION_MAJOR} REQUIRED COMPONENTS Core Widgets Xml Gui OpenGL REQUIRED)
+message(STATUS "Qt5Core_DIR: ${Qt5Core_DIR}")
+message(STATUS "Qt5Core_LIBRARIES: ${Qt5Core_LIBRARIES}")
 
 set(LIBS
   ${QGIS_CORE_LIBRARY}
@@ -42,7 +43,7 @@ set(LIBS
   Qt5::Gui
   Qt5::Xml
   Qt5::Widgets
-  Qt5::WebEngineWidgets
+  Qt5::OpenGL
 )
 
 set(INCLUDES
@@ -52,8 +53,11 @@ set(INCLUDES
 )
 
 include_directories(
+  ${Qt5Core_INCLUDE_DIRS}
+  ${Qt5Gui_INCLUDE_DIRS}
+  ${Qt5Xml_INCLUDE_DIRS}
+  ${Qt5Widgets_INCLUDE_DIRS}
   ${INCLUDES}
 )
 
-# The compiled library code is here
 add_subdirectory(src)

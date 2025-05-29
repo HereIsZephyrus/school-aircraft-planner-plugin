@@ -7,25 +7,13 @@
 
 class Camera {
 private:
-    // initial camera parameters
-    static constexpr float DEFAULT_FOV = 45.0f;
-    static constexpr float DEFAULT_ASPECT_RATIO = 16.0f / 9.0f;
-    static constexpr float DEFAULT_NEAR_PLANE = 0.1f;
-    static constexpr float DEFAULT_FAR_PLANE = 1000.0f;
-    static constexpr float DEFAULT_YAW = -90.0f;
-    static constexpr float DEFAULT_PITCH = 0.0f;
-    static constexpr QVector3D DEFAULT_POSITION = QVector3D(0.0f, 0.0f, 50.0f);
-    static constexpr QVector3D DEFAULT_TARGET = QVector3D(0.0f, 0.0f, 0.0f);
-    static constexpr QVector3D DEFAULT_UP = QVector3D(0.0f, 1.0f, 0.0f);
-    static constexpr float ZOOM_FACTOR = 0.1f;
-    
     Camera();
 public:
+    ~Camera();
     static Camera& getInstance() {
         static Camera instance;
         return instance;
     }
-    ~Camera();
     Camera(const Camera&) = delete;
     Camera& operator=(const Camera&) = delete;
 
@@ -46,7 +34,7 @@ public:
     float farPlane() const { return mFarPlane; }
     QMatrix4x4 viewMatrix() const;
     QMatrix4x4 projectionMatrix() const;
-    float zoomFactor() const { return ZOOM_FACTOR; }
+    float zoomFactor() const { return 0.1f; }
 
     void moveForward(float distance);
     void moveRight(float distance);
@@ -65,4 +53,4 @@ private:
     void updateProjectionMatrix();
 };
 
-#endif // CAMERA_H 
+#endif // CAMERA_H
