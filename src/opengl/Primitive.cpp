@@ -82,7 +82,7 @@ void ColorPrimitive::draw() {
   this->shader->setUniformValue("projection", camera.projectionMatrix());
   this->shader->setUniformValue("vColor", this->color);
   this->vao.bind();
-  glDrawArrays(this->primitiveType, 0, this->vertexNum);
+  //glDrawArrays(this->primitiveType, 0, this->vertexNum);
   this->vao.release();
   this->shader->release();
   checkGLError("ColorPrimitive::draw");

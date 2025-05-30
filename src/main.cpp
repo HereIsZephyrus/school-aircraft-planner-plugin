@@ -8,8 +8,8 @@ int main(int argc, char *argv[])
 
     QApplication app(argc, argv, true); // 第三个参数 `GUIenabled = true`
 
-    // QgsApplication::setPrefixPath("D:/OSGEO4~1/apps/qgis", true);
-    // QgsApplication::initQgis();
+    QgsApplication::setPrefixPath("D:/OSGEO4~1/apps/qgis", true);
+    //QgsApplication::initQgis();
 
 
     MainWindow w;
@@ -17,7 +17,7 @@ int main(int argc, char *argv[])
 
     int exitCode = app.exec();
 
-    // QgsApplication::exitQgis();
+    //QgsApplication::exitQgis();
 
     return exitCode;
 }
