@@ -54,8 +54,6 @@ public:
   QLabel *mpImageLabel;
 private slots:
   void Unrealized();
-  void switchTo3D();
-  void switchTo2D();
   void showUserManual();
 
 private:
@@ -65,7 +63,7 @@ private:
   void createLeftDockWidget();
   void createRightDockWidget();
   void createSlots();
-  void createCanvas();
+  QStackedWidget *mpCanvas;
   QMenuBar *mpMenuBar;
   QStackedWidget *mpStackedWidget;
   QTreeWidget *mpFileTreeWidget;
@@ -79,12 +77,7 @@ private:
   void onTreeItemExpanded(QTreeWidgetItem *item);
   void onTreeItemDoubleClicked(QTreeWidgetItem *item, int column);
   QString getItemFullPath(QTreeWidgetItem *item);
-  std::unique_ptr<RoutePlanner> mpRoutePlanner;
-  std::unique_ptr<OpenGLCanvas> mpOpenGLWidget;
-  void resetView();
   void initWindowStatus();
-  void init3DWidget();
-  void init2DWidget();
   template <typename Tp> // Tp is the pointer type
   Tp safeFindChild(const QString &name) {
     Tp pWidget = this->findChild<Tp>(name);

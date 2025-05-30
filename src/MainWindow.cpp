@@ -44,35 +44,6 @@
 #include <qpushbutton.h>
 #include <qtoolbutton.h>
 
-void MainWindow::init3DWidget() {
-  mpRoutePlanner = std::make_unique<RoutePlanner>();
-  // mpOpenGLWidget = std::make_unique<OpenGLCanvas>(this);
-
-  // connect(mpOpenGLWidget.get(), &OpenGLCanvas::glInitialized, this,
-  // &MainWindow::switchTo3D);
-
-  // logMessage("canvas initialized", Qgis::MessageLevel::Success);
-
-  // pass RoutePlanner instance to OpenGLWidget
-  // mpOpenGLWidget->setRoutePlanner(mpRoutePlanner.get());
-}
-void MainWindow::init2DWidget() {
-  // create QLabel to display local image
-  mpImageLabel = new QLabel(this);
-  QPixmap mapImage(
-      ":/schoolcore/map/capture.png"); // use resource path to load image
-  if (mapImage.isNull()) {
-    logMessage("failed to load local map image", Qgis::MessageLevel::Critical);
-    return;
-  }
-  mpImageLabel->setPixmap(mapImage);
-  mpImageLabel->setScaledContents(
-      true); // let image adapt to label size, keep ratio
-  mpImageLabel->setSizePolicy(QSizePolicy::Ignored,
-                              QSizePolicy::Ignored); // set size policy
-  logMessage("create QLabel to display local map image",
-             Qgis::MessageLevel::Success);
-}
 MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent) {
 
   logMessage("Application started", Qgis::MessageLevel::Info);
@@ -734,12 +705,12 @@ void MainWindow::createSlots() {
   */
 }
 void MainWindow::createMainWindow() {
-
-  createCanvas();
+  mpCanvas = new QStackedWidget(this);
+  setCentralWidget(mpCanvas);
   logMessage("create canvas", Qgis::MessageLevel::Success);
-  createLeftDockWidget();
+  mpLeftDockWidget = new LeftDockWidget(this);
   logMessage("create left dock widget", Qgis::MessageLevel::Success);
-  createRightDockWidget();
+  mpRightDockWidget = new RightDockWidget(this);
   logMessage("create right dock widget", Qgis::MessageLevel::Success);
   createSlots();
   logMessage("create main window", Qgis::MessageLevel::Success);
@@ -796,36 +767,6 @@ void MainWindow::loadDirectoryLevel(QTreeWidgetItem *parentItem,
       }
     }
   }
-}
-
-// switch to 3D
-void MainWindow::switchTo3D() {
-  if (!ws::WindowManager::getInstance().get3DMapInited()) {
-    logMessage("3D map not initialized", Qgis::MessageLevel::Info);
-    init3DWidget();
-    logMessage("3D map initialized", Qgis::MessageLevel::Success);
-  }
-  mpStackedWidget->setCurrentWidget(
-      mpOpenGLWidget.get()); // switch to 3D model view
-  ws::WindowManager::getInstance().setCurrentCanvas(ws::CanvasType::ThreeD);
-  logMessage("switch to 3D model view", Qgis::MessageLevel::Success);
-}
-// switch to 2D
-void MainWindow::switchTo2D() {
-  if (!ws::WindowManager::getInstance().get2DMapInited()) {
-    logMessage("2D map not initialized", Qgis::MessageLevel::Info);
-    init2DWidget();
-    logMessage("2D map initialized", Qgis::MessageLevel::Success);
-  }
-  logMessage("switch to 2D map view", Qgis::MessageLevel::Info);
-  mpStackedWidget->setCurrentWidget(mpImageLabel); // switch to 2D map view
-  ws::WindowManager::getInstance().setCurrentCanvas(ws::CanvasType::TwoD);
-  logMessage("switch to 2D map view", Qgis::MessageLevel::Success);
-}
-
-void MainWindow::resetView() {
-  Camera::getInstance().resetView();
-  logMessage("reset view", Qgis::MessageLevel::Success);
 }
 
 // add new slot function at the end of the file
