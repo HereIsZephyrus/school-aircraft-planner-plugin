@@ -49,8 +49,8 @@
 
 
 void MainWindow::init3DWidget(){
-    mpRoutePlanner = std::make_unique<RoutePlanner>(this);
-    mpOpenGLWidget = std::make_unique<MyOpenGLWidget>(this);
+    mpRoutePlanner = std::make_unique<RoutePlanner>();
+    // mpOpenGLWidget = std::make_unique<MyOpenGLWidget>(this);
 
     //connect(mpOpenGLWidget.get(), &MyOpenGLWidget::glInitialized, this, &MainWindow::switchTo3D);
 
@@ -77,12 +77,9 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent) {
 
     logMessage("Application started", Qgis::MessageLevel::Info);
     initWindowStatus();
-
-    // ws::initializeWorkspaceState(); // ⚠
-
+    ws::initializeWorkspaceState();
     logMessage("MainWindow constructor called", Qgis::MessageLevel::Success);
-
-    // init3DWidget(); // ⚠
+    init3DWidget();
     init2DWidget();
 
     logMessage("function class initialized", Qgis::MessageLevel::Success);
@@ -555,6 +552,7 @@ void MainWindow::createRightDockWidget() {
     logMessage("connect right widget to slots", Qgis::MessageLevel::Success);
 }
 void MainWindow::createCanvas() {
+    mpOpenGLWidget = std::make_unique<MyOpenGLWidget>(this);
     // ================= middle area =================
     mpStackedWidget = new QStackedWidget(this);
     setCentralWidget(mpStackedWidget);
@@ -663,13 +661,15 @@ void MainWindow::createSlots() {
     */
 }
 void MainWindow::createMainWindow() {
+    createCanvas(); // ⚠
+    logMessage("create canvas", Qgis::MessageLevel::Success);
+
     logMessage("create main window", Qgis::MessageLevel::Info);
     createLeftDockWidget();
     logMessage("create left dock widget", Qgis::MessageLevel::Success);
     // createRightDockWidget(); // ⚠
     logMessage("create right dock widget", Qgis::MessageLevel::Success);
-    // createCanvas(); // ⚠
-    logMessage("create canvas", Qgis::MessageLevel::Success);
+
     // createSlots(); // ⚠
     logMessage("create main window", Qgis::MessageLevel::Success);
 }
