@@ -21,12 +21,17 @@ else()
 endif()
 
 set(AVATAR_RESOURCES
+    ${CMAKE_SOURCE_DIR}/resources/resources.qrc
     ${CMAKE_SOURCE_DIR}/resources/avatar.qrc
+    ${CMAKE_SOURCE_DIR}/resources/shader.qrc
+
 )
 
 set(CORE_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/core/RouteData.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/core/RouteData.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/core/RoutePlanner.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/core/RoutePlanner.h
     ${CMAKE_CURRENT_SOURCE_DIR}/core/WorkspaceState.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/core/WorkspaceState.h
 )
@@ -85,6 +90,7 @@ else()
             MANUAL_FINALIZATION
             ${SCHOOLCORE_SOUCRES}
             ${STANDALONE_SOURCES}
+            ${AVATAR_RESOURCES}
         )
     # Define target properties for Android with Qt 6 as:
     #    set_property(TARGET transfer_school APPEND PROPERTY QT_ANDROID_PACKAGE_SOURCE_DIR
@@ -95,6 +101,7 @@ else()
             add_library(transfer_school SHARED
                 ${SCHOOLCORE_SOUCRES}
                 ${STANDALONE_SOURCES}
+                ${AVATAR_RESOURCES}
             )
     # Define properties for Android with Qt 5 after find_package() calls as:
     #    set(ANDROID_PACKAGE_SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/android")
@@ -102,6 +109,7 @@ else()
             add_executable(transfer_school
                 ${SCHOOLCORE_SOUCRES}
                 ${STANDALONE_SOURCES}
+                ${AVATAR_RESOURCES}
             )
         endif()
     endif()

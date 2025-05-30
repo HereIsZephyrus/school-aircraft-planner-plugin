@@ -5,6 +5,7 @@
 #include <QMatrix4x4>
 #include <QVector3D>
 #include <float.h>
+#include <stdexcept>
 
 //use a singleton to manage the workspace state
 typedef std::pair<QString, QString> ObjTexturePair; // the first is the obj path, the second is the texture path
