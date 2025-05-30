@@ -1,10 +1,10 @@
 #include "qgis_debug.h"
-
+#include <QCoreApplication>
 
 void logMessage(const QString &message, Qgis::MessageLevel level) {
     QgsMessageLog::logMessage(message, "SchoolPlugin3D", level);
-    
-    QString logDir = QDir::homePath() + "/.3Dschool/logs";
+
+    QString logDir = QCoreApplication::applicationDirPath() + "/.3Dschool/logs";
     QDir().mkpath(logDir);
     
     QString logFile = logDir + "/3Dschool_" + QDateTime::currentDateTime().toString("yyyy-MM-dd-hh-mm") + ".log";

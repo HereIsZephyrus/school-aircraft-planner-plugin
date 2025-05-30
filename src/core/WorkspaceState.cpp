@@ -1,4 +1,5 @@
 #include "WorkspaceState.h"
+#include <QProcessEnvironment>
 
 namespace ws {
     void initializeWorkspaceState() {
@@ -7,7 +8,9 @@ namespace ws {
 }
 
 ws::PathManager::PathManager() {
-    mRootDir = QString::fromStdString(getenv("HOME"));
+    QProcessEnvironment env = QProcessEnvironment::systemEnvironment();
+    mRootDir = env.value("HOME", env.value("USERPROFILE"));
+    // mRootDir = QString::fromStdString(getenv("HOME"));
 }
 
 ws::PathManager::~PathManager() {

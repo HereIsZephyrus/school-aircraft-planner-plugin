@@ -8,7 +8,6 @@
 #include <QFile>
 #include <QFileInfo>
 #include <QMouseEvent>
-#include <QOpenGLFunctions_3_3_Core>
 #include <QTextStream>
 #include <QTransform>
 #include <QWheelEvent>
@@ -17,7 +16,6 @@
 #include <qgsapplication.h>
 #include <qtimer.h>
 #include <qvector4d.h>
-#include <QOpenGLFunctions_4_1_Core>
 
 MyOpenGLWidget::MyOpenGLWidget(QWidget *parent)
     : QOpenGLWidget(parent) {
@@ -75,10 +73,8 @@ void MyOpenGLWidget::initializeGL() {
   glEnable(GL_DEPTH_TEST);
   glEnable(GL_BLEND);
   glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-  
-  makeCurrent();
+
   initCanvas();
-  doneCurrent();
   logMessage("OpenGL context initialized", Qgis::MessageLevel::Success);
   emit glInitialized();
 }
@@ -100,25 +96,23 @@ void MyOpenGLWidget::resizeGL(int w, int h) {
 
 void MyOpenGLWidget::paintGL() {
   if (!isValid()) {
-    logMessage("MyOpenGLWidget is not valid", Qgis::MessageLevel::Critical);
-    return;
-  }
-  if (!isVisible())
-    return;
-  makeCurrent();
-  glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
-  glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-  glEnable(GL_DEPTH_TEST);
-
-  if (basePlaneWidget)
-    basePlaneWidget->draw();
-  if (modelWidget)
-    modelWidget->draw();
-  doneCurrent();
+        logMessage("MyOpenGLWidget is not valid", Qgis::MessageLevel::Critical);
+        return;
+    }
+    if (!isVisible())
+        return;
+    glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    glEnable(GL_DEPTH_TEST);
+    logMessage("painting...", Qgis::MessageLevel::Critical);
+    if (basePlaneWidget)
+        basePlaneWidget->draw();
+    //if (modelWidget)
+    //    modelWidget->draw();
 }
 
 void MyOpenGLWidget::mousePressEvent(QMouseEvent *event) {
-/*
+    /*
   if (m_routePlanner && m_routePlanner->mCreateRoute) {
     // 优先处理添加控制点模式
     if (m_routePlanner->isSettingControlPointsMode() &&

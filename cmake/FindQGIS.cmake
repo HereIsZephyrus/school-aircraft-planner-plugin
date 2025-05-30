@@ -23,14 +23,14 @@
 
 IF(WIN32)
     # OSGEO4W_QGIS_SUBDIR relative install: qgis[-rel|-ltr][-dev], etc.
-    #IF(NOT OSGEO4W_QGIS_SUBDIR OR "${OSGEO4W_QGIS_SUBDIR}" STREQUAL "")
-    #    IF(NOT "$ENV{OSGEO4W_QGIS_SUBDIR}" STREQUAL "")
-    #        SET(OSGEO4W_QGIS_SUBDIR $ENV{OSGEO4W_QGIS_SUBDIR})
-    #    ELSE()
-    #        SET(OSGEO4W_QGIS_SUBDIR qgis)
-    #    ENDIF()
-    #ENDIF()
-    set(OSGEO4W_QGIS_SUBDIR qgis-dev)
+    IF(NOT OSGEO4W_QGIS_SUBDIR OR "${OSGEO4W_QGIS_SUBDIR}" STREQUAL "")
+       IF(NOT "$ENV{OSGEO4W_QGIS_SUBDIR}" STREQUAL "")
+           SET(OSGEO4W_QGIS_SUBDIR $ENV{OSGEO4W_QGIS_SUBDIR})
+       ELSE()
+           SET(OSGEO4W_QGIS_SUBDIR qgis)
+       ENDIF()
+    ENDIF()
+    # set(OSGEO4W_QGIS_SUBDIR qgis)
 
     FIND_PATH(QGIS_PLUGIN_DIR
         NAMES plugin_offlineediting.dll
