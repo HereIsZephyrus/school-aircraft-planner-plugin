@@ -1,21 +1,28 @@
 #include "MainWindow.h"
 #include "qgsapplication.h"
+#ifdef Q_OS_WIN
+#define QGIS_PATH "D:/OSGEO4~1/apps/qgis"
+#elif defined(Q_OS_MACOS)
+#define QGIS_PATH "/Applications/QGIS.app/Contents/MacOS/QGIS"
+#else
+#define QGIS_PATH "/usr/bin/qgis"
+#endif
 
-int main(int argc, char *argv[])
-{
-    QApplication::setAttribute(Qt::AA_UseDesktopOpenGL);
-    QApplication::setAttribute(Qt::AA_ShareOpenGLContexts);
-    QApplication app(argc, argv, true);
+int main(int argc, char *argv[]) {
+  QgsApplication app(argc, argv, true);
 
-    QgsApplication::setPrefixPath("D:/OSGEO4~1/apps/qgis", true);
-    QgsApplication::initQgis();
+  QgsApplication::setPrefixPath(QGIS_PATH, true);
+  QgsApplication::initQgis();
 
-    MainWindow w;
-    w.show();
+  //QApplication::setAttribute(Qt::AA_UseDesktopOpenGL);
+  //QApplication::setAttribute(Qt::AA_ShareOpenGLContexts);
 
-    int exitCode = app.exec();
+  MainWindow w;
+  w.show();
 
-    QgsApplication::exitQgis();
+  int exitCode = app.exec();
 
-    return exitCode;
+  QgsApplication::exitQgis();
+
+  return exitCode;
 }

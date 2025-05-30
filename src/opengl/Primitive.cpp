@@ -17,8 +17,7 @@ using MaterialGroupMap = QMap<QString, pMaterialGroup>;
 using pMaterialGroupMap = std::shared_ptr<MaterialGroupMap>;
 using TexturePair = std::pair<pMaterialVector, pTextureMap>;
 
-Primitive::Primitive(GLenum primitiveType, GLfloat *vertices, GLuint vertexNum,
-                     GLuint stride) {
+Primitive::Primitive(GLenum primitiveType, GLfloat *vertices, GLuint vertexNum, GLuint stride) {
   this->primitiveType = primitiveType;
   this->vertices = vertices;
   this->vertexNum = vertexNum;
@@ -70,19 +69,18 @@ ColorPrimitive::ColorPrimitive(GLenum primitiveType, GLfloat *vertices,
                                GLuint vertexNum, const QVector4D &color)
     : Primitive(primitiveType, vertices, vertexNum, 3), color(color) {}
 
-void ColorPrimitive::draw() {
+void ColorPrimitive::draw(const QMatrix4x4 &view, const QMatrix4x4 &projection) {
   if (!shader) {
     logMessage("Shader is not set", Qgis::MessageLevel::Critical);
     return;
   }
-  Camera& camera = Camera::getInstance();
   this->shader->bind();
   this->shader->setUniformValue("model", this->modelMatrix);
-  this->shader->setUniformValue("view", camera.viewMatrix());
-  this->shader->setUniformValue("projection", camera.projectionMatrix());
+  this->shader->setUniformValue("view", view);
+  this->shader->setUniformValue("projection", projection);
   this->shader->setUniformValue("vColor", this->color);
   this->vao.bind();
-  //glDrawArrays(this->primitiveType, 0, this->vertexNum);
+  glDrawArrays(this->primitiveType, 0, this->vertexNum);
   this->vao.release();
   this->shader->release();
   checkGLError("ColorPrimitive::draw");
@@ -189,22 +187,19 @@ Model::Model(std::shared_ptr<ModelData> modelData)
   this->vbo.allocate(this->vertices, count * sizeof(GLfloat));
   this->vbo.release();
   this->vao.release();
-
   checkGLError("Model::Model");
 }
 
-void Model::draw() {
+void Model::draw(const QMatrix4x4 &view, const QMatrix4x4 &projection) {
     if (!shader) {
         logMessage("Shader is not set", Qgis::MessageLevel::Critical);
         return;
     }
-    Camera& camera = Camera::getInstance();
     this->shader->bind();
     this->shader->setUniformValue("model", this->modelMatrix);
-    this->shader->setUniformValue("view", camera.viewMatrix());
-    this->shader->setUniformValue("projection", camera.projectionMatrix());
+    this->shader->setUniformValue("view", view);
+    this->shader->setUniformValue("projection", projection);
     this->vao.bind();
-
     glDrawArrays(this->primitiveType, 0, this->vertexNum);
     this->vao.release();
     this->shader->release();

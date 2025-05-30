@@ -175,7 +175,7 @@ private:
     QTimer mAnimationDirection;
     m_animationTimer = new QTimer(this);
   connect(m_animationTimer, &QTimer::timeout, this,
-          &MyOpenGLWidget::updateAnimation);
+          &OpenGLCanvas::updateAnimation);
   logMessage("m_animationTimer connected", Qgis::MessageLevel::Info);
     QTimer *m_animationTimer;
     float m_animationProgress; // 0~1之间的进度值

@@ -7,7 +7,7 @@ Date:2025.1.6
 #define MAINWINDOW_H
 #include "core/RoutePlanner.h"
 #include "core/WorkspaceState.h"
-#include "gui/MyOpenGLWidget.h"
+#include "gui/OpenGLCanvas.h"
 #include "log/QgisDebug.h"
 #include "qgisinterface.h"
 #include "qgisplugin.h"
@@ -80,7 +80,7 @@ private:
   void onTreeItemDoubleClicked(QTreeWidgetItem *item, int column);
   QString getItemFullPath(QTreeWidgetItem *item);
   std::unique_ptr<RoutePlanner> mpRoutePlanner;
-  std::unique_ptr<MyOpenGLWidget> mpOpenGLWidget;
+  std::unique_ptr<OpenGLCanvas> mpOpenGLWidget;
   void resetView();
   void initWindowStatus();
   void init3DWidget();

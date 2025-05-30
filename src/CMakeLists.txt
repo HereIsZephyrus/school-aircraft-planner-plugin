@@ -37,8 +37,8 @@ set(CORE_SOURCES
 )
 
 set(GUI_SOURCES
-    ${CMAKE_CURRENT_SOURCE_DIR}/gui/MyOpenGLWidget.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/gui/MyOpenGLWidget.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/gui/OpenGLCanvas.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/gui/OpenGLCanvas.h
     ${CMAKE_CURRENT_SOURCE_DIR}/gui/StyleManager.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/gui/StyleManager.h
 )

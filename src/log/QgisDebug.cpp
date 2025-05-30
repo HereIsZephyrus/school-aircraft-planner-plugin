@@ -2,7 +2,7 @@
 #include <QCoreApplication>
 
 void logMessage(const QString &message, Qgis::MessageLevel level) {
-    QgsMessageLog::logMessage(message, "SchoolPlugin3D", level);
+    //QgsMessageLog::logMessage(message, "SchoolPlugin3D", level);
 
     QString logDir = QCoreApplication::applicationDirPath() + "/.3Dschool/logs";
     QDir().mkpath(logDir);

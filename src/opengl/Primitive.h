@@ -16,7 +16,7 @@
 #include "../core/WorkspaceState.h"
 namespace gl{
 
-class Primitive : protected QOpenGLFunctions{
+class Primitive{
 
 protected:
     QOpenGLVertexArrayObject vao;
@@ -34,7 +34,7 @@ public:
     Primitive(GLenum primitiveType, GLuint stride); // no init data constructor
     void setModelMatrix(const QMatrix4x4 &matrix);
     virtual ~Primitive();
-    virtual void draw()=0;
+    virtual void draw(const QMatrix4x4 &view, const QMatrix4x4 &projection)=0;
 };
 
 class ColorPrimitive : public Primitive{
@@ -45,7 +45,7 @@ public:
     ColorPrimitive(GLenum primitiveType, const QVector4D& color=DEFAULT_COLOR);
     void setColor(const QVector4D& color){this->color = color;}
     QVector4D getColor() const{return this->color;}
-    void draw() override;
+    void draw(const QMatrix4x4 &view, const QMatrix4x4 &projection) override;
 };
 
 class BasePlane : public ColorPrimitive{
@@ -126,7 +126,7 @@ class Model : public Primitive{
 public:
     Model(std::shared_ptr<ModelData> modelData);
     Model(const QString& objFilePath);
-    void draw() override;
+    void draw(const QMatrix4x4 &view, const QMatrix4x4 &projection) override;
     QVector3D getModelCenter() const{return modelData->mBounds.center;}
     const Bounds& getBounds() const{return modelData->mBounds;}
     void setBounds(const Bounds& bounds){modelData->mBounds = bounds;}

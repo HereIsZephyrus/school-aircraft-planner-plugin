@@ -19,7 +19,6 @@ if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
   set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 endif()
 
-
 set(CMAKE_AUTOUIC ON)
 set(CMAKE_AUTOMOC ON)
 set(CMAKE_AUTORCC ON)
@@ -30,10 +29,17 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 message(STATUS "Build type: ${CMAKE_BUILD_TYPE}")
 
 find_package(QGIS REQUIRED)
+find_package(OpenGL REQUIRED)
 find_package(QT NAMES Qt6 Qt5 REQUIRED COMPONENTS Core Widgets Xml Gui OpenGL REQUIRED)
 find_package(Qt${QT_VERSION_MAJOR} REQUIRED COMPONENTS Core Widgets Xml Gui OpenGL REQUIRED)
 message(STATUS "Qt5Core_DIR: ${Qt5Core_DIR}")
 message(STATUS "Qt5Core_LIBRARIES: ${Qt5Core_LIBRARIES}")
+
+if(WIN32)
+  set(GL_LIBS opengl32)
+else()
+  set(GL_LIBS GL)
+endif()
 
 set(LIBS
   ${QGIS_CORE_LIBRARY}
@@ -44,6 +50,7 @@ set(LIBS
   Qt5::Xml
   Qt5::Widgets
   Qt5::OpenGL
+  ${GL_LIBS}
 )
 
 set(INCLUDES

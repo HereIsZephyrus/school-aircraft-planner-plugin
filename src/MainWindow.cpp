@@ -46,9 +46,9 @@
 
 void MainWindow::init3DWidget() {
   mpRoutePlanner = std::make_unique<RoutePlanner>();
-  // mpOpenGLWidget = std::make_unique<MyOpenGLWidget>(this);
+  // mpOpenGLWidget = std::make_unique<OpenGLCanvas>(this);
 
-  // connect(mpOpenGLWidget.get(), &MyOpenGLWidget::glInitialized, this,
+  // connect(mpOpenGLWidget.get(), &OpenGLCanvas::glInitialized, this,
   // &MainWindow::switchTo3D);
 
   // logMessage("canvas initialized", Qgis::MessageLevel::Success);
@@ -191,15 +191,15 @@ void MainWindow::createMenu() {
     QAction *stopAction = pSimulationMenu->addAction(tr("Stop Simulation"));
     /*
     connect(startAction, &QAction::triggered, mpOpenGLWidget.get(),
-            &MyOpenGLWidget::startSimulation);
+            &OpenGLCanvas::startSimulation);
     connect(pauseAction, &QAction::triggered, mpOpenGLWidget.get(),
-            &MyOpenGLWidget::pauseSimulation);
+            &OpenGLCanvas::pauseSimulation);
     connect(resumeAction, &QAction::triggered, mpOpenGLWidget.get(),
-            &MyOpenGLWidget::resumeSimulation);
+            &OpenGLCanvas::resumeSimulation);
     connect(returnAction, &QAction::triggered, mpOpenGLWidget.get(),
-            &MyOpenGLWidget::returnToHome);
+            &OpenGLCanvas::returnToHome);
     connect(stopAction, &QAction::triggered, mpOpenGLWidget.get(),
-            &MyOpenGLWidget::stopSimulation);
+            &OpenGLCanvas::stopSimulation);
 */
   } else {
     logMessage("OpenGLWidget not initialized", Qgis::MessageLevel::Critical);
@@ -601,7 +601,7 @@ void MainWindow::createRightDockWidget() {
   logMessage("connect right widget to slots", Qgis::MessageLevel::Success);
 }
 void MainWindow::createCanvas() {
-  mpOpenGLWidget = std::make_unique<MyOpenGLWidget>(this);
+  mpOpenGLWidget = std::make_unique<OpenGLCanvas>(this);
   // ================= middle area =================
   mpStackedWidget = new QStackedWidget(this);
   setCentralWidget(mpStackedWidget);
@@ -660,7 +660,7 @@ void MainWindow::createSlots() {
           [=](int index) {
             if (index == 0 &&
                 ws::WindowManager::getInstance().getCurrentCanvas() ==
-                    ws::CanvasType::ThreeD) { // assume MyOpenGLWidget is the
+                    ws::CanvasType::ThreeD) { // assume OpenGLCanvas is the
                                               // first page (index 0)
               mpOpenGLWidget->setFocus();     // switch back to force focus
             }
@@ -721,29 +721,27 @@ void MainWindow::createSlots() {
   connect(pBtnStart, &QPushButton::clicked,
           [=]() { mpOpenGLWidget->startSimulation(pSpeedSpin->value()); });
   connect(pBtnPause, &QPushButton::clicked, mpOpenGLWidget.get(),
-          &MyOpenGLWidget::pauseSimulation);
+          &OpenGLCanvas::pauseSimulation);
   connect(pBtnResume, &QPushButton::clicked, mpOpenGLWidget.get(),
-          &MyOpenGLWidget::resumeSimulation);
+          &OpenGLCanvas::resumeSimulation);
   connect(pBtnReturn, &QPushButton::clicked, mpOpenGLWidget.get(),
-          &MyOpenGLWidget::returnToHome);
+          &OpenGLCanvas::returnToHome);
   connect(pBtnStop, &QPushButton::clicked, mpOpenGLWidget.get(),
-          &MyOpenGLWidget::stopSimulation);
+          &OpenGLCanvas::stopSimulation);
   connect(pBaseHeightSpin, SIGNAL(valueChanged(double)), mpOpenGLWidget.get(),
           SLOT(ws::FlightManager::getInstance().setBaseHeight(double)));
   logMessage("connected all slots on main window", Qgis::MessageLevel::Success);
   */
 }
 void MainWindow::createMainWindow() {
-  createCanvas(); // ⚠
-  logMessage("create canvas", Qgis::MessageLevel::Success);
 
-  logMessage("create main window", Qgis::MessageLevel::Info);
+  createCanvas();
+  logMessage("create canvas", Qgis::MessageLevel::Success);
   createLeftDockWidget();
   logMessage("create left dock widget", Qgis::MessageLevel::Success);
-  // createRightDockWidget(); // ⚠
+  createRightDockWidget();
   logMessage("create right dock widget", Qgis::MessageLevel::Success);
-
-  // createSlots(); // ⚠
+  createSlots();
   logMessage("create main window", Qgis::MessageLevel::Success);
 }
 // select file list directory

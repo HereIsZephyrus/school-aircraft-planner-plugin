@@ -1,4 +1,4 @@
-﻿#include "MyOpenGLWidget.h"
+﻿#include "OpenGLCanvas.h"
 #include "../log/QgisDebug.h"
 #include "../core/RoutePlanner.h"
 #include <QApplication>
@@ -17,8 +17,7 @@
 #include <qtimer.h>
 #include <qvector4d.h>
 
-MyOpenGLWidget::MyOpenGLWidget(QWidget *parent)
-    : QOpenGLWidget(parent) {
+OpenGLCanvas::OpenGLCanvas(QWidget *parent) : QOpenGLWidget(parent) {
   QSurfaceFormat format;
   format.setVersion(4, 1);
   format.setProfile(QSurfaceFormat::CoreProfile);
@@ -35,37 +34,23 @@ MyOpenGLWidget::MyOpenGLWidget(QWidget *parent)
   updateTimer->setInterval(16);
   connect(updateTimer.get(), &QTimer::timeout, this, QOverload<>::of(&QOpenGLWidget::update));
   updateTimer->start();
-
-  modelWidget = nullptr;
-  basePlaneWidget = nullptr;
-  ControlPointsWidget = nullptr;
 }
 
-MyOpenGLWidget::~MyOpenGLWidget() {
-  logMessage("ready to destroy MyOpenGLWidget", Qgis::MessageLevel::Info);
+OpenGLCanvas::~OpenGLCanvas() {
+  logMessage("ready to destroy OpenGLCanvas", Qgis::MessageLevel::Info);
   makeCurrent();
-  modelWidget = nullptr;
-  basePlaneWidget = nullptr;
-  ControlPointsWidget = nullptr;
   doneCurrent();
   updateTimer->stop();
-  logMessage("MyOpenGLWidget destroyed", Qgis::MessageLevel::Success);
+  logMessage("OpenGLCanvas destroyed", Qgis::MessageLevel::Success);
 }
 
-void MyOpenGLWidget::initCanvas() {
-  basePlaneWidget = std::make_shared<gl::BasePlane>();
-  // ControlPointsWidget = initControlPoints();
-}
-
-void MyOpenGLWidget::initializeGL() {
-  
-  initializeOpenGLFunctions();
-  logMessage("initialize opengl functions", Qgis::MessageLevel::Info);
-  
-  if (!QOpenGLContext::currentContext()) {
-    logMessage("No OpenGL context available", Qgis::MessageLevel::Critical);
-    return;
+void OpenGLCanvas::initializeGL() {
+  if (!context()->isValid()){
+      logMessage("Invalid OpenGL context", Qgis::MessageLevel::Critical);
+      return;
   }
+  initializeOpenGLFunctions();
+  //logMessage("initialize opengl functions", Qgis::MessageLevel::Info);
   
   QString version = QString::fromUtf8((const char *)glGetString(GL_VERSION));
   logMessage("OpenGL Version: " + version, Qgis::MessageLevel::Info);
@@ -74,9 +59,8 @@ void MyOpenGLWidget::initializeGL() {
   glEnable(GL_BLEND);
   glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
-  initCanvas();
-  logMessage("OpenGL context initialized", Qgis::MessageLevel::Success);
-  emit glInitialized();
+  mpScene = std::make_unique<OpenGLScene>();
+  logMessage("OpenGL scene initialized", Qgis::MessageLevel::Success);
 }
 /*
   if (m_routePlanner) {
@@ -89,29 +73,41 @@ void MyOpenGLWidget::initializeGL() {
   }
   */
 
-void MyOpenGLWidget::resizeGL(int w, int h) {
+void OpenGLCanvas::resizeGL(int w, int h) {
   double aspectRatio = static_cast<double>(w) / static_cast<double>(h);
   Camera::getInstance().setAspectRatio(aspectRatio);
 }
 
-void MyOpenGLWidget::paintGL() {
+void OpenGLCanvas::paintGL() {
   if (!isValid()) {
-        logMessage("MyOpenGLWidget is not valid", Qgis::MessageLevel::Critical);
+        logMessage("OpenGLCanvas is not valid", Qgis::MessageLevel::Critical);
         return;
     }
-    if (!isVisible())
-        return;
-    glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-    glEnable(GL_DEPTH_TEST);
-    logMessage("painting...", Qgis::MessageLevel::Critical);
-    if (basePlaneWidget)
-        basePlaneWidget->draw();
-    //if (modelWidget)
-    //    modelWidget->draw();
+  if (!isVisible())
+      return;
+  glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
+  glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+  Camera &camera = Camera::getInstance();
+  QMatrix4x4 view = camera.viewMatrix();
+  QMatrix4x4 projection = camera.projectionMatrix();
+  mpScene->paintScene(view, projection);
 }
 
-void MyOpenGLWidget::mousePressEvent(QMouseEvent *event) {
+OpenGLScene::OpenGLScene(){
+  basePlaneWidget = std::make_shared<gl::BasePlane>();
+}
+OpenGLScene::~OpenGLScene(){
+  basePlaneWidget = nullptr;
+  modelWidget = nullptr;
+}
+void OpenGLScene::paintScene(const QMatrix4x4 &view, const QMatrix4x4 &projection){
+  if (basePlaneWidget)
+    basePlaneWidget->draw(view, projection);
+  if (modelWidget)
+    modelWidget->draw(view, projection);
+}
+
+void OpenGLCanvas::mousePressEvent(QMouseEvent *event) {
     /*
   if (m_routePlanner && m_routePlanner->mCreateRoute) {
     // 优先处理添加控制点模式
@@ -181,7 +177,7 @@ void MyOpenGLWidget::mousePressEvent(QMouseEvent *event) {
 */
 }
 
-void MyOpenGLWidget::mouseMoveEvent(QMouseEvent *event) {
+void OpenGLCanvas::mouseMoveEvent(QMouseEvent *event) {
   /*
   if (m_cameraFollowAircraft) {
     return; // 跟随视角下不处理旋转
@@ -219,7 +215,7 @@ void MyOpenGLWidget::mouseMoveEvent(QMouseEvent *event) {
   */
 }
 
-void MyOpenGLWidget::wheelEvent(QWheelEvent *event) {
+void OpenGLCanvas::wheelEvent(QWheelEvent *event) {
   Camera &camera = Camera::getInstance();
   float currentFov = camera.fieldOfView();
   float zoomFactor = camera.zoomFactor();
@@ -233,18 +229,21 @@ void MyOpenGLWidget::wheelEvent(QWheelEvent *event) {
   update();
 }
 
-void MyOpenGLWidget::loadModel(const QString& objFilePath){
+void OpenGLCanvas::loadModel(const QString& objFilePath){
+  mpScene->loadModel(objFilePath);
+}
+void OpenGLScene::loadModel(const QString& objFilePath){
   modelWidget = std::make_shared<gl::Model>(objFilePath);
   logMessage("Model loaded", Qgis::MessageLevel::Success);
 }
 /*
-void MyOpenGLWidget::setRoutePlanner(RoutePlanner *planner) {
+void OpenGLCanvas::setRoutePlanner(RoutePlanner *planner) {
   m_routePlanner = planner;
   connect(planner, &RoutePlanner::dataUpdated, this,
           QOverload<>::of(&QOpenGLWidget::update));
 }
-// MyOpenGLWidget.cpp 绘制控制点实现
-void MyOpenGLWidget::drawControlPoints() {
+// OpenGLCanvas.cpp 绘制控制点实现
+void OpenGLCanvas::drawControlPoints() {
 
   if (!m_routePlanner || m_routePlanner->controlPoints().isEmpty())
     return;
@@ -317,8 +316,8 @@ void MyOpenGLWidget::drawControlPoints() {
   glEnable(GL_DEPTH_TEST);
 }
 
-// MyOpenGLWidget.cpp 绘制凸包实现
-void MyOpenGLWidget::drawConvexHull() {
+// OpenGLCanvas.cpp 绘制凸包实现
+void OpenGLCanvas::drawConvexHull() {
   if (!m_routePlanner || m_routePlanner->convexHull().size() < 2)
     return;
 
@@ -356,7 +355,7 @@ void MyOpenGLWidget::drawConvexHull() {
   mLineShader->release();
 }
 
-void MyOpenGLWidget::drawRoutePath() {
+void OpenGLCanvas::drawRoutePath() {
   if (!m_routePlanner || m_routePlanner->routePath().isEmpty())
     return;
 
@@ -388,7 +387,7 @@ void MyOpenGLWidget::drawRoutePath() {
   mLineShader->release();
 }
 
-void MyOpenGLWidget::drawPathSection(const QVector<QVector3D> &points,
+void OpenGLCanvas::drawPathSection(const QVector<QVector3D> &points,
                                      const QVector4D &color, float lineWidth,
                                      bool dashed) {
   if (points.size() < 2)
@@ -425,7 +424,7 @@ void MyOpenGLWidget::drawPathSection(const QVector<QVector3D> &points,
   m_routeVAO.release();
 }
 
-void MyOpenGLWidget::addControlPoint(const QVector3D &point) {
+void OpenGLCanvas::addControlPoint(const QVector3D &point) {
   if (m_routePlanner) {
     // 直接在基准面高度上添加控制点（不再需要Z轴偏移）
 
@@ -439,7 +438,7 @@ void MyOpenGLWidget::addControlPoint(const QVector3D &point) {
     qDebug() << "错误：RoutePlanner 未初始化！";
   }
 }
-QVector3D MyOpenGLWidget::getSurfacePointFromMouse() {
+QVector3D OpenGLCanvas::getSurfacePointFromMouse() {
 
   // 获取鼠标点击位置
   QPoint mousePos = this->mapFromGlobal(QCursor::pos());
@@ -467,7 +466,7 @@ QVector3D MyOpenGLWidget::getSurfacePointFromMouse() {
 }
 
 QVector3D
-MyOpenGLWidget::calculateRayIntersection(const QVector3D &rayOrigin,
+OpenGLCanvas::calculateRayIntersection(const QVector3D &rayOrigin,
                                          const QVector3D &rayDirection) {
   float closestDistance = FLT_MAX;
   QVector3D closestPoint;
@@ -524,7 +523,7 @@ MyOpenGLWidget::calculateRayIntersection(const QVector3D &rayOrigin,
   return closestDistance < FLT_MAX ? closestPoint : QVector3D();
 }
 */
-void MyOpenGLWidget::handleMouseMove(QMouseEvent *event) {
+void OpenGLCanvas::handleMouseMove(QMouseEvent *event) {
 /*
   QPoint screenPos = event->pos(); // 从 QMouseEvent 获取鼠标位置
   if (m_routePlanner->selectedPointIndex() >= 0) {
@@ -536,7 +535,7 @@ void MyOpenGLWidget::handleMouseMove(QMouseEvent *event) {
 */
 }
 
-void MyOpenGLWidget::keyPressEvent(QKeyEvent *event) {
+void OpenGLCanvas::keyPressEvent(QKeyEvent *event) {
   /*
   if (event->key() == Qt::Key_Space) {
     m_cameraFollowAircraft = !m_cameraFollowAircraft;

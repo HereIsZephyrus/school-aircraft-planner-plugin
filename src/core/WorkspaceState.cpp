@@ -1,5 +1,15 @@
 #include "WorkspaceState.h"
 #include <QProcessEnvironment>
+#include <cstdlib>
+
+static QString GetHomeDirectory() {
+    #ifdef _WIN32
+        return QString(getenv("USERPROFILE"));
+    #else
+        const char* home = getenv("HOME");
+        return QString(home);
+    #endif
+}
 
 namespace ws {
     void initializeWorkspaceState() {
@@ -9,7 +19,7 @@ namespace ws {
 
 ws::PathManager::PathManager() {
     QProcessEnvironment env = QProcessEnvironment::systemEnvironment();
-    mRootDir = QDir::homePath();
+    mRootDir = GetHomeDirectory();
 }
 
 ws::PathManager::~PathManager() {
@@ -164,7 +174,7 @@ void ws::AnimationManager::drawAircraft(const QVector3D &position,
   mModelShader->release();
 }
 
-QVector<MyOpenGLWidget::Vertex> ws::AnimationManager::createAircraftModel() {
+QVector<OpenGLCanvas::Vertex> ws::AnimationManager::createAircraftModel() {
   QVector<Vertex> vertices;
 
   // 机身（使用红色纹理坐标区域）
