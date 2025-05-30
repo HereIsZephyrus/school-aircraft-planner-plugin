@@ -9,8 +9,7 @@ namespace ws {
 
 ws::PathManager::PathManager() {
     QProcessEnvironment env = QProcessEnvironment::systemEnvironment();
-    mRootDir = env.value("HOME", env.value("USERPROFILE"));
-    // mRootDir = QString::fromStdString(getenv("HOME"));
+    mRootDir = QDir::homePath();
 }
 
 ws::PathManager::~PathManager() {

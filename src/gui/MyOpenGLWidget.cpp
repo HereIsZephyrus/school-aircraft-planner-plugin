@@ -1,5 +1,5 @@
 ﻿#include "MyOpenGLWidget.h"
-#include "../log/qgis_debug.h"
+#include "../log/QgisDebug.h"
 #include "../core/RoutePlanner.h"
 #include <QApplication>
 #include <QOpenGLWidget>

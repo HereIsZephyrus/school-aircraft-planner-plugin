@@ -1,4 +1,5 @@
-#pragma once
+#ifndef PRIMITIVE_H
+#define PRIMITIVE_H
 //#include <GL/gl.h>
 #include <QOpenGLBuffer>
 #include <QOpenGLFunctions>
@@ -133,3 +134,5 @@ protected:
     void loadModel(const QString& objFilePath);
 };
 }
+
+#endif // PRIMITIVE_H

@@ -3,9 +3,10 @@ File:MyOpenGLWidget.h
 Author:wkj
 Date:2025.3.13
 ****************************************************************************/
-#pragma once
+#ifndef MYOPENGLWIDGET_H
+#define MYOPENGLWIDGET_H
 //#include <GL/gl.h>
-#include "../opengl/camera.h"
+#include "../opengl/Camera.h"
 #include "../opengl/Primitive.h"
 #include <QObject>
 #include <QOpenGLBuffer>
@@ -67,3 +68,4 @@ signals:
 
   //RoutePlanner *m_routePlanner = nullptr;
   //QVector<QVector3D> m_currentRoute;
+#endif // MYOPENGLWIDGET_H

@@ -1,6 +1,6 @@
 #include "Primitive.h"
-#include "../log/qgis_debug.h"
-#include "camera.h"
+#include "../log/QgisDebug.h"
+#include "Camera.h"
 namespace gl {
 using Material = ModelData::Material;
 using Texture = QOpenGLTexture;

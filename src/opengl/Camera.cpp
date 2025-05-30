@@ -1,5 +1,5 @@
-#include "camera.h"
-#include "../log/qgis_debug.h"
+#include "Camera.h"
+#include "../log/QgisDebug.h"
 #include <QtMath>
 
 Camera::Camera(){

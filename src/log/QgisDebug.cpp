@@ -1,4 +1,4 @@
-#include "qgis_debug.h"
+#include "QgisDebug.h"
 #include <QCoreApplication>
 
 void logMessage(const QString &message, Qgis::MessageLevel level) {
