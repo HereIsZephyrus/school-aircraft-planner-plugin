@@ -5,40 +5,15 @@ Date:2025.1.6
 ****************************************************************************/
 #ifndef MAINWINDOW_H
 #define MAINWINDOW_H
-#include "core/RoutePlanner.h"
 #include "core/WorkspaceState.h"
-#include "gui/OpenGLCanvas.h"
+#include "gui/Canvas.h"
+#include "gui/Menu.h"
+#include "gui/DockWidget.h"
 #include "log/QgisDebug.h"
-#include "qgisinterface.h"
-#include "qgisplugin.h"
-#include "qgsmapcanvas.h"
-#include "qgsmessagelog.h"
-#include "qgsvectorlayer.h"
-#include "qopengl.h"
 #include "ui_MainWindow.h"
 #include <QAction>
 #include <QApplication>
 #include <QKeyEvent>
-#include <QLabel>
-#include <QMainWindow>
-#include <QMouseEvent>
-#include <QOpenGLWidget>
-#include <QUrl>
-#include <QVBoxLayout>
-#include <QWheelEvent>
-#include <QtCore>
-#include <QtMath>
-#include <QtWidgets/QMainWindow>
-#include <QtWidgets/QPushButton>
-#include <QtWidgets/QStackedWidget>
-#include <cmath>
-#include <qdebug.h>
-#include <qdockwidget.h>
-#include <qfiledialog.h>
-#include <qmenu.h>
-#include <qrandom.h>
-#include <qtreewidget.h>
-#include <random>
 
 //#include <JoystickWidget.h>
 //#include <qgamepad.h>
@@ -47,18 +22,24 @@ class MainWindow : public QMainWindow {
   Q_OBJECT
 
 public:
-  MainWindow(QWidget *parent = nullptr);
+  static MainWindow& getInstance(QWidget *parent = nullptr) {
+    static MainWindow instance(parent);
+    return instance;
+  }
   ~MainWindow();
+
+private:
+  MainWindow(QWidget *parent = nullptr);
+  MainWindow(const MainWindow&) = delete;
+  MainWindow& operator=(const MainWindow&) = delete;
 
   // void setTianDiTuMap(double lat, double lon, int zoom);
   QLabel *mpImageLabel;
 private slots:
   void Unrealized();
-  void showUserManual();
 
 private:
   void createMenu();
-  void createMainWindow();
   void createJoyDockWidgets();
   void createLeftDockWidget();
   void createRightDockWidget();
@@ -100,9 +81,11 @@ private:
   QLabel *m_pWeatherLabel;
   QLabel *m_pTemperatureLabel;
   QLabel *m_pPressureLabel;
-private slots:
+  
+public slots:
   void showFlightParamsDialog();
   void showEnvironmentalParamsDialog();
+  void showUserManual();
 
 private:
   QPushButton *m_btnManualMode;

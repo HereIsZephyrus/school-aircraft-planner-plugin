@@ -5,44 +5,7 @@
 #include "qgsmessagelog.h"
 #include <QAction>
 #include <QApplication>
-#include <QCheckBox>
-#include <QComboBox>
-#include <QDateTime>
-#include <QDialog>
-#include <QDialogButtonBox>
-#include <QDir>
-#include <QDirIterator>
-#include <QDockWidget>
-#include <QDoubleSpinBox>
-#include <QFile>
-#include <QFormLayout>
-#include <QFrame>
-#include <QGroupBox>
-#include <QHBoxLayout>
-#include <QHeaderView>
-#include <QLabel>
-#include <QLineEdit>
-#include <QMainWindow>
-#include <QMenu>
-#include <QMenuBar>
-#include <QMessageBox>
-#include <QProgressBar>
-#include <QPushButton>
-#include <QQueue>
-#include <QRect>
-#include <QScreen>
-#include <QScrollArea>
-#include <QSplitter>
-#include <QStatusBar>
-#include <QTabWidget>
-#include <QTableWidget>
-#include <QTextEdit>
-#include <QToolBar>
-#include <QVBoxLayout>
 #include <memory>
-#include <qgroupbox.h>
-#include <qpushbutton.h>
-#include <qtoolbutton.h>
 
 MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent) {
 
@@ -55,8 +18,18 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent) {
 
   logMessage("function class initialized", Qgis::MessageLevel::Success);
 
-  createMenu();
-  createMainWindow();
+  mpMenuBar = new MenuBar(this);
+  logMessage("create menu bar", Qgis::MessageLevel::Success);
+  mpCanvas = new Canvas(this);
+  setCentralWidget(mpCanvas);
+  logMessage("create canvas", Qgis::MessageLevel::Success);
+  mpLeftDockWidget = new LeftDockWidget(this);
+  logMessage("create left dock widget", Qgis::MessageLevel::Success);
+  mpRightDockWidget = new RightDockWidget(this);
+  logMessage("create right dock widget", Qgis::MessageLevel::Success);
+  createSlots();
+  logMessage("create main window", Qgis::MessageLevel::Success);
+
   connect(mpRoutePlanner.get(), &RoutePlanner::dataUpdated,
           mpOpenGLWidget.get(), QOverload<>::of(&QOpenGLWidget::update));
   logMessage("connect route planner signal to update mapcanvas",
@@ -98,91 +71,7 @@ void MainWindow::initWindowStatus() {
 void MainWindow::Unrealized() {}
 
 void MainWindow::createMenu() {
-  logMessage("create menu bar", Qgis::MessageLevel::Info);
-  mpMenuBar = new QMenuBar(this);
-
-  // ================ Project menu ================
-  QMenu *pProjectMenu = mpMenuBar->addMenu(tr("Project"));
-  QAction *loadAction = pProjectMenu->addAction(tr("load 3D file"));
-  connect(loadAction, &QAction::triggered, this, [this]() {
-    QString filePath = QFileDialog::getOpenFileName(
-        this, tr("Open OBJ File"), "", tr("OBJ Files (*.obj)"));
-    if (filePath.isEmpty())
-      logMessage("no file selected", Qgis::MessageLevel::Critical);
-    else
-      loadModel(filePath);
-  });
-  logMessage("create project menu", Qgis::MessageLevel::Success);
-
-  // ================ View menu ================
-  QMenu *pViewMenu = mpMenuBar->addMenu(tr("View"));
-  pViewMenu->addAction(tr("3D View"), this, &MainWindow::switchTo3D);
-  pViewMenu->addAction(tr("2D View"), this, &MainWindow::switchTo2D);
-  pViewMenu->addAction(tr("Reset View"), this, &MainWindow::resetView);
-  logMessage("create view menu", Qgis::MessageLevel::Success);
-
-  // ================ Setting menu ================
-  QMenu *pSettingMenu = mpMenuBar->addMenu(tr("Setting"));
-  // parameter setting directly associated with dialog control
-  QAction *pFlightParamsAction =
-      pSettingMenu->addAction(tr("Flight Parameters")); // aircraft parameters
-  QAction *pEnvironmentalParamsAction = pSettingMenu->addAction(
-      tr("Environmental parameters")); // environmental parameters
-
-  connect(pFlightParamsAction, &QAction::triggered, this,
-          &MainWindow::showFlightParamsDialog);
-  logMessage(
-      "connect flight parameters action to show flight parameters dialog",
-      Qgis::MessageLevel::Info);
-  connect(pEnvironmentalParamsAction, &QAction::triggered, this,
-          &MainWindow::showEnvironmentalParamsDialog);
-  logMessage("connect environmental parameters action to show environmental "
-             "parameters dialog",
-             Qgis::MessageLevel::Info);
-  logMessage("create setting menu", Qgis::MessageLevel::Success);
-
-  // ================ Route Planning menu ================
-  QMenu *pRouteMenu = mpMenuBar->addMenu(tr("Route Planning"));
-  QAction *pCreateRouteAction = pRouteMenu->addAction(tr("Create route"));
-  if (mpRoutePlanner) {
-    connect(pCreateRouteAction, &QAction::triggered, mpRoutePlanner.get(),
-            &RoutePlanner::enterRoutePlanningMode);
-  } else {
-    logMessage("RoutePlanner not initialized", Qgis::MessageLevel::Critical);
-  }
-  logMessage("create route planning menu", Qgis::MessageLevel::Success);
-
-  //  ================ Simulation menu ================
-  QMenu *pSimulationMenu = mpMenuBar->addMenu(tr("Simulation"));
-  if (mpOpenGLWidget) {
-    QAction *startAction = pSimulationMenu->addAction(tr("Start Simulation"));
-    QAction *pauseAction = pSimulationMenu->addAction(tr("Pause Simulation"));
-    QAction *resumeAction = pSimulationMenu->addAction(tr("Resume Simulation"));
-    QAction *returnAction = pSimulationMenu->addAction(tr("Return Home"));
-    QAction *stopAction = pSimulationMenu->addAction(tr("Stop Simulation"));
-    /*
-    connect(startAction, &QAction::triggered, mpOpenGLWidget.get(),
-            &OpenGLCanvas::startSimulation);
-    connect(pauseAction, &QAction::triggered, mpOpenGLWidget.get(),
-            &OpenGLCanvas::pauseSimulation);
-    connect(resumeAction, &QAction::triggered, mpOpenGLWidget.get(),
-            &OpenGLCanvas::resumeSimulation);
-    connect(returnAction, &QAction::triggered, mpOpenGLWidget.get(),
-            &OpenGLCanvas::returnToHome);
-    connect(stopAction, &QAction::triggered, mpOpenGLWidget.get(),
-            &OpenGLCanvas::stopSimulation);
-*/
-  } else {
-    logMessage("OpenGLWidget not initialized", Qgis::MessageLevel::Critical);
-  }
-  logMessage("create simulation menu", Qgis::MessageLevel::Success);
-
-  //  ================ Help menu ================
-  QMenu *pHelpMenu = mpMenuBar->addMenu(tr("Help"));
-  pHelpMenu->addAction(tr("User Manual"), this, &MainWindow::showUserManual);
-
-  setMenuBar(mpMenuBar);
-  logMessage("create menu bar", Qgis::MessageLevel::Success);
+  
 }
 
 void MainWindow::createLeftDockWidget() {
@@ -704,18 +593,6 @@ void MainWindow::createSlots() {
   logMessage("connected all slots on main window", Qgis::MessageLevel::Success);
   */
 }
-void MainWindow::createMainWindow() {
-  mpCanvas = new QStackedWidget(this);
-  setCentralWidget(mpCanvas);
-  logMessage("create canvas", Qgis::MessageLevel::Success);
-  mpLeftDockWidget = new LeftDockWidget(this);
-  logMessage("create left dock widget", Qgis::MessageLevel::Success);
-  mpRightDockWidget = new RightDockWidget(this);
-  logMessage("create right dock widget", Qgis::MessageLevel::Success);
-  createSlots();
-  logMessage("create main window", Qgis::MessageLevel::Success);
-}
-// select file list directory
 
 void MainWindow::onSelectDirectoryClicked() {
   // open folder selection dialog

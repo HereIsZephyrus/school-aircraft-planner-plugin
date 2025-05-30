@@ -17,7 +17,7 @@ int main(int argc, char *argv[]) {
   //QApplication::setAttribute(Qt::AA_UseDesktopOpenGL);
   //QApplication::setAttribute(Qt::AA_ShareOpenGLContexts);
 
-  MainWindow w;
+  MainWindow& w = MainWindow::getInstance();
   w.show();
 
   int exitCode = app.exec();
