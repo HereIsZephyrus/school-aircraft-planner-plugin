@@ -24,7 +24,7 @@ set(RESOURCES
     ${CMAKE_SOURCE_DIR}/resources/resources.qrc
     ${CMAKE_SOURCE_DIR}/resources/avatar.qrc
     ${CMAKE_SOURCE_DIR}/resources/shader.qrc
-
+    ${DOC_RESOURCES}
 )
 
 set(CORE_SOURCES
@@ -68,16 +68,27 @@ set(SCHOOLCORE_SOUCRES
     ${GUI_SOURCES}
 )
 
-set(STANDALONE_SOURCES
-    main.cpp
+set(MAIN_WINDOW_SOURCES
     MainWindow.cpp
     MainWindow.h
     MainWindow.ui
 )
 
+set(STANDALONE_SOURCES
+    main.cpp
+    ${MAIN_WINDOW_SOURCES}
+)
+
+set(PLUGIN_SOURCES
+    plugin.cpp
+    plugin.h
+    ${MAIN_WINDOW_SOURCES}
+)
+
 if(BUILD_AS_PLUGIN)
     # Build as QGIS plugin
     add_library(3Dschool MODULE
+        ${PLUGIN_SOURCES}
         ${SCHOOLCORE_SOUCRES}
         ${RESOURCES}
     )

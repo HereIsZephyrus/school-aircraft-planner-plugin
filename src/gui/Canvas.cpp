@@ -64,3 +64,75 @@ void Canvas::init2DWidget() {
   logMessage("create QLabel to display local map image",
              Qgis::MessageLevel::Success);
 }
+
+
+/*
+void MainWindow::setTianDiTuMap(double lat, double lon, int zoom) {
+    QString key = "3e6c3b63b9529d502fc08c5850dfa5d5";
+
+    QString htmlContent =
+      QString("<!DOCTYPE html>"
+              "<html>"
+              "<head>"
+              "<title>TianDiTu Map</title>"
+              "<link rel='stylesheet' "
+              "href='https://unpkg.com/leaflet@1.7.1/dist/leaflet.css'/>"
+              "<script "
+              "src='https://unpkg.com/leaflet@1.7.1/dist/leaflet.js'></script>"
+              "<style>"
+              "#map { height: 100%%; width: 100%%; }"
+              "body { margin: 0; padding: 0; }"
+              "</style>"
+              "</head>"
+              "<body>"
+              "<div id='map'></div>"
+              "<script>"
+              "var map = L.map('map', {"
+              "   crs: L.CRS.EPSG4326," // use EPSG4326 coordinate system
+              "   center: [%4, %3],"    // latitude, longitude
+              "   zoom: %2"
+              "});"
+              ""
+              "L.tileLayer("
+              "   "
+              "'http://t0.tianditu.gov.cn/img_c/"
+              "wmts?tk=%1&layer=img&style=default&tilematrixset=wgs84&Service="
+              "WMTS&Request=GetTile&Version=1.0.0&Format=image/"
+              "jpeg&TileMatrix=%2&TileRow=%3&TileCol=%4"
+              "    "
+              "Request=GetTile&Version=1.0.0&Format=image/"
+              "jpeg&TileMatrix={z}&TileRow={y}&TileCol={x}',"
+              "   {"
+              "       tms: true,"              // enable TMS coordinate system
+              "       maxZoom: 18,"            // maximum zoom level
+              "       tileSize: 256,"          // tile size
+              "       attribution: 'TianDiTu'" // attribution
+              "   }"
+              ").addTo(map);"
+              "</script>"
+              "</body>"
+              "</html>")
+          .arg(key)
+          .arg(lat)
+          .arg(lon)
+          .arg(zoom);
+
+  // mpWebView->setHtml(htmlContent);
+  logMessage("set TianDiTu map", Qgis::MessageLevel::Success);
+}
+*/
+
+
+void MainWindow::createCanvas() {
+  mpOpenGLWidget = std::make_unique<OpenGLCanvas>(this);
+  // ================= middle area =================
+  mpStackedWidget = new QStackedWidget(this);
+  setCentralWidget(mpStackedWidget);
+  mpStackedWidget->setObjectName("mpStackedWidget");
+  mpStackedWidget->addWidget(mpOpenGLWidget.get()); // add 3D view
+  mpStackedWidget->addWidget(mpImageLabel);         // add 2D view
+  mpStackedWidget->setCurrentWidget(
+      mpOpenGLWidget.get()); // set 3D view as default
+
+  logMessage("create stacked widget", Qgis::MessageLevel::Info);
+}

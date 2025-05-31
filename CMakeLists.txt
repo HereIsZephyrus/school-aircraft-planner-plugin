@@ -59,6 +59,10 @@ set(INCLUDES
   ${QGIS_INCLUDE_DIR}
 )
 
+set(DOC_RESOURCES
+  ${CMAKE_SOURCE_DIR}/doc/documents.qrc
+)
+
 include_directories(
   ${Qt5Core_INCLUDE_DIRS}
   ${Qt5Gui_INCLUDE_DIRS}
