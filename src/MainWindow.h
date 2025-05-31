@@ -36,7 +36,6 @@ private:
   // void setTianDiTuMap(double lat, double lon, int zoom);
   QLabel *mpImageLabel;
 private slots:
-  void Unrealized();
 
 private:
   void createMenu();
@@ -44,9 +43,10 @@ private:
   void createLeftDockWidget();
   void createRightDockWidget();
   void createSlots();
-  QStackedWidget *mpCanvas;
-  QMenuBar *mpMenuBar;
-  QStackedWidget *mpStackedWidget;
+  Canvas *mpCanvas;
+  MenuBar *mpMenuBar;
+  LeftDockWidget *mpLeftDockWidget;
+  RightDockWidget *mpRightDockWidget;
   QTreeWidget *mpFileTreeWidget;
   QPushButton *mpBtnReset;
   QPushButton *mpBtnSwitchTo3D;
@@ -82,10 +82,11 @@ private:
   QLabel *m_pTemperatureLabel;
   QLabel *m_pPressureLabel;
   
-public slots:
+private slots:
   void showFlightParamsDialog();
   void showEnvironmentalParamsDialog();
   void showUserManual();
+  void Unrealized();
 
 private:
   QPushButton *m_btnManualMode;

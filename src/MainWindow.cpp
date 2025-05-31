@@ -8,7 +8,6 @@
 #include <memory>
 
 MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent) {
-
   logMessage("Application started", Qgis::MessageLevel::Info);
   initWindowStatus();
   ws::initializeWorkspaceState();
@@ -21,7 +20,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent) {
   mpMenuBar = new MenuBar(this);
   logMessage("create menu bar", Qgis::MessageLevel::Success);
   mpCanvas = new Canvas(this);
-  setCentralWidget(mpCanvas);
+  QMainWindow::setCentralWidget(mpCanvas);
   logMessage("create canvas", Qgis::MessageLevel::Success);
   mpLeftDockWidget = new LeftDockWidget(this);
   logMessage("create left dock widget", Qgis::MessageLevel::Success);

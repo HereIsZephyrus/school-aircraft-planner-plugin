@@ -3,12 +3,13 @@
 
 #include <qmenubar.h>
 #include <memory>
+#include "../core/WorkspaceState.h"
 
 class MenuBar : public QMenuBar{
     using pMenu = std::shared_ptr<QMenu>;
 public:
     MenuBar(QWidget *parent = nullptr);
-
+ 
 private:
     pMenu createProjectMenu(QWidget *parent);
     pMenu createViewMenu(QWidget *parent);
@@ -22,5 +23,27 @@ private:
     pMenu mpRouteMenu;
     pMenu mpSettingMenu;
     pMenu mpHelpMenu;
+
+private slots:
+    void onProjectMenuTriggered();
+
+signals:
+    void projectMenuTriggered(const QString &filePath);
+    void viewMenuTriggered();
+    void simulationMenuTriggered();
+    void routeMenuTriggered();
+    void settingMenuTriggered();
+    void helpMenuTriggered();
+    void viewChanged(ws::CanvasType viewType);
+    void viewReset();
+    void simulationStart();
+    void simulationPause();
+    void simulationResume();
+    void simulationReturnHome();
+    void simulationStop();
+    void createRoute();
+    void showFlightParamsDialog();
+    void showEnvironmentalParamsDialog();
+    void showUserManual();
 };
 #endif
