@@ -4,46 +4,29 @@
 #include "log/QgisDebug.h"
 #include <QAction>
 #include <QApplication>
-#include <memory>
 #include <QFile>
+#include <QScreen>
 #include <QTextStream>
+#include <memory>
 
 MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent) {
   logMessage("Application started", Qgis::MessageLevel::Info);
-  initWindowStatus();
   ws::initializeWorkspaceState();
-  logMessage("MainWindow constructor called", Qgis::MessageLevel::Success);
-  init3DWidget();
-  init2DWidget();
-
-  logMessage("function class initialized", Qgis::MessageLevel::Success);
-
+  initWindowStatus();
   mpMenuBar = new MenuBar(this);
-  logMessage("create menu bar", Qgis::MessageLevel::Success);
   mpCanvas = new Canvas(this);
-  QMainWindow::setCentralWidget(mpCanvas);
-  logMessage("create canvas", Qgis::MessageLevel::Success);
   mpLeftDockWidget = new LeftDockWidget(this);
-  logMessage("create left dock widget", Qgis::MessageLevel::Success);
   mpRightDockWidget = new RightDockWidget(this);
-  logMessage("create right dock widget", Qgis::MessageLevel::Success);
+  QMainWindow::setCentralWidget(mpCanvas);
   createSlots();
   logMessage("create main window", Qgis::MessageLevel::Success);
-
-  connect(mpRoutePlanner.get(), &RoutePlanner::dataUpdated,
-          mpOpenGLWidget.get(), QOverload<>::of(&QOpenGLWidget::update));
-  logMessage("connect route planner signal to update mapcanvas",
-             Qgis::MessageLevel::Success);
-  createJoyDockWidgets();
-  logMessage("create dock widgets", Qgis::MessageLevel::Success);
 }
 
 MainWindow::~MainWindow() {
-  logMessage("MainWindow destroyed", Qgis::MessageLevel::Info);
+  logMessage("MainWindow destroyed", Qgis::MessageLevel::Success);
 }
 
-static QSize setWindowSize(QRect screenGeometry, int maxWidth, int maxHeight,
-                           int minWidth, int minHeight) {
+QSize MainWindow::setWindowSize(QRect screenGeometry, int maxWidth, int maxHeight, int minWidth, int minHeight) {
   // calc current screen size
   double width_d = screenGeometry.width() * 0.8;
   double height_d = screenGeometry.height() * 0.8;
@@ -67,8 +50,6 @@ void MainWindow::initWindowStatus() {
   setWindowFlags(Qt::Window);
   setWindowTitle("3D Flight Simulation");
 }
-
-void MainWindow::Unrealized() {}
 
 void MainWindow::createSlots() {
   logMessage("create slots", Qgis::MessageLevel::Info);
@@ -191,58 +172,6 @@ void MainWindow::createSlots() {
   */
 }
 
-void MainWindow::onSelectDirectoryClicked() {
-  // open folder selection dialog
-  QString currentDir = ws::PathManager::getInstance().getRootDir();
-  QString dirPath = QFileDialog::getExistingDirectory(
-      this, tr("Select Directory"), currentDir);
-  if (!dirPath.isEmpty()) {
-    loadDirectoryFiles(
-        dirPath); // call loadDirectoryFiles to load selected directory
-  }
-  logMessage("select file list directory", Qgis::MessageLevel::Success);
-}
-// load file list of specified directory to QTreeWidget
-void MainWindow::loadDirectoryFiles(const QString &path) {
-  QDir dir(path);
-  if (!dir.exists())
-    return;
-
-  mpFileTreeWidget->clear();
-
-  QTreeWidgetItem *rootItem = new QTreeWidgetItem(mpFileTreeWidget);
-  rootItem->setText(0, dir.dirName());
-  loadDirectoryLevel(rootItem, path, 1, 3);
-
-  connect(mpFileTreeWidget, &QTreeWidget::itemExpanded, this,
-          &MainWindow::onTreeItemExpanded);
-}
-
-void MainWindow::loadDirectoryLevel(QTreeWidgetItem *parentItem,
-                                    const QString &path, int level,
-                                    int maxLevel) {
-  if (level > maxLevel)
-    return;
-
-  QDir dir(path);
-  QFileInfoList files =
-      dir.entryInfoList(QDir::Files | QDir::Dirs | QDir::NoDotAndDotDot);
-
-  foreach (const QFileInfo &fileInfo, files) {
-    QTreeWidgetItem *item = new QTreeWidgetItem(parentItem);
-    item->setText(0, fileInfo.fileName());
-
-    if (fileInfo.isDir()) {
-      if (level < maxLevel) {
-        loadDirectoryLevel(item, fileInfo.absoluteFilePath(), level + 1,
-                           maxLevel);
-      } else if (level == maxLevel) {
-        new QTreeWidgetItem(item);
-      }
-    }
-  }
-}
-
 void MainWindow::showUserManual() {
   logMessage("show user manual", Qgis::MessageLevel::Info);
   QDialog *manualDialog = new QDialog(this);
@@ -250,7 +179,7 @@ void MainWindow::showUserManual() {
   manualDialog->setWindowFlag(Qt::WindowContextHelpButtonHint, true);
 
   QTextEdit *textEdit = new QTextEdit(manualDialog);
-  
+
   QFile manualFile("resources/user_manual.txt");
   QString content;
   if (manualFile.open(QIODevice::ReadOnly | QIODevice::Text)) {
@@ -276,7 +205,8 @@ void MainWindow::showUserManual() {
   textEdit->setText(content);
   textEdit->setReadOnly(true);
   textEdit->setFixedSize(800, 600);
-  textEdit->setWhatsThis(tr("If you have any questions or issues, please contact the developer at: 18372124178."));
+  textEdit->setWhatsThis(tr("If you have any questions or issues, please "
+                            "contact the developer at: 18372124178."));
 
   QVBoxLayout *dialogLayout = new QVBoxLayout(manualDialog);
   dialogLayout->addWidget(textEdit);

@@ -14,6 +14,7 @@ static QString GetHomeDirectory() {
 namespace ws {
     void initializeWorkspaceState() {
         PathManager::getInstance();
+        logMessage("WorkspaceState initialized", Qgis::MessageLevel::Success);
     }
 }
 

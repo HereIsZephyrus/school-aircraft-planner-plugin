@@ -1,258 +1,210 @@
+#include "DockWidget.h"
+#include "../log/QgisDebug.h"
+#include "../core/WorkspaceState.h"
 
-void MainWindow::createJoyDockWidgets() {
-  // create flight control dock widget
-  QDockWidget *controlDock = new QDockWidget(tr("Flight Control"), this);
-  QWidget *controlPanel = new QWidget(this);
-
-  // main vertical layout
-  QVBoxLayout *mainLayout = new QVBoxLayout(controlPanel);
-  mainLayout->setContentsMargins(20, 20, 20, 20); // 增加边距
-  mainLayout->setSpacing(30);                     // 摇杆与按钮间距
-
-  // joystick row (horizontal layout)=====================================
-  QHBoxLayout *joystickLayout = new QHBoxLayout(controlPanel);
-  joystickLayout->setSpacing(40); // 增大摇杆间距
-
-  // m_leftJoystick = new JoystickWidget();
-  // m_rightJoystick = new JoystickWidget();
-
-  // 设置大尺寸摇杆
-  const int joystickSize = 180; // 摇杆尺寸
-  // m_leftJoystick->setFixedSize(joystickSize, joystickSize);
-  // m_rightJoystick->setFixedSize(joystickSize, joystickSize);
-
-  QString joystickStyle = "background-color: #333333;"
-                          "border-radius: " +
-                          QString::number(joystickSize / 2) +
-                          "px;"; // 动态计算圆角
-  // m_leftJoystick->setStyleSheet(joystickStyle);
-  // m_rightJoystick->setStyleSheet(joystickStyle);
-
-  // joystickLayout->addWidget(m_leftJoystick);
-  // joystickLayout->addWidget(m_rightJoystick);
-  mainLayout->addLayout(joystickLayout);
-
-  // 按钮行（保持大尺寸）===================================
-  QHBoxLayout *buttonLayout = new QHBoxLayout(controlPanel);
-  buttonLayout->setAlignment(Qt::AlignHCenter);
-  buttonLayout->setSpacing(30); // 按钮间距
-
-  m_btnManualMode = new QPushButton("手动模式", controlPanel);
-  m_btnAutoMode = new QPushButton("自动模式", controlPanel);
-
-  // 按钮样式（保持大尺寸但调整比例）
-  QString buttonStyle = "QPushButton {"
-                        "  background-color: #4A4A4A;"
-                        "  border: 2px solid #5A5A5A;"
-                        "  border-radius: 8px;"
-                        "  padding: 15px 30px;"         // 增大内边距
-                        "  min-width: 140px;"           // 保持大宽度
-                        "  min-height: 45px;"           // 保持大高度
-                        "  font: bold 16px '微软雅黑';" // 字体稍增大
-                        "}"
-                        "QPushButton:hover {"
-                        "  background-color: #5A5A5A;"
-                        "}";
-  m_btnManualMode->setStyleSheet(buttonStyle);
-  m_btnAutoMode->setStyleSheet(buttonStyle);
-
-  buttonLayout->addWidget(m_btnManualMode);
-  buttonLayout->addWidget(m_btnAutoMode);
-  mainLayout->addLayout(buttonLayout);
-
-  controlDock->setWidget(controlPanel);
-  addDockWidget(Qt::RightDockWidgetArea, controlDock);
+void LeftDockWidget::createScrollArea(QWidget* parent) {
+    mpScrollArea = new QScrollArea(parent);
+    mpScrollArea->setObjectName("leftDockWidgetScrollArea");
+    mpScrollArea->setWidgetResizable(true);
+    mpScrollArea->setHorizontalScrollBarPolicy(Qt::ScrollBarAsNeeded);
+    mpScrollArea->setVerticalScrollBarPolicy(Qt::ScrollBarAsNeeded);
+    mpMainLayout->addWidget(mpScrollArea);
 }
 
-void MainWindow::createLeftDockWidget() {
-  // initialize left dock widget
-  QDockWidget *pLeftDockWidget = new QDockWidget(tr("Control Panel"), this);
-  pLeftDockWidget->setObjectName("pLeftDockWidget");
-  pLeftDockWidget->setAllowedAreas(Qt::LeftDockWidgetArea);
-  pLeftDockWidget->setFeatures(QDockWidget::DockWidgetMovable |
-                               QDockWidget::DockWidgetFloatable);
-  pLeftDockWidget->setMinimumWidth(200);
-
-  QScrollArea *scrollArea = new QScrollArea(pLeftDockWidget);
-  scrollArea->setObjectName("scrollArea");
-  scrollArea->setWidgetResizable(true);
-  scrollArea->setHorizontalScrollBarPolicy(Qt::ScrollBarAsNeeded);
-  scrollArea->setVerticalScrollBarPolicy(Qt::ScrollBarAsNeeded);
-
-  QWidget *pDockContent = new QWidget(pLeftDockWidget);
-  pDockContent->setObjectName("pDockContent");
-  pDockContent->setMinimumWidth(175);
-  QVBoxLayout *pMainLayout = new QVBoxLayout(pDockContent);
-  pMainLayout->setContentsMargins(10, 10, 10, 10);
-  pMainLayout->setSpacing(10);
-
-  // ===== view switch group =====
-  QGroupBox *pViewGroup = new QGroupBox("View Switch", pDockContent);
-  pViewGroup->setObjectName("pViewGroup");
-  QVBoxLayout *pViewLayout = new QVBoxLayout(pViewGroup);
-  pViewLayout->setObjectName("pViewLayout");
-  pViewLayout->addWidget(mpBtnReset = new QPushButton("Reset", pViewGroup));
-  pViewLayout->addWidget(mpBtnSwitchTo3D =
-                             new QPushButton("3D View", pViewGroup));
-  pViewLayout->addWidget(mpBtnSwitchTo2D =
-                             new QPushButton("2D Map", pViewGroup));
-  pMainLayout->addWidget(pViewGroup);
-  logMessage("create view switch group", Qgis::MessageLevel::Success);
-
-  // ===== route planning group =====
-  QGroupBox *pRouteGroup = new QGroupBox("Route Planning");
-  pRouteGroup->setObjectName("pRouteGroup");
-  QFormLayout *pRouteLayout = new QFormLayout();
-  pRouteLayout->setObjectName("pRouteLayout");
-  logMessage("create route planning group", Qgis::MessageLevel::Success);
-
-  // add base height control widget to route planning group
-  QDoubleSpinBox *pBaseHeightSpin = new QDoubleSpinBox(pRouteGroup);
-  pBaseHeightSpin->setObjectName("pBaseHeightSpin");
-  pBaseHeightSpin->setRange(-1000.0, 1000.0);
-  pBaseHeightSpin->setValue(0.0);
-  pBaseHeightSpin->setSuffix(" m");
-  pRouteLayout->addRow("Base Height:", pBaseHeightSpin);
-
-  // set height selection box
-  QDoubleSpinBox *pHeightSpin = new QDoubleSpinBox(pRouteGroup);
-  pHeightSpin->setObjectName("pHeightSpin");
-  pHeightSpin->setRange(1.0, 300.0);
-  pHeightSpin->setValue(75.0);
-  pHeightSpin->setSuffix(" m");
-  pRouteLayout->addRow("Set Altitude:", pHeightSpin);
-
-  // set height selection box
-  QDoubleSpinBox *pWidthSpin = new QDoubleSpinBox(pRouteGroup);
-  pWidthSpin->setObjectName("pWidthSpin");
-  pWidthSpin->setRange(1.0, 300.0);
-  pWidthSpin->setValue(10.0);
-  pWidthSpin->setSuffix(" m");
-  pRouteLayout->addRow("Flight Path Width:", pWidthSpin);
-
-  // set operation buttons: create route, add, move, clear control points,
-  // generate route
-  QPushButton *pBtnCreateRoute =
-      new QPushButton("Create Route", pRouteGroup); // start creating route
-  pBtnCreateRoute->setObjectName("pBtnCreateRoute");
-  QPushButton *pBtnSetHome = new QPushButton("Set Home Point", pRouteGroup);
-  pBtnSetHome->setObjectName("pBtnSetHome");
-  QPushButton *pBtnAddControlPoint = new QPushButton(
-      "Add Control Point", pRouteGroup); // add control point button
-  pBtnAddControlPoint->setObjectName("pBtnAddControlPoint");
-  QPushButton *pBtnEditPoint = new QPushButton(
-      "Edit Points", pRouteGroup); // bring up the toolbar, select the point,
-                                   // and move, delete point function
-  pBtnEditPoint->setObjectName("pBtnEditPoint");
-  QPushButton *pBtnGenerate =
-      new QPushButton("Generate Route", pRouteGroup); // generate route
-  pBtnGenerate->setObjectName("pBtnGenerate");
-
-  QWidget *buttonContainer = new QWidget(pRouteGroup);
-  QVBoxLayout *pBtnColumn = new QVBoxLayout(buttonContainer);
-  pBtnColumn->setObjectName("pBtnColumn");
-  pBtnColumn->setContentsMargins(0, 0, 0, 0);
-  pBtnColumn->addWidget(pBtnCreateRoute);
-  pBtnColumn->addWidget(pBtnSetHome);
-  pBtnColumn->addWidget(pBtnAddControlPoint);
-  pBtnColumn->addWidget(pBtnEditPoint);
-  pBtnColumn->addWidget(pBtnGenerate);
-  pRouteLayout->addRow(buttonContainer);
-  pRouteGroup->setLayout(pRouteLayout);
-  pMainLayout->addWidget(pRouteGroup);
-
-  logMessage("create route planning group", Qgis::MessageLevel::Success);
-
-  // ===== flight simulation group =====
-  QGroupBox *pSimGroup = new QGroupBox("Flight Simulation");
-  pSimGroup->setObjectName("pSimGroup");
-  QFormLayout *pSimLayout = new QFormLayout(pSimGroup);
-  pSimLayout->setObjectName("pSimLayout");
-  logMessage("create flight simulation group", Qgis::MessageLevel::Success);
-
-  QDoubleSpinBox *pSpeedSpin = new QDoubleSpinBox(pSimGroup);
-  pSpeedSpin->setObjectName("pSpeedSpin");
-  pSpeedSpin->setRange(ws::FlightManager::minFlightSpeed,
-                       ws::FlightManager::maxFlightSpeed);
-  pSpeedSpin->setValue(ws::FlightManager::getInstance().getFlightSpeed());
-  pSpeedSpin->setSuffix(" m/s");
-  pSimLayout->addRow("Flight Speed:", pSpeedSpin);
-  logMessage("create flight speed spin box", Qgis::MessageLevel::Success);
-
-  QPushButton *pBtnStart = new QPushButton("Start", pSimGroup);
-  pBtnStart->setObjectName("pBtnStart");
-  QPushButton *pBtnPause = new QPushButton("Pause", pSimGroup);
-  pBtnPause->setObjectName("pBtnPause");
-  QPushButton *pBtnResume = new QPushButton("Resume", pSimGroup);
-  pBtnResume->setObjectName("pBtnResume");
-  QPushButton *pBtnReturn = new QPushButton("Return Home", pSimGroup);
-  pBtnReturn->setObjectName("pBtnReturn");
-  QPushButton *pBtnStop = new QPushButton("Stop Simulation", pSimGroup);
-  pBtnStop->setObjectName("pBtnStop");
-  QHBoxLayout *pControlRow1 = new QHBoxLayout();
-  pControlRow1->setObjectName("pControlRow1");
-  pControlRow1->addWidget(pBtnStart);
-  pControlRow1->addWidget(pBtnPause);
-  QHBoxLayout *pControlRow2 = new QHBoxLayout();
-  pControlRow2->setObjectName("pControlRow2");
-  pControlRow2->addWidget(pBtnResume);
-  pControlRow2->addWidget(pBtnReturn);
-  QHBoxLayout *pControlRow3 = new QHBoxLayout();
-  pControlRow3->setObjectName("pControlRow3");
-  pControlRow3->addWidget(pBtnStop);
-  logMessage("create flight simulation group", Qgis::MessageLevel::Success);
-
-  pSimLayout->addRow(pControlRow1);
-  pSimLayout->addRow(pControlRow2);
-  pSimLayout->addRow(pControlRow3);
-  pMainLayout->addWidget(pSimGroup);
-
-  pMainLayout->addStretch();
-
-  scrollArea->setWidget(pDockContent);
-  pLeftDockWidget->setWidget(scrollArea);
-  addDockWidget(Qt::LeftDockWidgetArea, pLeftDockWidget);
-
-  // ===== flight parameters query group =====
-  QGroupBox *pFlightParamsGroup =
-      new QGroupBox("Flight Parameters", pDockContent);
-  pFlightParamsGroup->setObjectName("pFlightParamsGroup");
-  QVBoxLayout *pFlightParamsLayout = new QVBoxLayout(pFlightParamsGroup);
-  pFlightParamsLayout->setObjectName("pFlightParamsLayout");
-  QPushButton *pBtnQueryParams =
-      new QPushButton("Query Parameters", pFlightParamsGroup);
-  pBtnQueryParams->setObjectName("pBtnQueryParams");
-  m_pFlightParamsDisplay =
-      new QLabel("No flight data available", pFlightParamsGroup);
-  m_pFlightParamsDisplay->setWordWrap(true);
-  m_pFlightParamsDisplay->setFrameStyle(QFrame::Box);
-  pFlightParamsLayout->addWidget(pBtnQueryParams);
-  pFlightParamsLayout->addWidget(m_pFlightParamsDisplay);
-  pMainLayout->addWidget(pFlightParamsGroup);
-  logMessage("create flight parameters query group",
-             Qgis::MessageLevel::Success);
-
-  // ===== basic data group =====
-  QGroupBox *pBasicDataGroup =
-      new QGroupBox("Environmental Data", pDockContent);
-  pBasicDataGroup->setObjectName("pBasicDataGroup");
-  QFormLayout *pBasicDataLayout = new QFormLayout(pBasicDataGroup);
-  pBasicDataLayout->setObjectName("pBasicDataLayout");
-  m_pWeatherLabel = new QLabel("Weather: -", pBasicDataGroup);
-  m_pTemperatureLabel = new QLabel("Temperature: -", pBasicDataGroup);
-  m_pPressureLabel = new QLabel("Pressure: -", pBasicDataGroup);
-  QPushButton *pBtnRefreshData =
-      new QPushButton("Refresh Data", pBasicDataGroup);
-  pBtnRefreshData->setObjectName("pBtnRefreshData");
-  pBasicDataLayout->addRow("Weather:", m_pWeatherLabel);
-  pBasicDataLayout->addRow("Temperature:", m_pTemperatureLabel);
-  pBasicDataLayout->addRow("Pressure:", m_pPressureLabel);
-  pBasicDataLayout->addRow(pBtnRefreshData);
-  pMainLayout->addWidget(pBasicDataGroup);
-  logMessage("create basic data group", Qgis::MessageLevel::Success);
+void LeftDockWidget::createDockContent(QWidget* parent) {
+    mpDockContent = new QWidget(parent);
+    mpDockContent->setObjectName("dockContent");
+    mpDockContent->setMinimumWidth(175);
+    mpMainLayout->addWidget(mpDockContent);
 }
-void MainWindow::createRightDockWidget() {
-  // initialize right dock widget
+
+ViewGroup::ViewGroup(QWidget* parent) : FunctionGroup(tr("View Switch"), "viewGroup", parent) {
+    mpGroupLayout->setObjectName("viewLayout");
+    mpGroupLayout->setContentsMargins(10, 10, 10, 10);
+    mpGroupLayout->setSpacing(5);
+
+    mpBtnReset = new QPushButton(tr("Reset"), this);
+    mpBtnReset->setObjectName("resetButton");
+    mpBtnSwitchTo3D = new QPushButton(tr("3D View"), this);
+    mpBtnSwitchTo3D->setObjectName("switchTo3DButton");
+    mpBtnSwitchTo2D = new QPushButton(tr("2D Map"), this);
+    mpBtnSwitchTo2D->setObjectName("switchTo2DButton");
+    mpGroupLayout->addWidget(mpBtnReset);
+    mpGroupLayout->addWidget(mpBtnSwitchTo3D);
+    mpGroupLayout->addWidget(mpBtnSwitchTo2D);
+    logMessage("View switch group created", Qgis::MessageLevel::Success);
+}
+
+void RouteGroup::createSpins() {
+    mpBaseHeightSpin = new QDoubleSpinBox(this);
+    mpBaseHeightSpin->setObjectName("baseHeightSpin");
+    mpBaseHeightSpin->setRange(-1000.0, 1000.0);
+    mpBaseHeightSpin->setValue(0.0);
+    mpBaseHeightSpin->setSuffix(" m");
+
+    mpHeightSpin = new QDoubleSpinBox(this);
+    mpHeightSpin->setObjectName("heightSpin");
+    mpHeightSpin->setRange(1.0, 300.0);
+    mpHeightSpin->setValue(75.0);
+    mpHeightSpin->setSuffix(" m");
+
+    mpWidthSpin = new QDoubleSpinBox(this);
+    mpWidthSpin->setObjectName("widthSpin");
+    mpWidthSpin->setRange(1.0, 300.0);
+    mpWidthSpin->setValue(10.0);
+    mpWidthSpin->setSuffix(" m");
+}
+
+void RouteGroup::createButtons() {
+    // create button container
+    mpButtonContainer = new QWidget(this);
+    mpButtonContainer->setObjectName("buttonContainer");
+
+    // create button layout
+    mpButtonLayout = new QVBoxLayout(mpButtonContainer);
+    mpButtonLayout->setContentsMargins(0, 0, 0, 0);
+    mpButtonLayout->setSpacing(5);  // set button spacing
+
+    // create button
+    mpBtnCreateRoute = new QPushButton(tr("Create Route"), mpButtonContainer);
+    mpBtnSetHome = new QPushButton(tr("Set Home"), mpButtonContainer);
+    mpBtnAddControlPoint = new QPushButton(tr("Add Control Point"), mpButtonContainer);
+    mpBtnEditPoint = new QPushButton(tr("Edit Point"), mpButtonContainer);
+    mpBtnGenerate = new QPushButton(tr("Generate"), mpButtonContainer);
+
+    // set button object name
+    mpBtnCreateRoute->setObjectName("createRouteButton");
+    mpBtnSetHome->setObjectName("setHomeButton");
+    mpBtnAddControlPoint->setObjectName("addControlPointButton");
+    mpBtnEditPoint->setObjectName("editPointButton");
+    mpBtnGenerate->setObjectName("generateButton");
+
+    // add to layout
+    mpButtonLayout->addWidget(mpBtnCreateRoute);
+    mpButtonLayout->addWidget(mpBtnSetHome);
+    mpButtonLayout->addWidget(mpBtnAddControlPoint);
+    mpButtonLayout->addWidget(mpBtnEditPoint);
+    mpButtonLayout->addWidget(mpBtnGenerate);
+}
+
+RouteGroup::RouteGroup(QWidget* parent) : FunctionGroup(tr("Route Planning"), "routeGroup", parent) {
+    createSpins();
+    createButtons();
+    mpGroupLayout->addRow("Base Height:", mpBaseHeightSpin);
+    mpGroupLayout->addRow("Set Altitude:", mpHeightSpin);
+    mpGroupLayout->addRow("Flight Path Width:", mpWidthSpin);
+    mpGroupLayout->addRow(tr("Controls:"), mpButtonContainer);
+
+    logMessage("route planning group created", Qgis::MessageLevel::Success);
+}
+
+void FlightSimGroup::createSpins() {
+    using namespace ws;
+    FlightManager &flightManager = FlightManager::getInstance();
+    mpSpeedSpin = new QDoubleSpinBox(this);
+    mpSpeedSpin->setObjectName("pSpeedSpin");
+    mpSpeedSpin->setRange(FlightManager::minFlightSpeed,
+                        FlightManager::maxFlightSpeed);
+    mpSpeedSpin->setValue(flightManager.getFlightSpeed());
+    mpSpeedSpin->setSuffix(" m/s");
+}
+
+void FlightSimGroup::createButtons() {
+    mpControlRow1 = new QHBoxLayout(this);
+    mpControlRow1->setObjectName("controlRow1");
+    mpBtnStart = new QPushButton("Start", this);
+    mpBtnStart->setObjectName("startButton");
+    mpBtnPause = new QPushButton("Pause", this);
+    mpBtnPause->setObjectName("pauseButton");
+    mpControlRow1->addWidget(mpBtnStart);
+    mpControlRow1->addWidget(mpBtnPause);
+
+    mpControlRow2 = new QHBoxLayout();
+    mpControlRow2->setObjectName("controlRow2");
+    mpBtnResume = new QPushButton("Resume", this);
+    mpBtnResume->setObjectName("resumeButton");
+    mpBtnReturn = new QPushButton("Return Home", this);
+    mpBtnReturn->setObjectName("returnButton");
+    mpControlRow2->addWidget(mpBtnResume);
+    mpControlRow2->addWidget(mpBtnReturn);
+
+    mpControlRow3 = new QHBoxLayout();
+    mpControlRow3->setObjectName("controlRow3");
+    mpBtnStop = new QPushButton("Stop Simulation", this);
+    mpBtnStop->setObjectName("stopButton");
+    mpControlRow3->addWidget(mpBtnStop);
+}
+
+FlightSimGroup::FlightSimGroup(QWidget* parent) : FunctionGroup(tr("Flight Simulation"), "flightSimGroup", parent) {
+    setObjectName("flightSimGroup");
+    createSpins();
+    createButtons();
+    mpGroupLayout->addRow("Flight Speed:", mpSpeedSpin);
+    mpGroupLayout->addRow(mpControlRow1);
+    mpGroupLayout->addRow(mpControlRow2);
+    mpGroupLayout->addRow(mpControlRow3);
+
+    logMessage("flight simulation group created", Qgis::MessageLevel::Success);
+}
+
+void FlightQueryGroup::createButtons() {
+    mpBtnQueryParams = new QPushButton("Query Parameters", this);
+    mpBtnQueryParams->setObjectName("pBtnQueryParams");
+    mpFlightParamsDisplay = new QLabel("No flight data available", this);
+    mpFlightParamsDisplay->setWordWrap(true);
+    mpFlightParamsDisplay->setFrameStyle(QFrame::Box);
+}
+
+FlightQueryGroup::FlightQueryGroup(QWidget* parent) : FunctionGroup(tr("Flight Query"), "flightQueryGroup", parent) {
+    setObjectName("flightQueryGroup");
+    createButtons();
+    
+    mpGroupLayout->addWidget(mpBtnQueryParams);
+    mpGroupLayout->addWidget(mpFlightParamsDisplay);
+    logMessage("flight parameters query group created",
+                Qgis::MessageLevel::Success);
+}
+
+void BasicDataGroup::createButtons() {
+    mpBtnRefreshData = new QPushButton("Refresh Data", this);
+    mpBtnRefreshData->setObjectName("pBtnRefreshData");
+    mpWeatherLabel = new QLabel("Weather: -", this);
+    mpTemperatureLabel = new QLabel("Temperature: -", this);
+    mpPressureLabel = new QLabel("Pressure: -", this);
+}
+
+BasicDataGroup::BasicDataGroup(QWidget* parent) : FunctionGroup(tr("Environmental Data"), "basicDataGroup", parent) {
+    setObjectName("basicDataGroup");
+
+    createButtons();
+    mpGroupLayout->addRow("Weather:", mpWeatherLabel);
+    mpGroupLayout->addRow("Temperature:", mpTemperatureLabel);
+    mpGroupLayout->addRow("Pressure:", mpPressureLabel);
+    mpGroupLayout->addRow(mpBtnRefreshData);
+    logMessage("basic data group created", Qgis::MessageLevel::Success);
+}
+
+LeftDockWidget::LeftDockWidget(QWidget *parent) : QDockWidget(parent) {
+    setObjectName("leftDockWidget");
+    setAllowedAreas(Qt::LeftDockWidgetArea);
+    setFeatures(QDockWidget::DockWidgetMovable | QDockWidget::DockWidgetFloatable);
+    setMinimumWidth(200);
+
+    mpMainLayout = new QVBoxLayout(this);
+    createScrollArea(this);
+    createDockContent(mpScrollArea);
+    mpViewGroup = new ViewGroup(mpDockContent);
+    mpRouteGroup = new RouteGroup(mpDockContent);
+    mpFlightSimGroup = new FlightSimGroup(mpDockContent);
+    mpMainLayout->addStretch();
+    mpFlightQueryGroup = new FlightQueryGroup(mpDockContent);
+    mpBasicDataGroup = new BasicDataGroup(mpDockContent);
+    logMessage("left dock widget created", Qgis::MessageLevel::Success);
+}
+
+RightDockWidget::RightDockWidget(QWidget *parent) : QDockWidget(parent) {
+  logMessage("create right dock widget", Qgis::MessageLevel::Success);
+    // initialize right dock widget
   QDockWidget *pRightDockWidget = new QDockWidget(tr("Property Panel"));
   pRightDockWidget->setObjectName("pRightDockWidget");
   pRightDockWidget->setAllowedAreas(Qt::RightDockWidgetArea);
@@ -451,6 +403,70 @@ void MainWindow::createRightDockWidget() {
   logMessage("connect right widget to slots", Qgis::MessageLevel::Success);
 }
 
+JoyDockWidget::JoyDockWidget(QWidget *parent) : QDockWidget(parent) {
+     QDockWidget *controlDock = new QDockWidget(tr("Flight Control"), this);
+  QWidget *controlPanel = new QWidget(this);
+
+  // main vertical layout
+  QVBoxLayout *mainLayout = new QVBoxLayout(controlPanel);
+  mainLayout->setContentsMargins(20, 20, 20, 20); // 增加边距
+  mainLayout->setSpacing(30);                     // 摇杆与按钮间距
+
+  // joystick row (horizontal layout)=====================================
+  QHBoxLayout *joystickLayout = new QHBoxLayout(controlPanel);
+  joystickLayout->setSpacing(40); // 增大摇杆间距
+
+  // m_leftJoystick = new JoystickWidget();
+  // m_rightJoystick = new JoystickWidget();
+
+  // 设置大尺寸摇杆
+  const int joystickSize = 180; // 摇杆尺寸
+  // m_leftJoystick->setFixedSize(joystickSize, joystickSize);
+  // m_rightJoystick->setFixedSize(joystickSize, joystickSize);
+
+  QString joystickStyle = "background-color: #333333;"
+                          "border-radius: " +
+                          QString::number(joystickSize / 2) +
+                          "px;"; // 动态计算圆角
+  // m_leftJoystick->setStyleSheet(joystickStyle);
+  // m_rightJoystick->setStyleSheet(joystickStyle);
+
+  // joystickLayout->addWidget(m_leftJoystick);
+  // joystickLayout->addWidget(m_rightJoystick);
+  mainLayout->addLayout(joystickLayout);
+
+  // 按钮行（保持大尺寸）===================================
+  QHBoxLayout *buttonLayout = new QHBoxLayout(controlPanel);
+  buttonLayout->setAlignment(Qt::AlignHCenter);
+  buttonLayout->setSpacing(30); // 按钮间距
+
+  m_btnManualMode = new QPushButton("手动模式", controlPanel);
+  m_btnAutoMode = new QPushButton("自动模式", controlPanel);
+
+  // 按钮样式（保持大尺寸但调整比例）
+  QString buttonStyle = "QPushButton {"
+                        "  background-color: #4A4A4A;"
+                        "  border: 2px solid #5A5A5A;"
+                        "  border-radius: 8px;"
+                        "  padding: 15px 30px;"         // 增大内边距
+                        "  min-width: 140px;"           // 保持大宽度
+                        "  min-height: 45px;"           // 保持大高度
+                        "  font: bold 16px '微软雅黑';" // 字体稍增大
+                        "}"
+                        "QPushButton:hover {"
+                        "  background-color: #5A5A5A;"
+                        "}";
+  m_btnManualMode->setStyleSheet(buttonStyle);
+  m_btnAutoMode->setStyleSheet(buttonStyle);
+
+  buttonLayout->addWidget(m_btnManualMode);
+  buttonLayout->addWidget(m_btnAutoMode);
+  mainLayout->addLayout(buttonLayout);
+
+  controlDock->setWidget(controlPanel);
+  addDockWidget(Qt::RightDockWidgetArea, controlDock);
+  logMessage("create joy dock widget", Qgis::MessageLevel::Success);
+}
 
 void MainWindow::showFlightParamsDialog() {
   logMessage("show flight parameters dialog", Qgis::MessageLevel::Info);
@@ -637,4 +653,57 @@ void MainWindow::onTreeItemDoubleClicked(QTreeWidgetItem *item, int column) {
 
 void MainWindow::loadModel(const QString &objFilePath) {
   mpOpenGLWidget->loadModel(objFilePath);
+}
+
+
+void MainWindow::onSelectDirectoryClicked() {
+  // open folder selection dialog
+  QString currentDir = ws::PathManager::getInstance().getRootDir();
+  QString dirPath = QFileDialog::getExistingDirectory(
+      this, tr("Select Directory"), currentDir);
+  if (!dirPath.isEmpty()) {
+    loadDirectoryFiles(
+        dirPath); // call loadDirectoryFiles to load selected directory
+  }
+  logMessage("select file list directory", Qgis::MessageLevel::Success);
+}
+// load file list of specified directory to QTreeWidget
+void MainWindow::loadDirectoryFiles(const QString &path) {
+  QDir dir(path);
+  if (!dir.exists())
+    return;
+
+  mpFileTreeWidget->clear();
+
+  QTreeWidgetItem *rootItem = new QTreeWidgetItem(mpFileTreeWidget);
+  rootItem->setText(0, dir.dirName());
+  loadDirectoryLevel(rootItem, path, 1, 3);
+
+  connect(mpFileTreeWidget, &QTreeWidget::itemExpanded, this,
+          &MainWindow::onTreeItemExpanded);
+}
+
+void MainWindow::loadDirectoryLevel(QTreeWidgetItem *parentItem,
+                                    const QString &path, int level,
+                                    int maxLevel) {
+  if (level > maxLevel)
+    return;
+
+  QDir dir(path);
+  QFileInfoList files =
+      dir.entryInfoList(QDir::Files | QDir::Dirs | QDir::NoDotAndDotDot);
+
+  foreach (const QFileInfo &fileInfo, files) {
+    QTreeWidgetItem *item = new QTreeWidgetItem(parentItem);
+    item->setText(0, fileInfo.fileName());
+
+    if (fileInfo.isDir()) {
+      if (level < maxLevel) {
+        loadDirectoryLevel(item, fileInfo.absoluteFilePath(), level + 1,
+                           maxLevel);
+      } else if (level == maxLevel) {
+        new QTreeWidgetItem(item);
+      }
+    }
+  }
 }

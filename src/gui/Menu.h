@@ -2,27 +2,27 @@
 #define MENU_H
 
 #include <qmenubar.h>
-#include <memory>
 #include "../core/WorkspaceState.h"
 
 class MenuBar : public QMenuBar{
-    using pMenu = std::shared_ptr<QMenu>;
+    Q_OBJECT
+    
 public:
     MenuBar(QWidget *parent = nullptr);
  
 private:
-    pMenu createProjectMenu(QWidget *parent);
-    pMenu createViewMenu(QWidget *parent);
-    pMenu createSimulationMenu(QWidget *parent);
-    pMenu createRouteMenu(QWidget *parent);
-    pMenu createSettingMenu(QWidget *parent);
-    pMenu createHelpMenu(QWidget *parent);
-    pMenu mpProjectMenu;
-    pMenu mpViewMenu;
-    pMenu mpSimulationMenu;
-    pMenu mpRouteMenu;
-    pMenu mpSettingMenu;
-    pMenu mpHelpMenu;
+    QMenu* createProjectMenu(QWidget *parent);
+    QMenu* createViewMenu(QWidget *parent);
+    QMenu* createSimulationMenu(QWidget *parent);
+    QMenu* createRouteMenu(QWidget *parent);
+    QMenu* createSettingMenu(QWidget *parent);
+    QMenu* createHelpMenu(QWidget *parent);
+    QMenu* mpProjectMenu;
+    QMenu* mpViewMenu;
+    QMenu* mpSimulationMenu;
+    QMenu* mpRouteMenu;
+    QMenu* mpSettingMenu;
+    QMenu* mpHelpMenu;
 
 private slots:
     void onProjectMenuTriggered();

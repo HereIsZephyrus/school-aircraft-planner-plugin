@@ -1,7 +1,8 @@
 #include "Canvas.h"
+#include "../log/QgisDebug.h"
 
-Canvas::Canvas(QStackedWidget *parent) : QStackedWidget(parent){
-
+Canvas::Canvas(QWidget *parent) : QStackedWidget(parent){
+  logMessage("create canvas", Qgis::MessageLevel::Success);
 }
 
 // switch to 3D

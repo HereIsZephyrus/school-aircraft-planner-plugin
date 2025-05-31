@@ -10,7 +10,7 @@ class Canvas : public QStackedWidget {
   Q_OBJECT
 
 public:
-  Canvas(QStackedWidget *parent = nullptr);
+  Canvas(QWidget *parent = nullptr);
   ~Canvas();
   void init3DWidget();
   void init2DWidget();
