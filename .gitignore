@@ -3,6 +3,7 @@
 /build
 /app
 /.cache
+/.vscode
 *.d
 
 # Compiled Object files

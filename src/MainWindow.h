@@ -8,7 +8,8 @@ Date:2025.1.6
 #include "core/WorkspaceState.h"
 #include "gui/Canvas.h"
 #include "gui/Menu.h"
-#include "gui/DockWidget.h"
+#include "gui/LeftDockWidget.h"
+#include "gui/RightDockWidget.h"
 #include <QAction>
 #include <QApplication>
 #include <QKeyEvent>

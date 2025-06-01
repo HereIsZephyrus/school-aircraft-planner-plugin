@@ -13,11 +13,34 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent) {
   logMessage("Application started", Qgis::MessageLevel::Info);
   ws::initializeWorkspaceState();
   initWindowStatus();
-  mpMenuBar = new MenuBar(this);
+
   mpCanvas = new Canvas(this);
-  mpLeftDockWidget = new LeftDockWidget(this);
-  mpRightDockWidget = new RightDockWidget(this);
   QMainWindow::setCentralWidget(mpCanvas);
+  if (!mpCanvas) {
+    logMessage("Failed to create canvas", Qgis::MessageLevel::Error);
+    return;
+  }
+  
+  mpMenuBar = new MenuBar(this);
+  setMenuBar(mpMenuBar);
+  if (!mpMenuBar) {
+    logMessage("Failed to create menu bar", Qgis::MessageLevel::Error);
+    return;
+  }
+
+  mpLeftDockWidget = new LeftDockWidget(this);
+  addDockWidget(Qt::LeftDockWidgetArea, mpLeftDockWidget);
+  mpRightDockWidget = new RightDockWidget(this);
+  addDockWidget(Qt::RightDockWidgetArea, mpRightDockWidget);
+  if (!mpLeftDockWidget) {
+    logMessage("Failed to create left dock widget", Qgis::MessageLevel::Error);
+    return;
+  }
+  if (!mpRightDockWidget) {
+    logMessage("Failed to create right dock widget", Qgis::MessageLevel::Error);
+    return;
+  }
+
   createSlots();
   logMessage("create main window", Qgis::MessageLevel::Success);
 }

@@ -39,8 +39,10 @@ set(CORE_SOURCES
 set(GUI_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/gui/Canvas.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/gui/Canvas.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/gui/DockWidget.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/gui/DockWidget.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/gui/LeftDockWidget.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/gui/LeftDockWidget.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/gui/RightDockWidget.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/gui/RightDockWidget.h
     ${CMAKE_CURRENT_SOURCE_DIR}/gui/Menu.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/gui/Menu.h
     ${CMAKE_CURRENT_SOURCE_DIR}/gui/OpenGLCanvas.cpp
