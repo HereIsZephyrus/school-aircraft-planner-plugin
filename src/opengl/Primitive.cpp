@@ -2,6 +2,7 @@
 #include "../log/QgisDebug.h"
 #include "../core/WorkspaceState.h"
 #include "Camera.h"
+#include <GL/gl.h>
 namespace gl {
 using Material = ModelData::Material;
 using Texture = QOpenGLTexture;
@@ -37,6 +38,32 @@ Primitive::Primitive(GLenum primitiveType, GLfloat *vertices, GLuint vertexNum, 
   this->vao.release();
   logMessage("Primitive data initialized", Qgis::MessageLevel::Info);
 }
+
+Primitive::Primitive(GLenum primitiveType, const QVector<QVector3D>& vertices, GLuint stride){
+  this->primitiveType = primitiveType;
+  this->vertexNum = vertices.size();
+  this->vertices = new GLfloat[this->vertexNum * 3];
+  for (GLuint i = 0; i < this->vertexNum; i++) {
+    this->vertices[i * 3] = vertices[i].x();
+    this->vertices[i * 3 + 1] = vertices[i].y();
+    this->vertices[i * 3 + 2] = vertices[i].z();
+  }
+  this->stride = stride;
+  this->vao.create();
+  this->vbo.create();
+  this->modelMatrix.setToIdentity();
+  this->shader = nullptr;
+  logMessage("Primitive created", Qgis::MessageLevel::Info);
+  this->vao.bind();
+  this->vbo.bind();
+  this->vbo.setUsagePattern(QOpenGLBuffer::StaticDraw);
+  this->vbo.allocate(this->vertices,
+                     this->vertexNum * this->stride * sizeof(GLfloat));
+  this->vbo.release();
+  this->vao.release();
+  logMessage("Primitive data initialized", Qgis::MessageLevel::Info);
+}
+
 Primitive::Primitive(GLenum primitiveType, GLuint stride)
     : shader(nullptr), stride(stride) {
   this->primitiveType = primitiveType;
@@ -69,6 +96,9 @@ void Primitive::setModelMatrix(const QMatrix4x4 &matrix) {
 ColorPrimitive::ColorPrimitive(GLenum primitiveType, GLfloat *vertices,
                                GLuint vertexNum, const QVector4D &color)
     : Primitive(primitiveType, vertices, vertexNum, 3), color(color) {}
+
+ColorPrimitive::ColorPrimitive(GLenum primitiveType, const QVector<QVector3D>& vertices, const QVector4D& color)
+    : Primitive(primitiveType, vertices, 3), color(color) {}
 
 void ColorPrimitive::draw(const QMatrix4x4 &view, const QMatrix4x4 &projection) {
   if (!shader) {
@@ -128,9 +158,8 @@ BasePlane::BasePlane(const QVector4D &color)
   logMessage("BasePlane initialized", Qgis::MessageLevel::Info);
 }
 
-RoutePath::RoutePath(GLfloat *vertices, GLuint vertexNum,
-                     const QVector4D &color)
-    : ColorPrimitive(GL_LINE_STRIP, vertices, vertexNum, color) {
+RoutePath::RoutePath(const QVector<QVector3D>& vertices, const QVector4D& color)
+    : ColorPrimitive(GL_LINE_STRIP, vertices, color) {
   logMessage("start constructing shader", Qgis::MessageLevel::Info);
   constructShader(QStringLiteral(":/schoolcore/shaders/line.vs"), QStringLiteral(":/schoolcore/shaders/line.fs"));
   this->shader->enableAttributeArray(0);
@@ -138,9 +167,8 @@ RoutePath::RoutePath(GLfloat *vertices, GLuint vertexNum,
   logMessage("RoutePath initialized", Qgis::MessageLevel::Info);
 }
 
-ControlPoints::ControlPoints(GLfloat *vertices, GLuint vertexNum,
-                             const QVector4D &color)
-    : ColorPrimitive(GL_POINTS, vertices, vertexNum, color) {
+ControlPoints::ControlPoints(const QVector<QVector3D>& vertices, const QVector4D& color)
+    : ColorPrimitive(GL_POINTS, vertices, color) {
   logMessage("start constructing shader", Qgis::MessageLevel::Info);
   constructShader(QStringLiteral(":/schoolcore/shaders/point.vs"), QStringLiteral(":/schoolcore/shaders/point.fs"));
   this->shader->enableAttributeArray(0);
@@ -148,9 +176,17 @@ ControlPoints::ControlPoints(GLfloat *vertices, GLuint vertexNum,
   logMessage("ControlPoints initialized", Qgis::MessageLevel::Info);
 }
 
-ConvexHull::ConvexHull(GLfloat *vertices, GLuint vertexNum,
-                       const QVector4D &color)
-    : ColorPrimitive(GL_LINE_LOOP, vertices, vertexNum, color) {
+HomePoint::HomePoint(const QVector<QVector3D>& vertices, const QVector4D& color)
+    : ColorPrimitive(GL_POINTS, vertices, color) {
+  logMessage("start constructing shader", Qgis::MessageLevel::Info);
+  constructShader(QStringLiteral(":/schoolcore/shaders/point.vs"), QStringLiteral(":/schoolcore/shaders/point.fs"));
+  this->shader->enableAttributeArray(0);
+  this->shader->setAttributeBuffer(0, GL_FLOAT, 0, 3, this->stride * sizeof(GLfloat));
+  logMessage("HomePoint initialized", Qgis::MessageLevel::Info);
+}
+
+  ConvexHull::ConvexHull(const QVector<QVector3D>& vertices, const QVector4D& color)
+    : ColorPrimitive(GL_LINE_LOOP, vertices, color) {
   logMessage("start constructing shader", Qgis::MessageLevel::Info);
   constructShader(QStringLiteral(":/schoolcore/shaders/line.vs"), QStringLiteral(":/schoolcore/shaders/line.fs"));
   this->shader->enableAttributeArray(0);

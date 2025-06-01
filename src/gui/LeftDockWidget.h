@@ -41,7 +41,7 @@ private:
   void createDockContent(QWidget *parent);
 };
 
-template <typename LayoutType> class FunctionGroup : public QGroupBox {
+class FunctionGroup : public QGroupBox {
   Q_OBJECT
 
 public:
@@ -56,12 +56,12 @@ public:
   ~FunctionGroup(){};
 
 protected:
-  LayoutType *mpGroupLayout;
+  QVBoxLayout *mpGroupLayout;
   virtual void createSlots() {}
   virtual void createButtons() {}
 };
 
-class ViewGroup : protected FunctionGroup<QVBoxLayout> {
+class ViewGroup : public FunctionGroup {
   Q_OBJECT
 
 public:
@@ -80,7 +80,7 @@ signals:
   void viewReset();
 };
 
-class RouteGroup : protected FunctionGroup<QFormLayout> {
+class RouteGroup : public FunctionGroup {
   Q_OBJECT
 
 public:
@@ -104,7 +104,7 @@ signals:
   void editRoute();
 };
 
-class FlightSimGroup : protected FunctionGroup<QFormLayout> {
+class FlightSimGroup : public FunctionGroup {
   Q_OBJECT
 
 public:
@@ -118,6 +118,7 @@ private:
   QHBoxLayout *mpControlRow1;
   QHBoxLayout *mpControlRow2;
   QHBoxLayout *mpControlRow3;
+  QFormLayout *mpSpeedLayout;
   QDoubleSpinBox *mpSpeedSpin;
   QPushButton *mpBtnStart;
   QPushButton *mpBtnPause;
@@ -133,7 +134,7 @@ signals:
   void simulationStop();
 };
 
-class FlightQueryGroup : protected FunctionGroup<QVBoxLayout> {
+class FlightQueryGroup : public FunctionGroup {
   Q_OBJECT
 
 public:
@@ -157,7 +158,7 @@ signals:
   void queryFlightParams();
 };
 
-class EnvQueryGroup : protected FunctionGroup<QFormLayout> {
+class EnvQueryGroup : public FunctionGroup {
   Q_OBJECT
 
 public:

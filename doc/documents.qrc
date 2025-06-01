@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <RCC>
     <qresource prefix="/schoolcore">
-        <file>doc/user_manual.txt</file>
-        <file>doc/copyright.txt</file>
+        <file>user_manual.txt</file>
+        <file>copyright.txt</file>
     </qresource>
 </RCC> 

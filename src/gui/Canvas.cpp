@@ -11,23 +11,12 @@ Canvas::Canvas(QWidget *parent) : QStackedWidget(parent) {
 
 // switch to 3D
 void Canvas::switchTo3D() {
-  if (!ws::WindowManager::getInstance().get3DMapInited()) {
-    logMessage("3D map not initialized", Qgis::MessageLevel::Info);
-    init3DWidget();
-    logMessage("3D map initialized", Qgis::MessageLevel::Success);
-  }
   ws::WindowManager::getInstance().setCurrentCanvas(ws::CanvasType::ThreeD);
   setCurrentWidget(mpOpenGLWidget);
   logMessage("switch to 3D model view", Qgis::MessageLevel::Success);
 }
 // switch to 2D
 void Canvas::switchTo2D() {
-  if (!ws::WindowManager::getInstance().get2DMapInited()) {
-    logMessage("2D map not initialized", Qgis::MessageLevel::Info);
-    init2DWidget();
-    logMessage("2D map initialized", Qgis::MessageLevel::Success);
-  }
-  logMessage("switch to 2D map view", Qgis::MessageLevel::Info);
   ws::WindowManager::getInstance().setCurrentCanvas(ws::CanvasType::TwoD);
   setCurrentWidget(mpImageLabel); // switch to 2D map view
   logMessage("switch to 2D map view", Qgis::MessageLevel::Success);

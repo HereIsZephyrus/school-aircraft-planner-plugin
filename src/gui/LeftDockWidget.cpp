@@ -5,7 +5,6 @@
 #include <QDialog>
 #include <QDialogButtonBox>
 #include <QDoubleSpinBox>
-#include <QFormLayout>
 #include <QHBoxLayout>
 #include <QLabel>
 #include <QPushButton>
@@ -103,12 +102,12 @@ void RouteGroup::createSlots() {
 RouteGroup::RouteGroup(QWidget *parent)
     : FunctionGroup(tr("Route Planning"), "routeGroup", parent) {
   createSpins();
-  mpGroupLayout->addRow("Base Height:", mpBaseHeightSpin);
-  mpGroupLayout->addRow("Set Altitude:", mpHeightSpin);
-  mpGroupLayout->addRow("Flight Path Width:", mpWidthSpin);
-  mpGroupLayout->addRow(tr("Controls:"), mpButtonContainer);
+  mpGroupLayout->addWidget(mpBaseHeightSpin);
+  mpGroupLayout->addWidget(mpHeightSpin);
+  mpGroupLayout->addWidget(mpWidthSpin);
+  mpGroupLayout->addWidget(mpButtonContainer);
   createButtons();
-  mpGroupLayout->addRow(mpButtonContainer);
+  mpGroupLayout->addWidget(mpButtonContainer);
   createSlots();
 
   logMessage("route planning group created", Qgis::MessageLevel::Success);
@@ -169,10 +168,13 @@ FlightSimGroup::FlightSimGroup(QWidget *parent)
   setObjectName("flightSimGroup");
   createSpins();
   createButtons();
-  mpGroupLayout->addRow("Flight Speed:", mpSpeedSpin);
-  mpGroupLayout->addRow(mpControlRow1);
-  mpGroupLayout->addRow(mpControlRow2);
-  mpGroupLayout->addRow(mpControlRow3);
+  
+  mpSpeedLayout = new QFormLayout();
+  mpSpeedLayout->addRow("Flight Speed:", mpSpeedSpin);
+  mpGroupLayout->addLayout(mpSpeedLayout);
+  mpGroupLayout->addLayout(mpControlRow1);
+  mpGroupLayout->addLayout(mpControlRow2);
+  mpGroupLayout->addLayout(mpControlRow3);
   createSlots();
 
   logMessage("flight simulation group created", Qgis::MessageLevel::Success);
@@ -332,10 +334,10 @@ EnvQueryGroup::EnvQueryGroup(QWidget *parent)
       this);
   createButtons();
 
-  mpGroupLayout->addRow("Weather:", mpWeatherLabel);
-  mpGroupLayout->addRow("Temperature:", mpTemperatureLabel);
-  mpGroupLayout->addRow("Pressure:", mpPressureLabel);
-  mpGroupLayout->addRow(mpBtnRefreshData);
+  mpGroupLayout->addWidget(mpWeatherLabel);
+  mpGroupLayout->addWidget(mpTemperatureLabel);
+  mpGroupLayout->addWidget(mpPressureLabel);
+  mpGroupLayout->addWidget(mpBtnRefreshData);
 
   createDialog();
   createSlots();

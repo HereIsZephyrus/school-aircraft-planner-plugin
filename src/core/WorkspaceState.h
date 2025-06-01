@@ -26,11 +26,13 @@ enum class CanvasType : unsigned char{
     ThreeD,
     TwoD
 };
-class WindowManager {
+class WindowManager : public QObject{
+    Q_OBJECT
+    
 private:
     WindowManager();
 public:
-    ~WindowManager();
+    virtual ~WindowManager();
     static WindowManager& getInstance() {
         static WindowManager instance;
         return instance;
@@ -40,10 +42,6 @@ public:
     void setCurrentCanvas(CanvasType canvas) {mCurrentCanvas = canvas;}
     CanvasType getCurrentCanvas() const {return mCurrentCanvas;}
     QObject* getDefaultObject() const {return pDefaultObject;}
-    bool get3DMapInited() const {return is3DMapInited;}
-    bool get2DMapInited() const {return is2DMapInited;}
-    void set3DMapInited() {is3DMapInited = true;}
-    void set2DMapInited() {is2DMapInited = true;}
     const Bounds& getBounds() const {return mBounds;}
     void setBounds(const Bounds& bounds) {mBounds = bounds;}
 private:
@@ -52,11 +50,13 @@ private:
     bool is3DMapInited,is2DMapInited;
     Bounds mBounds;
 };
-class PathManager {
+class PathManager : public QObject{
+    Q_OBJECT
+
 private:
     PathManager();
 public:
-    ~PathManager();
+    virtual ~PathManager();
     static PathManager& getInstance() {
         static PathManager instance;
         return instance;
@@ -84,11 +84,13 @@ enum class WeatherType : unsigned char{
     Snowy,
     Foggy
 };
-class EnvManager{
+class EnvManager : public QObject{
+    Q_OBJECT
+
 private:
     EnvManager();
 public:
-    ~EnvManager();
+    virtual ~EnvManager();
     const QStringList weatherList = {"Sunny", "Cloudy", "Rainy", "Snowy", "Foggy"};
     static EnvManager& getInstance() {
         static EnvManager instance;
@@ -116,11 +118,13 @@ private:
     double mTemperature;
     double mPressure;
 };
-class FlightManager{
+class FlightManager : public QObject{
+    Q_OBJECT
+
 private:
     FlightManager();
 public:
-    ~FlightManager();
+    virtual ~FlightManager();
     static FlightManager& getInstance() {
         static FlightManager instance;
         return instance;

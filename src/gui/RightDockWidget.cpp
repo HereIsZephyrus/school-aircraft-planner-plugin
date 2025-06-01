@@ -261,33 +261,33 @@ void ToolTreeWidget::onTreeItemClicked(QTreeWidgetItem *item, int column) {
 
 RoutePlanningToolbox::RoutePlanningToolbox(QTreeWidget *parent)
     : QTreeWidgetItem(parent) {
-  setText(0, tr("Route Planning"));
+  setText(0, ("Route Planning"));
   mpCreateRoute = new QTreeWidgetItem(this);
-  mpCreateRoute->setText(0, tr("Create Route"));
+  mpCreateRoute->setText(0, ("Create Route"));
   mpEditRoute = new QTreeWidgetItem(this);
-  mpEditRoute->setText(0, tr("Edit Route"));
+  mpEditRoute->setText(0, ("Edit Route"));
 }
 
 SimulationToolbox::SimulationToolbox(QTreeWidget *parent)
     : QTreeWidgetItem(parent) {
-  setText(0, tr("Simulation"));
+  setText(0, ("Simulation"));
   mpStart = new QTreeWidgetItem(this);
-  mpStart->setText(0, tr("Start"));
+  mpStart->setText(0, ("Start"));
   mpPause = new QTreeWidgetItem(this);
-  mpPause->setText(0, tr("Pause"));
+  mpPause->setText(0, ("Pause"));
   mpResume = new QTreeWidgetItem(this);
-  mpResume->setText(0, tr("Resume"));
+  mpResume->setText(0, ("Resume"));
   mpReturn = new QTreeWidgetItem(this);
-  mpReturn->setText(0, tr("Return"));
+  mpReturn->setText(0, ("Return"));
   mpStop = new QTreeWidgetItem(this);
-  mpStop->setText(0, tr("Stop"));
+  mpStop->setText(0, ("Stop"));
 }
 
 ParameterToolbox::ParameterToolbox(QTreeWidget *parent)
     : QTreeWidgetItem(parent) {
-  setText(0, tr("Parameter"));
+  setText(0, ("Parameter"));
   mpFlightParams = new QTreeWidgetItem(this);
-  mpFlightParams->setText(0, tr("Flight Parameters"));
+  mpFlightParams->setText(0, ("Flight Parameters"));
   mpEnvironmentParams = new QTreeWidgetItem(this);
-  mpEnvironmentParams->setText(0, tr("Environment Parameters"));
+  mpEnvironmentParams->setText(0, ("Environment Parameters"));
 }

@@ -123,8 +123,6 @@ signals:
 };
 
 class RoutePlanningToolbox : public QTreeWidgetItem {
-  Q_OBJECT
-
 public:
   RoutePlanningToolbox(QTreeWidget *parent = nullptr);
   ~RoutePlanningToolbox() = default;
@@ -141,8 +139,6 @@ private:
 };
 
 class SimulationToolbox : public QTreeWidgetItem {
-  Q_OBJECT
-
 public:
   SimulationToolbox(QTreeWidget *parent = nullptr);
   ~SimulationToolbox() = default;
@@ -161,8 +157,6 @@ private:
 };
 
 class ParameterToolbox : public QTreeWidgetItem {
-  Q_OBJECT
-
 public:
   ParameterToolbox(QTreeWidget *parent = nullptr);
   ~ParameterToolbox() = default;

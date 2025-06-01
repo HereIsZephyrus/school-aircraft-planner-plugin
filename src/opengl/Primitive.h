@@ -1,6 +1,5 @@
 #ifndef PRIMITIVE_H
 #define PRIMITIVE_H
-//#include <GL/gl.h>
 #include <QOpenGLBuffer>
 #include <QOpenGLFunctions>
 #include <QOpenGLShaderProgram>
@@ -13,8 +12,9 @@
 #include <QtMath>
 #include <cfloat>
 #include <memory>
-namespace gl{
+#include "../core/WorkspaceState.h"
 
+namespace gl{
 class Primitive : public QObject{
   Q_OBJECT
 
@@ -31,6 +31,7 @@ protected:
     bool constructShader(const QString& vertexShaderPath, const QString& fragmentShaderPath, const QString& geometryShaderPath="");
 public:
     Primitive(GLenum primitiveType, GLfloat* vertices, GLuint vertexNum, GLuint stride); // RAII constructor
+    Primitive(GLenum primitiveType, const QVector<QVector3D>& vertices, GLuint stride); // RAII constructor
     Primitive(GLenum primitiveType, GLuint stride); // no init data constructor
     void setModelMatrix(const QMatrix4x4 &matrix);
     virtual ~Primitive();
@@ -42,6 +43,7 @@ class ColorPrimitive : public Primitive{
     static constexpr QVector4D DEFAULT_COLOR = QVector4D(1.0f, 1.0f, 1.0f, 1.0f);
 public:
     ColorPrimitive(GLenum primitiveType, GLfloat* vertices, GLuint vertexNum, const QVector4D& color=DEFAULT_COLOR);
+    ColorPrimitive(GLenum primitiveType, const QVector<QVector3D>& vertices, const QVector4D& color=DEFAULT_COLOR);
     ColorPrimitive(GLenum primitiveType, const QVector4D& color=DEFAULT_COLOR);
     void setColor(const QVector4D& color){this->color = color;}
     QVector4D getColor() const{return this->color;}
@@ -58,22 +60,22 @@ public:
 
 class RoutePath : public ColorPrimitive{
 public:
-  RoutePath(GLfloat* vertices, GLuint vertexNum, const QVector4D& color=QVector4D(1.0f, 1.0f, 1.0f, 1.0f));
+  RoutePath(const QVector<QVector3D>& vertices, const QVector4D& color=QVector4D(1.0f, 1.0f, 1.0f, 1.0f));
 };
 
 class HomePoint : public ColorPrimitive{
 public:
-  HomePoint(const QVector4D& color=QVector4D(1.0f, 1.0f, 1.0f, 1.0f));
+  HomePoint(const QVector<QVector3D>& vertices, const QVector4D& color=QVector4D(1.0f, 1.0f, 1.0f, 1.0f));
 };
 
 class ControlPoints : public ColorPrimitive{
 public:
-  ControlPoints(GLfloat* vertices, GLuint vertexNum=1, const QVector4D& color=QVector4D(1.0f, 1.0f, 1.0f, 1.0f));
+  ControlPoints(const QVector<QVector3D>& vertices, const QVector4D& color=QVector4D(1.0f, 1.0f, 1.0f, 1.0f));
 };
 
 class ConvexHull : public ColorPrimitive{
 public:
-  ConvexHull(GLfloat* vertices, GLuint vertexNum, const QVector4D& color=QVector4D(1.0f, 1.0f, 1.0f, 1.0f));
+  ConvexHull(const QVector<QVector3D>& vertices, const QVector4D& color=QVector4D(1.0f, 1.0f, 1.0f, 1.0f));
 };
 
 class ModelData{

@@ -8,6 +8,7 @@ Date:2025.3.13
 //#include <GL/gl.h>
 #include "../opengl/Camera.h"
 #include "../opengl/Primitive.h"
+#include "../core/RoutePlanner.h"
 #include <QObject>
 #include <QOpenGLBuffer>
 #include <QOpenGLFunctions>
@@ -58,6 +59,6 @@ public:
   // protected:
   std::shared_ptr<gl::Model> modelWidget;
   std::shared_ptr<gl::BasePlane> basePlaneWidget;
-  std::shared_ptr<gl::ControlPoints> ControlPointsWidget;
+  QVector<std::shared_ptr<Route>> routes;
 };
 #endif // Canvas_H

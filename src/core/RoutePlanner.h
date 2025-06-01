@@ -16,13 +16,8 @@ Date:2025.3.13
 #include <cfloat>
 #include <memory>
 #include <qtransform.h>
-
-namespace gl {
-class RoutePath;
-class HomePoint;
-class ControlPoints;
-class ConvexHull;
-}; // namespace gl
+#include <qvector3d.h>
+#include "../opengl/Primitive.h"
 
 enum class FlightPattern : unsigned char {
   SCANLINE,
@@ -96,8 +91,9 @@ private:
   float mTurnRadius;  // turn radius
   QVector3D getControlPoint();
 
-  void generateRoutePath(QVector<QVector3D> &controlPointsLocation,
-                         QVector<QVector3D> &convexHullLocation,
+  void generateRoutePath(const QVector<QVector3D> &controlPointsLocation,
+                         const QVector3D &homePointLocation,
+                         const QVector<QVector3D> &convexHullLocation,
                          FlightPattern pattern,
                          QVector<QVector3D> &routePathLocation);
                          
@@ -118,11 +114,6 @@ private:
 
   void generateConvexHull(QVector<QVector3D> &controlPointsLocation,
                           QVector<QVector3D> &convexHullLocation);
-
-  void generateRoutePath(QVector<QVector3D> &controlPointsLocation,
-                         QVector<QVector3D> &convexHullLocation,
-                         FlightPattern pattern,
-                         QVector<QVector3D> &routePathLocation);
 
   QVector3D generateHomePoint();
 

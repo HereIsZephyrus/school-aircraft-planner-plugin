@@ -71,7 +71,6 @@ QMenu *MenuBar::createSettingMenu(QWidget *parent) {
   QAction *environmentalParamsAction = settingMenu->addAction(
       tr("Environmental parameters")); // environmental parameters
 
-  MainWindow &mainWindow = MainWindow::getInstance();
   connect(flightParamsAction, &QAction::triggered, this,
           &MenuBar::refreshFlightParams);
   connect(environmentalParamsAction, &QAction::triggered, this,
@@ -83,7 +82,6 @@ QMenu *MenuBar::createSettingMenu(QWidget *parent) {
 
 QMenu *MenuBar::createHelpMenu(QWidget *parent) {
   QMenu *helpMenu = new QMenu(tr("Help"), parent);
-  MainWindow &mainWindow = MainWindow::getInstance();
   QAction *userManualAction = helpMenu->addAction(tr("User Manual"));
   connect(userManualAction, &QAction::triggered, this,
           &MenuBar::showUserManual);

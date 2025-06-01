@@ -113,9 +113,9 @@ void RoutePlanner::generateConvexHull(QVector<QVector3D> &controlPointsLocation,
     convexHullLocation.append(upper.pop());
 }
 
-void RoutePlanner::generateRoutePath(QVector<QVector3D> &controlPointsLocation,
-                                     QVector3D &homePointLocation,
-                                     QVector<QVector3D> &convexHullLocation,
+void RoutePlanner::generateRoutePath(const QVector<QVector3D> &controlPointsLocation,
+                                     const QVector3D &homePointLocation,
+                                     const QVector<QVector3D> &convexHullLocation,
                                      FlightPattern pattern,
                                      QVector<QVector3D> &routePathLocation) {
   mDrawMode = RouteDrawMode::CREATING_ROUTE_PATH;
@@ -152,7 +152,7 @@ void RoutePlanner::createRoute() {
   QVector3D homePointLocation;
   homePointLocation = generateHomePoint();
   std::shared_ptr<gl::HomePoint> homePoint =
-      std::make_shared<gl::HomePoint>(homePointLocation);
+      std::make_shared<gl::HomePoint>(QVector<QVector3D>{homePointLocation});
 
   QVector<QVector3D> convexHullLocation;
   generateConvexHull(controlPointsLocation, convexHullLocation);
@@ -162,9 +162,9 @@ void RoutePlanner::createRoute() {
   QVector<QVector3D> routePathLocation;
   generateRoutePath(controlPointsLocation, homePointLocation,
                     convexHullLocation, mPattern, routePathLocation);
+
   std::shared_ptr<gl::RoutePath> routePath =
       std::make_shared<gl::RoutePath>(routePathLocation);
-
   mRoutes.append(std::make_shared<Route>(mPattern, mTurnRadius, mScanSpacing,
                                          controlPoints, convexHull, routePath,
                                          homePoint));
@@ -242,6 +242,7 @@ void RoutePlanner::generateSpiralPath(
     const QVector3D &homePointLocation,
     const QVector<QVector3D> &convexHullLocation,
     QVector<QVector3D> &routePathLocation) {
+  float currentHeight = ws::FlightManager::getInstance().getCurrentHeight();
   if (convexHullLocation.size() < 3)
     return;
 

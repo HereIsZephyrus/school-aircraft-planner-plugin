@@ -2,6 +2,7 @@
 #include <QProcessEnvironment>
 #include <QRandomGenerator>
 #include <cstdlib>
+#include "../log/QgisDebug.h"
 
 static QString GetHomeDirectory() {
 #ifdef _WIN32
