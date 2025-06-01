@@ -22,13 +22,10 @@ private slots:
 private:
   QLabel *mpImageLabel;
   OpenGLCanvas *mpOpenGLWidget;
-  std::unique_ptr<RoutePlanner> mpRoutePlanner;
 
   QPushButton *mpBtnReset;
   QPushButton *mpBtnSwitchTo3D;
   QPushButton *mpBtnSwitchTo2D;
-  QPushButton *mpBtnManualMode;
-  QPushButton *mpBtnAutoMode;
 
   void init3DWidget();
   void init2DWidget();

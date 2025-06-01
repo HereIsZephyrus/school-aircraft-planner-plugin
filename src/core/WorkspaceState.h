@@ -108,7 +108,7 @@ public:
     static constexpr int minPressure = 800;
     static constexpr int maxPressure = 1100;
 
-private slots:
+public slots:
     void generateRandomWeather();
 
 private:
@@ -147,8 +147,8 @@ public:
     static constexpr int minBaseHeight = 0;
     static constexpr int maxBaseHeight = 100;
 
-private slots:
-    void queryFlightParameters();
+public slots:
+    QString queryFlightParameters();
 private:
     double mFlightSpeed,mFlightAltitude,mFlightBattery;
     double mBaseHeight, mCurrentHeight;
@@ -158,6 +158,7 @@ private:
     QVector3D mHomePosition;
 };
 
+/*
 class AnimationManager{
 private:
     AnimationManager();
@@ -171,8 +172,8 @@ public:
     AnimationManager& operator=(const AnimationManager&) = delete;
     void setAnimationSpeed(double speed) {mAnimationSpeed = speed;}
     double getAnimationSpeed() const {return mAnimationSpeed;}
-    void setAnimationDirection(AnimationDirection direction) {mAnimationDirection = direction;}
-    AnimationDirection getAnimationDirection() const {return mAnimationDirection;}
+    void setAnimationDirection(QVector3D direction) {mAnimationDirection = direction;}
+    QVector3D getAnimationDirection() const {return mAnimationDirection;}
 
 private slots:
     void startSimulation();
@@ -183,15 +184,16 @@ private slots:
 
 private:
     double mAnimationSpeed;
-    AnimationDirection mAnimationDirection;
+    QVector3D mAnimationDirection;
     float mAnimationProgress;
     bool mIsAnimating;
     void updateAnimation();
     void drawAircraft(const QVector3D &position, const QQuaternion &orientation);
-    QVector<Vertex> createAircraftModel();
+    //QVector<Vertex> createAircraftModel();
     bool mCameraFollowAircraft;
     QVector3D mViewTranslation;
 };
+*/
 }
 
 #endif

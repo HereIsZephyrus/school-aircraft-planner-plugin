@@ -1,75 +1,71 @@
 #include "WorkspaceState.h"
 #include <QProcessEnvironment>
+#include <QRandomGenerator>
 #include <cstdlib>
 
 static QString GetHomeDirectory() {
-    #ifdef _WIN32
-        return QString(getenv("USERPROFILE"));
-    #else
-        const char* home = getenv("HOME");
-        return QString(home);
-    #endif
+#ifdef _WIN32
+  return QString(getenv("USERPROFILE"));
+#else
+  const char *home = getenv("HOME");
+  return QString(home);
+#endif
 }
 
 namespace ws {
-    void initializeWorkspaceState() {
-        PathManager::getInstance();
-        logMessage("WorkspaceState initialized", Qgis::MessageLevel::Success);
-    }
+QObject *ws::WindowManager::pDefaultObject = nullptr;
+
+void initializeWorkspaceState() {
+  PathManager::getInstance();
+  logMessage("WorkspaceState initialized", Qgis::MessageLevel::Success);
 }
+} // namespace ws
 
 ws::PathManager::PathManager() {
-    QProcessEnvironment env = QProcessEnvironment::systemEnvironment();
-    mRootDir = GetHomeDirectory();
+  QProcessEnvironment env = QProcessEnvironment::systemEnvironment();
+  mRootDir = GetHomeDirectory();
 }
 
-ws::PathManager::~PathManager() {
-    mObjTexturePairs.clear();
-}
+ws::PathManager::~PathManager() { mObjTexturePairs.clear(); }
 
 void ws::PathManager::findAllObjAndTexturePaths() {
-    QDir dir(mRootDir);
-    QStringList objFiles = dir.entryList(QStringList() << "*.obj", QDir::Files);
-    QStringList textureFiles = dir.entryList(QStringList() << "*.jpg", QDir::Files);
+  QDir dir(mRootDir);
+  QStringList objFiles = dir.entryList(QStringList() << "*.obj", QDir::Files);
+  QStringList textureFiles =
+      dir.entryList(QStringList() << "*.jpg", QDir::Files);
 }
 
 ObjTexturePair ws::PathManager::getObjTexturePair(int index) const {
-    if (index < 0 || index >= mObjTexturePairs.size()) {
-        throw std::out_of_range("Index out of range");
-    }
-    return mObjTexturePairs[index];
+  if (index < 0 || index >= mObjTexturePairs.size()) {
+    throw std::out_of_range("Index out of range");
+  }
+  return mObjTexturePairs[index];
 }
 
 ws::EnvManager::EnvManager() {
-    mWeather = WeatherType::Sunny;
-    mTemperature = 25.0;
-    mPressure = 1013.25;
+  mWeather = WeatherType::Sunny;
+  mTemperature = 25.0;
+  mPressure = 1013.25;
 }
 ws::EnvManager::~EnvManager() {}
 
 ws::FlightManager::FlightManager() {
-    mFlightSpeed = 10.0;
-    mFlightAltitude = 100.0;
-    mFlightBattery = 100.0;
-    mBaseHeight = 0.0;
+  mFlightSpeed = 10.0;
+  mFlightAltitude = 100.0;
+  mFlightBattery = 100.0;
+  mBaseHeight = 0.0;
 }
-ws::FlightManager::~FlightManager() {
-  mFlightPath.clear();
-}
+ws::FlightManager::~FlightManager() { mFlightPath.clear(); }
 
-QObject* ws::WindowManager::pDefaultObject = nullptr;
 ws::WindowManager::WindowManager() {
-    mCurrentCanvas = CanvasType::ThreeD;
-    is3DMapInited = false;
-    is2DMapInited = false;
-    if (!pDefaultObject)
-        pDefaultObject = new QObject();
-    mBounds = Bounds();
+  mCurrentCanvas = CanvasType::ThreeD;
+  is3DMapInited = false;
+  is2DMapInited = false;
+  if (!pDefaultObject)
+    pDefaultObject = new QObject();
+  mBounds = Bounds();
 }
-ws::WindowManager::~WindowManager() {
-    delete pDefaultObject;
-}
-
+ws::WindowManager::~WindowManager() { delete pDefaultObject; }
 
 // add new slot function at the end of the file
 QString ws::FlightManager::queryFlightParameters() {
@@ -87,15 +83,15 @@ QString ws::FlightManager::queryFlightParameters() {
                        .arg(mFlightBattery, 0, 'f', 1)
                        .arg(latitude, 0, 'f', 6)
                        .arg(longitude, 0, 'f', 6);
-                       
+
   logMessage("generate random flight parameters", Qgis::MessageLevel::Success);
   return params;
 }
 
-
 void ws::EnvManager::generateRandomWeather() {
   logMessage("generate random weather data", Qgis::MessageLevel::Info);
-  WeatherType weather = static_cast<WeatherType>(QRandomGenerator::global()->bounded(5));
+  WeatherType weather =
+      static_cast<WeatherType>(QRandomGenerator::global()->bounded(5));
 
   ws::EnvManager &envManager = ws::EnvManager::getInstance();
   double temperature =

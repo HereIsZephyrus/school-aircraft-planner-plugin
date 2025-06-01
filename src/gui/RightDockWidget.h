@@ -8,157 +8,173 @@
 #include <QLabel>
 #include <QPushButton>
 #include <QScrollArea>
+#include <QToolButton>
 #include <QTreeWidgetItem>
 #include <QVBoxLayout>
 #include <QWidget>
-#include <QToolButton>
 #include <qwidget.h>
 // #include <JoyDockWidget.h>
 // #include <qgamepad.h>
 
 class JoyDockWidget;
 class FileTreeWidget;
+class ToolTreeWidget;
 class RoutePlanningToolbox;
 class SimulationToolbox;
 class ParameterToolbox;
 
-class RightDockWidget : public QDockWidget{
-    Q_OBJECT
+class RightDockWidget : public QDockWidget {
+  Q_OBJECT
 
 public:
-    RightDockWidget(QWidget *parent = nullptr);
-    ~RightDockWidget() = default;
+  RightDockWidget(QWidget *parent = nullptr);
+  ~RightDockWidget() = default;
 
 private:
-    QWidget *mpMainContainer;
-    JoyDockWidget *mJoystickWidget;
-    FileTreeWidget *mpFileTreeWidget;
-    ToolTreeWidget *mpToolTreeWidget;
-    
+  QWidget *mpMainContainer;
+  QVBoxLayout *mpMainLayout;
+  JoyDockWidget *mJoystickWidget;
+  FileTreeWidget *mpFileTreeWidget;
+  ToolTreeWidget *mpToolTreeWidget;
 };
 
-class JoyDockWidget : public QWidget{
-    Q_OBJECT
+class JoyDockWidget : public QWidget {
+  Q_OBJECT
 
 public:
-    JoyDockWidget(QWidget *parent = nullptr);
-    ~JoyDockWidget() = default;
+  JoyDockWidget(QWidget *parent = nullptr);
+  ~JoyDockWidget() = default;
 
 private:
-    QVBoxLayout *mpMainLayout;
-    QDockWidget *mpControlDock;
-    QWidget *mpControlPanel;
-    QHBoxLayout *mpJoystickLayout;
-    QHBoxLayout *mpButtonLayout;
-    QPushButton *mpManualBtn;
-    QPushButton *mpAutoBtn;
+  QVBoxLayout *mpMainLayout;
+  QDockWidget *mpControlDock;
+  QWidget *mpControlPanel;
+  QHBoxLayout *mpJoystickLayout;
+  QHBoxLayout *mpButtonLayout;
+  QPushButton *mpManualBtn;
+  QPushButton *mpAutoBtn;
+  QPushButton *mpBtnManualMode;
+  QPushButton *mpBtnAutoMode;
 private slots:
-    void handleJoystickMove(float dx, float dy);
-    void switchToManualMode();
-    void switchToAutoMode();
-    //
-    // private:
-    //   QGamepad *m_gamepad = nullptr;
-    //   JoystickWidget *m_leftJoystick = nullptr;
-    //   JoystickWidget *m_rightJoystick = nullptr;
+  void handleJoystickMove(float dx, float dy);
+  void switchToManualMode();
+  void switchToAutoMode();
+  //
+  // private:
+  //   QGamepad *m_gamepad = nullptr;
+  //   JoystickWidget *m_leftJoystick = nullptr;
+  //   JoystickWidget *m_rightJoystick = nullptr;
 };
 
-class FileTreeWidget : public QTreeWidget{
-    Q_OBJECT
+class FileTreeWidget : public QTreeWidget {
+  Q_OBJECT
 
 public:
-    FileTreeWidget(QWidget *parent = nullptr);
-    ~FileTreeWidget() = default;
+  FileTreeWidget(QWidget *parent = nullptr);
+  ~FileTreeWidget() = default;
 
 private:
-    void createSelectDirectoryButton();
-    void createSlots();
-    QToolButton *mpSelectDirectoryButton;
-    void loadDirectoryFiles(const QString &path);
-    void loadDirectoryLevel(QTreeWidgetItem *parentItem, const QString &path,
-                            int level, int maxLevel);
-    void onTreeItemExpanded(QTreeWidgetItem *item);
-    void onTreeItemDoubleClicked(QTreeWidgetItem *item, int column);
-    QString getItemFullPath(QTreeWidgetItem *item);
-    QVBoxLayout *mpMainLayout;
-    QTreeWidgetItem *mpRootItem;
+  void createSelectDirectoryButton();
+  void createSlots();
+  QToolButton *mpSelectDirectoryButton;
+  void loadDirectoryFiles(const QString &path);
+  void loadDirectoryLevel(QTreeWidgetItem *parentItem, const QString &path,
+                          int level, int maxLevel);
+  void onTreeItemExpanded(QTreeWidgetItem *item);
+  QString getItemFullPath(QTreeWidgetItem *item);
+  QVBoxLayout *mpMainLayout;
+  QTreeWidgetItem *mpRootItem;
 private slots:
-    void onSelectDirectoryClicked();
-    void onTreeItemDoubleClicked(QTreeWidgetItem *item, int column);
-};
-
-class ToolTreeWidget : public QTreeWidget{
-    Q_OBJECT
-
-public:
-    ToolTreeWidget(QWidget *parent = nullptr);
-    ~ToolTreeWidget() = default;
-
-private:
-    QVBoxLayout *mpMainLayout;
-    RoutePlanningToolbox *mpRoutePlanningToolbox;
-    SimulationToolbox *mpSimulationToolbox;
-    ParameterToolbox *mpParameterToolbox;
-    void createSlots();
+  void onSelectDirectoryClicked();
+  void onTreeItemDoubleClicked(QTreeWidgetItem *item, int column);
 
 signals:
-    void createRoute();
-    void editRoute();
-    void viewReset();
-    void simulationStart();
-    void simulationPause();
-    void simulationResume();
-    void simulationReturnHome();
-    void simulationStop();
-    void queryFlightParams();
-    void queryEnvParams();
+  void loadModel(const QString &filePath);
 };
 
-class RoutePlanningToolbox : public QTreeWidgetItem{
-    Q_OBJECT
+class ToolTreeWidget : public QTreeWidget {
+  Q_OBJECT
 
 public:
-    RoutePlanningToolbox(QTreeWidget *parent = nullptr);
-    ~RoutePlanningToolbox() = default;
-    bool isCreateRoute(const QTreeWidgetItem *item) const{return item == mpCreateRoute;}
-    bool isEditRoute(const QTreeWidgetItem *item) const{return item == mpEditRoute;}
+  ToolTreeWidget(QWidget *parent = nullptr);
+  ~ToolTreeWidget() = default;
 
 private:
-    QTreeWidgetItem *mpCreateRoute;
-    QTreeWidgetItem *mpEditRoute;
+  QVBoxLayout *mpMainLayout;
+  RoutePlanningToolbox *mpRoutePlanningToolbox;
+  SimulationToolbox *mpSimulationToolbox;
+  ParameterToolbox *mpParameterToolbox;
+  void createSlots();
+
+private slots:
+  void onTreeItemClicked(QTreeWidgetItem *item, int column);
+
+signals:
+  void createRoute();
+  void editRoute();
+  void viewReset();
+  void simulationStart();
+  void simulationPause();
+  void simulationResume();
+  void simulationReturnHome();
+  void simulationStop();
+  void queryFlightParams();
+  void queryEnvParams();
 };
 
-class SimulationToolbox : public QTreeWidgetItem{
-    Q_OBJECT
+class RoutePlanningToolbox : public QTreeWidgetItem {
+  Q_OBJECT
 
 public:
-    SimulationToolbox(QTreeWidget *parent = nullptr);
-    ~SimulationToolbox() = default;
-    bool isStart(const QTreeWidgetItem *item) const{return item == mpStart;}
-    bool isPause(const QTreeWidgetItem *item) const{return item == mpPause;}
-    bool isResume(const QTreeWidgetItem *item) const{return item == mpResume;}
-    bool isReturn(const QTreeWidgetItem *item) const{return item == mpReturn;}
-    bool isStop(const QTreeWidgetItem *item) const{return item == mpStop;}
+  RoutePlanningToolbox(QTreeWidget *parent = nullptr);
+  ~RoutePlanningToolbox() = default;
+  bool isCreateRoute(const QTreeWidgetItem *item) const {
+    return item == mpCreateRoute;
+  }
+  bool isEditRoute(const QTreeWidgetItem *item) const {
+    return item == mpEditRoute;
+  }
 
 private:
-    QTreeWidgetItem *mpStart;
-    QTreeWidgetItem *mpPause;
-    QTreeWidgetItem *mpResume;
-    QTreeWidgetItem *mpReturn;
-    QTreeWidgetItem *mpStop;
+  QTreeWidgetItem *mpCreateRoute;
+  QTreeWidgetItem *mpEditRoute;
 };
 
-class ParameterToolbox : public QTreeWidgetItem{
-    Q_OBJECT
+class SimulationToolbox : public QTreeWidgetItem {
+  Q_OBJECT
 
 public:
-    ParameterToolbox(QTreeWidget *parent = nullptr);
-    ~ParameterToolbox() = default;
-    bool isFlightParams(const QTreeWidgetItem *item) const{return item == mpFlightParams;}
-    bool isEnvironmentParams(const QTreeWidgetItem *item) const{return item == mpEnvironmentParams;}
+  SimulationToolbox(QTreeWidget *parent = nullptr);
+  ~SimulationToolbox() = default;
+  bool isStart(const QTreeWidgetItem *item) const { return item == mpStart; }
+  bool isPause(const QTreeWidgetItem *item) const { return item == mpPause; }
+  bool isResume(const QTreeWidgetItem *item) const { return item == mpResume; }
+  bool isReturn(const QTreeWidgetItem *item) const { return item == mpReturn; }
+  bool isStop(const QTreeWidgetItem *item) const { return item == mpStop; }
 
 private:
-    QTreeWidgetItem *mpFlightParams;
-    QTreeWidgetItem *mpEnvironmentParams;
+  QTreeWidgetItem *mpStart;
+  QTreeWidgetItem *mpPause;
+  QTreeWidgetItem *mpResume;
+  QTreeWidgetItem *mpReturn;
+  QTreeWidgetItem *mpStop;
+};
+
+class ParameterToolbox : public QTreeWidgetItem {
+  Q_OBJECT
+
+public:
+  ParameterToolbox(QTreeWidget *parent = nullptr);
+  ~ParameterToolbox() = default;
+  bool isFlightParams(const QTreeWidgetItem *item) const {
+    return item == mpFlightParams;
+  }
+  bool isEnvironmentParams(const QTreeWidgetItem *item) const {
+    return item == mpEnvironmentParams;
+  }
+
+private:
+  QTreeWidgetItem *mpFlightParams;
+  QTreeWidgetItem *mpEnvironmentParams;
 };
 #endif // RIGHTDOCKWIDGET_H
