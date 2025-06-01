@@ -379,3 +379,27 @@ void RoutePlanner::setScanSpacing(double spacing) {
         emit requestRedraw();
     }
 }
+
+/*
+
+    // create button
+    mpBtnCreateRoute = new QPushButton(tr("Create Route"), mpButtonContainer);
+    mpBtnSetHome = new QPushButton(tr("Set Home"), mpButtonContainer);
+    mpBtnAddControlPoint = new QPushButton(tr("Add Control Point"), mpButtonContainer);
+    mpBtnEditPoint = new QPushButton(tr("Edit Point"), mpButtonContainer);
+    mpBtnGenerate = new QPushButton(tr("Generate"), mpButtonContainer);
+
+    // set button object name
+    mpBtnCreateRoute->setObjectName("createRouteButton");
+    mpBtnSetHome->setObjectName("setHomeButton");
+    mpBtnAddControlPoint->setObjectName("addControlPointButton");
+    mpBtnEditPoint->setObjectName("editPointButton");
+    mpBtnGenerate->setObjectName("generateButton");
+
+    // add to layout
+    mpButtonLayout->addWidget(mpBtnCreateRoute);
+    mpButtonLayout->addWidget(mpBtnSetHome);
+    mpButtonLayout->addWidget(mpBtnAddControlPoint);
+    mpButtonLayout->addWidget(mpBtnEditPoint);
+    mpButtonLayout->addWidget(mpBtnGenerate);
+*/

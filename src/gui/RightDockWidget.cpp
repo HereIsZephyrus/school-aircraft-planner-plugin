@@ -213,6 +213,10 @@ void FileTreeWidget::loadDirectoryLevel(QTreeWidgetItem *parentItem,
   }
 }
 
+void ToolTreeWidget::createSlots() {
+  connect(this, &QTreeWidget::itemClicked, this, &ToolTreeWidget::onTreeItemClicked);
+}
+
 ToolTreeWidget::ToolTreeWidget(QWidget *parent) : QTreeWidget(parent) {
   setObjectName("toolTreeWidget");
   setHeaderLabel(tr("Tool Box"));
@@ -222,7 +226,7 @@ ToolTreeWidget::ToolTreeWidget(QWidget *parent) : QTreeWidget(parent) {
   mpSimulationToolbox = new SimulationToolbox(this);
   mpParameterToolbox = new ParameterToolbox(this);
 
-  connect(this, &QTreeWidget::itemClicked, this, &ToolTreeWidget::onTreeItemClicked);
+  createSlots();
   logMessage("create tool box", Qgis::MessageLevel::Success);
 }
 
@@ -231,23 +235,23 @@ void ToolTreeWidget::onTreeItemClicked(QTreeWidgetItem *item, int column) {
     return;
     
   if (mpRoutePlanningToolbox->isCreateRoute(item)) {
-    emit createRouteClicked();
+    emit createRoute();
   } else if (mpRoutePlanningToolbox->isEditRoute(item)) {
-    emit editRouteClicked();
+    emit editRoute();
   } else if (mpSimulationToolbox->isStart(item)) {
-    emit startClicked();
+    emit simulationStart();
   } else if (mpSimulationToolbox->isPause(item)) {
-    emit pauseClicked();
+    emit simulationPause();
   } else if (mpSimulationToolbox->isResume(item)) {
-    emit resumeClicked();
+    emit simulationResume();
   } else if (mpSimulationToolbox->isReturn(item)) {
-    emit returnClicked();
+    emit simulationReturnHome();
   } else if (mpSimulationToolbox->isStop(item)) {
-    emit stopClicked();
+    emit simulationStop();
   } else if (mpParameterToolbox->isFlightParams(item)) {
-    emit flightParamsClicked();
+    emit queryFlightParams();
   } else if (mpParameterToolbox->isEnvironmentParams(item)) {
-    emit environmentParamsClicked();
+    emit queryEnvParams();
   }
 }
 

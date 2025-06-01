@@ -105,6 +105,7 @@ public:
     static constexpr int maxTemperature = 50;
     static constexpr int minPressure = 800;
     static constexpr int maxPressure = 1100;
+    void generateRandomWeather();
 private:
     WeatherType mWeather;
     double mTemperature;
@@ -147,6 +148,7 @@ private:
     QQuaternion mAircraftOrientation;
     QVector<QVector3D> mFlightPath;
     QVector3D mHomePosition;
+    void queryFlightParameters();
 };
 /*
 class AnimationManager{

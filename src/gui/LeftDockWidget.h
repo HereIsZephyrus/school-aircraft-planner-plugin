@@ -18,7 +18,7 @@ class ViewGroup;
 class RouteGroup;
 class FlightSimGroup;
 class FlightQueryGroup;
-class BasicDataGroup;
+class EnvQueryGroup;
 
 class LeftDockWidget : public QDockWidget{
     Q_OBJECT
@@ -35,7 +35,7 @@ private:
     RouteGroup *mpRouteGroup;
     FlightSimGroup *mpFlightSimGroup;
     FlightQueryGroup *mpFlightQueryGroup;
-    BasicDataGroup *mpBasicDataGroup;
+    EnvQueryGroup *mpEnvQueryGroup;
     void createScrollArea(QWidget *parent);
     void createDockContent(QWidget *parent);
 };
@@ -45,8 +45,7 @@ class FunctionGroup : public QGroupBox{
     Q_OBJECT
 
 public:
-    FunctionGroup(const QString &title, const QString &objectName, QWidget *parent = nullptr) : QGroupBox(title, parent)
-    {
+    FunctionGroup(const QString &title, const QString &objectName, QWidget *parent = nullptr) : QGroupBox(title, parent){
         setObjectName(objectName);
         mpGroupLayout = new QVBoxLayout(this);
         QString groupLayoutName = objectName + "Layout";
@@ -56,7 +55,7 @@ public:
 
 protected:
     LayoutType *mpGroupLayout;
-    virtual void createSpins() {}
+    virtual void createSlots() {}
     virtual void createButtons() {}
 };
 
@@ -65,12 +64,18 @@ class ViewGroup : protected FunctionGroup<QVBoxLayout>{
 
 public:
     ViewGroup(QWidget *parent = nullptr);
+    void createSlots() override;
     ~ViewGroup() = default;
 
 private:
     QPushButton *mpBtnReset;
     QPushButton *mpBtnSwitchTo3D;
     QPushButton *mpBtnSwitchTo2D;
+
+signals:
+    void switchTo3D();
+    void switchTo2D();
+    void viewReset();
 };
 
 class RouteGroup : protected FunctionGroup<QFormLayout>{
@@ -81,7 +86,8 @@ public:
     ~RouteGroup() = default;
 
 private:
-    void createSpins() override;
+    void createSpins();
+    void createSlots() override;
     void createButtons() override;
     QVBoxLayout *mpButtonLayout;
     QWidget *mpButtonContainer;
@@ -89,10 +95,11 @@ private:
     QDoubleSpinBox *mpHeightSpin;
     QDoubleSpinBox *mpWidthSpin;
     QPushButton *mpBtnCreateRoute;
-    QPushButton *mpBtnSetHome;
-    QPushButton *mpBtnAddControlPoint;
-    QPushButton *mpBtnEditPoint;
-    QPushButton *mpBtnGenerate;
+    QPushButton *mpBtnEditRoute;
+
+signals:
+    void createRoute();
+    void editRoute();
 };
 
 class FlightSimGroup : protected FunctionGroup<QFormLayout>{
@@ -103,7 +110,8 @@ public:
     ~FlightSimGroup() = default;
 
 private:
-    void createSpins() override;
+    void createSpins();
+    void createSlots() override;
     void createButtons() override;
     QHBoxLayout *mpControlRow1;
     QHBoxLayout *mpControlRow2;
@@ -114,6 +122,13 @@ private:
     QPushButton *mpBtnResume;
     QPushButton *mpBtnReturn;
     QPushButton *mpBtnStop;
+
+signals:
+    void simulationStart();
+    void simulationPause();
+    void simulationResume();
+    void simulationReturnHome();
+    void simulationStop();
 };
 
 class FlightQueryGroup : protected FunctionGroup<QVBoxLayout>{
@@ -124,24 +139,47 @@ public:
     ~FlightQueryGroup() = default;
 
 private:
-    void createButtons() override;
+    void createSlots() override;
+    void createDialog();
+    void refreshFlightParams();
     QPushButton *mpBtnQueryParams;
     QLabel *mpFlightParamsDisplay;
+    QDialog *mpFlightParamsDialog;
+    QFormLayout *mpFlightParamsForm;
+    QDoubleSpinBox *mpSpeedSpin;
+    QDoubleSpinBox *mpAltitudeSpin;
+    QDoubleSpinBox *mpBatterySpin;
+    QDialogButtonBox *mpFlightParamsButtonBox;
+
+signals:
+    void queryFlightParams();
 };
 
-class BasicDataGroup : protected FunctionGroup<QFormLayout>{
+class EnvQueryGroup : protected FunctionGroup<QFormLayout>{
     Q_OBJECT
 
 public:
-    BasicDataGroup(QWidget *parent = nullptr);
-    ~BasicDataGroup() = default;
+    EnvQueryGroup(QWidget *parent = nullptr);
+    ~EnvQueryGroup() = default;
 
 private:
     void createButtons() override;
+    void createSlots() override;
+    void createDialog();
+    void refreshEnvParams();
     QPushButton *mpBtnRefreshData;
     QLabel *mpWeatherLabel;
     QLabel *mpTemperatureLabel;
     QLabel *mpPressureLabel;
+    QDialog *mpEnvParamsDialog;
+    QFormLayout *mpEnvParamsForm;
+    QDialogButtonBox *mpEnvParamsButtonBox;
+    QComboBox *mpWeatherCombo;
+    QDoubleSpinBox *mpTemperatureSpin;
+    QDoubleSpinBox *mpPressureSpin;
+
+signals:
+    void queryEnvParams();
 };
 
 #endif // LEFTDOCKWIDGET_H

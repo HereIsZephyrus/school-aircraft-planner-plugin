@@ -34,18 +34,7 @@ private:
     JoyDockWidget *mJoystickWidget;
     FileTreeWidget *mpFileTreeWidget;
     ToolTreeWidget *mpToolTreeWidget;
-    void onTreeItemClicked(QTreeWidgetItem *item, int column);
-
-signals:
-    void createRouteClicked();
-    void editRouteClicked();
-    void startClicked();
-    void pauseClicked();
-    void resumeClicked();
-    void returnClicked();
-    void stopClicked();
-    void flightParamsClicked();
-    void environmentParamsClicked();
+    
 };
 
 class JoyDockWidget : public QWidget{
@@ -106,12 +95,23 @@ public:
     ~ToolTreeWidget() = default;
 
 private:
-    void createToolTree();
     QVBoxLayout *mpMainLayout;
     RoutePlanningToolbox *mpRoutePlanningToolbox;
     SimulationToolbox *mpSimulationToolbox;
     ParameterToolbox *mpParameterToolbox;
     void createSlots();
+
+signals:
+    void createRoute();
+    void editRoute();
+    void viewReset();
+    void simulationStart();
+    void simulationPause();
+    void simulationResume();
+    void simulationReturnHome();
+    void simulationStop();
+    void queryFlightParams();
+    void queryEnvParams();
 };
 
 class RoutePlanningToolbox : public QTreeWidgetItem{

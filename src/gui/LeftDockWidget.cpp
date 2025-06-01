@@ -18,6 +18,12 @@ void LeftDockWidget::createDockContent(QWidget* parent) {
     mpMainLayout->addWidget(mpDockContent);
 }
 
+void ViewGroup::createSlots() {
+    connect(mpBtnSwitchTo3D, &QPushButton::clicked, this, &ViewGroup::switchTo3D);
+    connect(mpBtnSwitchTo2D, &QPushButton::clicked, this, &ViewGroup::switchTo2D);
+    connect(mpBtnReset, &QPushButton::clicked, this, &ViewGroup::viewReset);
+}
+
 ViewGroup::ViewGroup(QWidget* parent) : FunctionGroup(tr("View Switch"), "viewGroup", parent) {
     mpGroupLayout->setObjectName("viewLayout");
     mpGroupLayout->setContentsMargins(10, 10, 10, 10);
@@ -32,6 +38,8 @@ ViewGroup::ViewGroup(QWidget* parent) : FunctionGroup(tr("View Switch"), "viewGr
     mpGroupLayout->addWidget(mpBtnReset);
     mpGroupLayout->addWidget(mpBtnSwitchTo3D);
     mpGroupLayout->addWidget(mpBtnSwitchTo2D);
+    createSlots();
+
     logMessage("View switch group created", Qgis::MessageLevel::Success);
 }
 
@@ -67,33 +75,28 @@ void RouteGroup::createButtons() {
 
     // create button
     mpBtnCreateRoute = new QPushButton(tr("Create Route"), mpButtonContainer);
-    mpBtnSetHome = new QPushButton(tr("Set Home"), mpButtonContainer);
-    mpBtnAddControlPoint = new QPushButton(tr("Add Control Point"), mpButtonContainer);
-    mpBtnEditPoint = new QPushButton(tr("Edit Point"), mpButtonContainer);
-    mpBtnGenerate = new QPushButton(tr("Generate"), mpButtonContainer);
-
-    // set button object name
     mpBtnCreateRoute->setObjectName("createRouteButton");
-    mpBtnSetHome->setObjectName("setHomeButton");
-    mpBtnAddControlPoint->setObjectName("addControlPointButton");
-    mpBtnEditPoint->setObjectName("editPointButton");
-    mpBtnGenerate->setObjectName("generateButton");
+    mpBtnEditRoute = new QPushButton(tr("Edit Route"), mpButtonContainer);
+    mpBtnEditRoute->setObjectName("editRouteButton");
 
-    // add to layout
     mpButtonLayout->addWidget(mpBtnCreateRoute);
-    mpButtonLayout->addWidget(mpBtnSetHome);
-    mpButtonLayout->addWidget(mpBtnAddControlPoint);
-    mpButtonLayout->addWidget(mpBtnEditPoint);
-    mpButtonLayout->addWidget(mpBtnGenerate);
+    mpButtonLayout->addWidget(mpBtnEditRoute);
+}
+
+void RouteGroup::createSlots() {
+    connect(mpBtnCreateRoute, &QPushButton::clicked, this, [this]() { emit createRoute(); });
+    connect(mpBtnEditRoute, &QPushButton::clicked, this, [this]() { emit editRoute(); });
 }
 
 RouteGroup::RouteGroup(QWidget* parent) : FunctionGroup(tr("Route Planning"), "routeGroup", parent) {
     createSpins();
-    createButtons();
     mpGroupLayout->addRow("Base Height:", mpBaseHeightSpin);
     mpGroupLayout->addRow("Set Altitude:", mpHeightSpin);
     mpGroupLayout->addRow("Flight Path Width:", mpWidthSpin);
     mpGroupLayout->addRow(tr("Controls:"), mpButtonContainer);
+    createButtons();
+    mpGroupLayout->addRow(mpButtonContainer);
+    createSlots();
 
     logMessage("route planning group created", Qgis::MessageLevel::Success);
 }
@@ -107,6 +110,14 @@ void FlightSimGroup::createSpins() {
                         FlightManager::maxFlightSpeed);
     mpSpeedSpin->setValue(flightManager.getFlightSpeed());
     mpSpeedSpin->setSuffix(" m/s");
+}
+
+void FlightSimGroup::createSlots() {
+    connect(mpBtnStart, &QPushButton::clicked, this, [this]() { emit simulationStart(); });
+    connect(mpBtnPause, &QPushButton::clicked, this, [this]() { emit simulationPause(); });
+    connect(mpBtnResume, &QPushButton::clicked, this, [this]() { emit simulationResume(); });
+    connect(mpBtnReturn, &QPushButton::clicked, this, [this]() { emit simulationReturnHome(); });
+    connect(mpBtnStop, &QPushButton::clicked, this, [this]() { emit simulationStop(); });
 }
 
 void FlightSimGroup::createButtons() {
@@ -143,44 +154,158 @@ FlightSimGroup::FlightSimGroup(QWidget* parent) : FunctionGroup(tr("Flight Simul
     mpGroupLayout->addRow(mpControlRow1);
     mpGroupLayout->addRow(mpControlRow2);
     mpGroupLayout->addRow(mpControlRow3);
+    createSlots();
 
     logMessage("flight simulation group created", Qgis::MessageLevel::Success);
 }
 
-void FlightQueryGroup::createButtons() {
-    mpBtnQueryParams = new QPushButton("Query Parameters", this);
-    mpBtnQueryParams->setObjectName("pBtnQueryParams");
-    mpFlightParamsDisplay = new QLabel("No flight data available", this);
+void FlightQueryGroup::createSlots() {
+    connect(mpBtnQueryParams, &QPushButton::clicked, this, [this]() { emit queryFlightParams(); });
+}
+
+void FlightQueryGroup::createDialog() {
+    using namespace ws;
+    FlightManager &flightManager = FlightManager::getInstance();
+    mpFlightParamsDisplay = new QLabel(flightManager.queryFlightParameters(), this);
     mpFlightParamsDisplay->setWordWrap(true);
     mpFlightParamsDisplay->setFrameStyle(QFrame::Box);
+
+    mpFlightParamsDialog = new QDialog(this);
+    mpFlightParamsDialog->setObjectName("flightParamsDialog");
+    mpFlightParamsDialog->setModal(true);
+    mpFlightParamsDialog->setWindowTitle(tr("Flight Parameters Settings"));
+
+    mpFlightParamsForm = new QFormLayout(mpFlightParamsDialog);
+
+    mpSpeedSpin = new QDoubleSpinBox(mpFlightParamsDialog);
+    mpSpeedSpin->setRange(FlightManager::minFlightSpeed,FlightManager::maxFlightSpeed);
+    mpSpeedSpin->setValue(flightManager.getFlightSpeed());
+    mpFlightParamsForm->addRow(tr("Flight Speed (m/s):"), mpSpeedSpin);
+
+    mpAltitudeSpin = new QDoubleSpinBox(mpFlightParamsDialog);
+    mpAltitudeSpin->setRange(FlightManager::minFlightAltitude,FlightManager::maxFlightAltitude);
+    mpAltitudeSpin->setValue(flightManager.getFlightAltitude());
+    mpFlightParamsForm->addRow(tr("Max Altitude (m):"), mpAltitudeSpin);
+
+    mpBatterySpin = new QDoubleSpinBox(mpFlightParamsDialog);
+    mpBatterySpin->setRange(FlightManager::minFlightBattery,FlightManager::maxFlightBattery);
+    mpBatterySpin->setValue(flightManager.getFlightBattery());
+    mpFlightParamsForm->addRow(tr("Battery Capacity (%):"), mpBatterySpin);
+
+    mpFlightParamsButtonBox = new QDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel, Qt::Horizontal, mpFlightParamsDialog);
+    mpFlightParamsForm->addRow(mpFlightParamsButtonBox);
+
+    logMessage("show flight parameters dialog", Qgis::MessageLevel::Success);
+}
+
+void FlightQueryGroup::refreshFlightParams() {
+    using namespace ws;
+    FlightManager &flightManager = FlightManager::getInstance();
+    flightManager.setFlightSpeed(mpSpeedSpin->value());
+    flightManager.setFlightAltitude(mpAltitudeSpin->value());
+    flightManager.setFlightBattery(mpBatterySpin->value());
+    mpFlightParamsDisplay->setText(flightManager.queryFlightParameters());
+}
+
+void FlightQueryGroup::createSlots() {
+    connect(mpFlightParamsButtonBox, &QDialogButtonBox::accepted, mpFlightParamsDialog, &QDialog::accept);
+    connect(mpFlightParamsButtonBox, &QDialogButtonBox::rejected, mpFlightParamsDialog, &QDialog::reject);
+    connect(mpFlightParamsDialog, &QDialog::accepted, this, &FlightQueryGroup::refreshFlightParams);
 }
 
 FlightQueryGroup::FlightQueryGroup(QWidget* parent) : FunctionGroup(tr("Flight Query"), "flightQueryGroup", parent) {
     setObjectName("flightQueryGroup");
-    createButtons();
     
-    mpGroupLayout->addWidget(mpBtnQueryParams);
     mpGroupLayout->addWidget(mpFlightParamsDisplay);
-    logMessage("flight parameters query group created",
-                Qgis::MessageLevel::Success);
+    mpGroupLayout->addWidget(mpBtnQueryParams);
+
+    createDialog();
+    createSlots();
+
+    logMessage("flight parameters query group created", Qgis::MessageLevel::Success);
 }
 
-void BasicDataGroup::createButtons() {
+void EnvQueryGroup::createSlots() {
+    connect(mpBtnRefreshData, &QPushButton::clicked, this, [this]() { emit queryEnvParams(); });
+}
+
+void EnvQueryGroup::refreshEnvParams() {
+    using namespace ws;
+    EnvManager &envManager = EnvManager::getInstance();
+    
+}
+
+void EnvQueryGroup::createButtons() {
     mpBtnRefreshData = new QPushButton("Refresh Data", this);
     mpBtnRefreshData->setObjectName("pBtnRefreshData");
-    mpWeatherLabel = new QLabel("Weather: -", this);
-    mpTemperatureLabel = new QLabel("Temperature: -", this);
-    mpPressureLabel = new QLabel("Pressure: -", this);
 }
 
-BasicDataGroup::BasicDataGroup(QWidget* parent) : FunctionGroup(tr("Environmental Data"), "basicDataGroup", parent) {
+void EnvQueryGroup::createDialog() {
+  mpEnvParamsDialog = new QDialog(this);
+  mpEnvParamsDialog->setWindowTitle(tr("Environmental Parameters Settings"));
+
+  mpEnvParamsForm = new QFormLayout(mpEnvParamsDialog);
+
+  ws::EnvManager &envManager = ws::EnvManager::getInstance();
+  mpWeatherCombo = new QComboBox(mpEnvParamsDialog);
+  mpWeatherCombo->addItems(envManager.weatherList);
+  mpWeatherCombo->setCurrentText(envManager.getWeatherString());
+  mpEnvParamsForm->addRow(tr("Weather Condition:"), mpWeatherCombo);
+
+  mpTemperatureSpin = new QDoubleSpinBox(mpEnvParamsDialog);
+  mpTemperatureSpin->setRange(ws::EnvManager::minTemperature,
+                     ws::EnvManager::maxTemperature);
+  mpTemperatureSpin->setValue(envManager.getTemperature());
+  mpEnvParamsForm->addRow(tr("Temperature (°C):"), mpTemperatureSpin);
+
+  mpPressureSpin = new QDoubleSpinBox(mpEnvParamsDialog);
+  mpPressureSpin->setRange(ws::EnvManager::minPressure,
+                         ws::EnvManager::maxPressure);
+  mpPressureSpin->setValue(envManager.getPressure());
+  mpEnvParamsForm->addRow(tr("Pressure (hPa):"), mpPressureSpin);
+
+  mpEnvParamsButtonBox = new QDialogButtonBox(
+      QDialogButtonBox::Ok | QDialogButtonBox::Cancel, Qt::Horizontal, mpEnvParamsDialog);
+  mpEnvParamsForm->addRow(mpEnvParamsButtonBox);
+
+  logMessage("show environmental parameters dialog",Qgis::MessageLevel::Success);
+}
+
+void EnvQueryGroup::refreshEnvParams() {
+    using namespace ws;
+    EnvManager &envManager = EnvManager::getInstance();
+    envManager.setWeather(static_cast<ws::WeatherType>(mpWeatherCombo->currentIndex()));
+    envManager.setTemperature(mpTemperatureSpin->value());
+    envManager.setPressure(mpPressureSpin->value());
+    mpWeatherLabel->setText(QString("Weather: %1").arg(envManager.getWeatherString()));
+    mpTemperatureLabel->setText(QString("Temperature: %1 C").arg(envManager.getTemperature(), 0, 'f', 1));
+    mpPressureLabel->setText(QString("Pressure: %1 hPa").arg(envManager.getPressure(), 0, 'f', 1));
+}
+
+void EnvQueryGroup::createSlots() {
+    connect(mpBtnRefreshData, &QPushButton::clicked, this, &ws::EnvManager::generateRandomWeather);
+    connect(mpEnvParamsButtonBox, &QDialogButtonBox::accepted, mpEnvParamsDialog, &QDialog::accept);
+    connect(mpEnvParamsButtonBox, &QDialogButtonBox::rejected, mpEnvParamsDialog, &QDialog::reject);
+    connect(mpEnvParamsDialog, &QDialog::accepted, this, &EnvQueryGroup::refreshEnvParams);
+}
+
+EnvQueryGroup::EnvQueryGroup(QWidget* parent) : FunctionGroup(tr("Environmental Data"), "basicDataGroup", parent) {
     setObjectName("basicDataGroup");
 
+    ws::EnvManager &envManager = ws::EnvManager::getInstance();
+    mpWeatherLabel = new QLabel(QString("Weather: %1").arg(envManager.getWeatherString()), this);
+    mpTemperatureLabel = new QLabel(QString("Temperature: %1 C").arg(envManager.getTemperature(), 0, 'f', 1), this);
+    mpPressureLabel = new QLabel(QString("Pressure: %1 hPa").arg(envManager.getPressure(), 0, 'f', 1), this);
     createButtons();
+
     mpGroupLayout->addRow("Weather:", mpWeatherLabel);
     mpGroupLayout->addRow("Temperature:", mpTemperatureLabel);
     mpGroupLayout->addRow("Pressure:", mpPressureLabel);
     mpGroupLayout->addRow(mpBtnRefreshData);
+
+    createDialog();
+    createSlots();
+    
     logMessage("basic data group created", Qgis::MessageLevel::Success);
 }
 
@@ -198,146 +323,6 @@ LeftDockWidget::LeftDockWidget(QWidget *parent) : QDockWidget(parent) {
     mpFlightSimGroup = new FlightSimGroup(mpDockContent);
     mpMainLayout->addStretch();
     mpFlightQueryGroup = new FlightQueryGroup(mpDockContent);
-    mpBasicDataGroup = new BasicDataGroup(mpDockContent);
+    mpEnvQueryGroup = new EnvQueryGroup(mpDockContent);
     logMessage("left dock widget created", Qgis::MessageLevel::Success);
-}
-
-void MainWindow::showFlightParamsDialog() {
-  logMessage("show flight parameters dialog", Qgis::MessageLevel::Info);
-  QDialog *dialog = new QDialog(this);
-  dialog->setWindowTitle(tr("Flight Parameters Settings"));
-
-  QFormLayout *form = new QFormLayout(dialog);
-
-  ws::FlightManager &flightManager = ws::FlightManager::getInstance();
-  QDoubleSpinBox *speedSpin = new QDoubleSpinBox(dialog);
-  speedSpin->setRange(ws::FlightManager::minFlightSpeed,
-                      ws::FlightManager::maxFlightSpeed);
-  speedSpin->setValue(ws::FlightManager::getInstance().getFlightSpeed());
-  form->addRow(tr("Flight Speed (m/s):"), speedSpin);
-
-  QDoubleSpinBox *altitudeSpin = new QDoubleSpinBox(dialog);
-  altitudeSpin->setRange(ws::FlightManager::minFlightAltitude,
-                         ws::FlightManager::maxFlightAltitude);
-  altitudeSpin->setValue(ws::FlightManager::getInstance().getFlightAltitude());
-  form->addRow(tr("Max Altitude (m):"), altitudeSpin);
-
-  QDoubleSpinBox *batterySpin = new QDoubleSpinBox(dialog);
-  batterySpin->setRange(ws::FlightManager::minFlightBattery,
-                        ws::FlightManager::maxFlightBattery);
-  batterySpin->setValue(ws::FlightManager::getInstance().getFlightBattery());
-  form->addRow(tr("Battery Capacity (%):"), batterySpin);
-
-  QDialogButtonBox *buttonBox = new QDialogButtonBox(
-      QDialogButtonBox::Ok | QDialogButtonBox::Cancel, Qt::Horizontal, dialog);
-  form->addRow(buttonBox);
-
-  connect(buttonBox, &QDialogButtonBox::accepted, dialog, &QDialog::accept);
-  logMessage("connect flight parameters dialog button box accepted",
-             Qgis::MessageLevel::Success);
-  connect(buttonBox, &QDialogButtonBox::rejected, dialog, &QDialog::reject);
-  logMessage("connect flight parameters dialog button box rejected",
-             Qgis::MessageLevel::Success);
-
-  if (dialog->exec() == QDialog::Accepted) {
-    flightManager.setFlightSpeed(speedSpin->value());
-    flightManager.setFlightAltitude(altitudeSpin->value());
-    flightManager.setFlightBattery(batterySpin->value());
-
-    queryFlightParameters(); // 刷新飞行参数显示
-  }
-  logMessage("show flight parameters dialog", Qgis::MessageLevel::Success);
-}
-void MainWindow::showEnvironmentalParamsDialog() {
-  logMessage("show environmental parameters dialog", Qgis::MessageLevel::Info);
-  QDialog *dialog = new QDialog(this);
-  dialog->setWindowTitle(tr("Environmental Parameters Settings"));
-
-  QFormLayout *form = new QFormLayout(dialog);
-
-  ws::EnvManager &envManager = ws::EnvManager::getInstance();
-  QComboBox *weatherCombo = new QComboBox(dialog);
-  weatherCombo->addItems(envManager.weatherList);
-  weatherCombo->setCurrentText(envManager.getWeatherString());
-  form->addRow(tr("Weather Condition:"), weatherCombo);
-
-  QDoubleSpinBox *tempSpin = new QDoubleSpinBox(dialog);
-  tempSpin->setRange(ws::EnvManager::minTemperature,
-                     ws::EnvManager::maxTemperature);
-  tempSpin->setValue(envManager.getTemperature());
-  form->addRow(tr("Temperature (°C):"), tempSpin);
-
-  QDoubleSpinBox *pressureSpin = new QDoubleSpinBox(dialog);
-  pressureSpin->setRange(ws::EnvManager::minPressure,
-                         ws::EnvManager::maxPressure);
-  pressureSpin->setValue(envManager.getPressure());
-  form->addRow(tr("Pressure (hPa):"), pressureSpin);
-
-  QDialogButtonBox *buttonBox = new QDialogButtonBox(
-      QDialogButtonBox::Ok | QDialogButtonBox::Cancel, Qt::Horizontal, dialog);
-  form->addRow(buttonBox);
-
-  connect(buttonBox, &QDialogButtonBox::accepted, dialog, &QDialog::accept);
-  logMessage("connect environmental parameters dialog button box accepted",
-             Qgis::MessageLevel::Success);
-  connect(buttonBox, &QDialogButtonBox::rejected, dialog, &QDialog::reject);
-  logMessage("connect environmental parameters dialog button box rejected",
-             Qgis::MessageLevel::Success);
-
-  if (dialog->exec() == QDialog::Accepted) {
-    envManager.setWeather(
-        static_cast<ws::WeatherType>(weatherCombo->currentIndex()));
-    envManager.setTemperature(tempSpin->value());
-    envManager.setPressure(pressureSpin->value());
-
-    refreshBasicData(); // refresh environment data display
-  }
-  logMessage("show environmental parameters dialog",
-             Qgis::MessageLevel::Success);
-}
-
-// add new slot function at the end of the file
-void MainWindow::queryFlightParameters() {
-  logMessage("generate random flight parameters", Qgis::MessageLevel::Info);
-  double speed = ws::FlightManager::getInstance().getFlightSpeed();
-  double altitude = ws::FlightManager::getInstance().getFlightAltitude();
-  double battery = ws::FlightManager::getInstance().getFlightBattery();
-  double latitude = QRandomGenerator::global()->bounded(-90, 90);
-  double longitude = QRandomGenerator::global()->bounded(-180, 180);
-
-  QString params = QString("Current Flight Parameters:\n"
-                           "Speed: %1 m/s\n"
-                           "Altitude: %2 m\n"
-                           "Battery: %3%\n"
-                           "Position: (%4, %5)")
-                       .arg(speed, 0, 'f', 1)
-                       .arg(altitude, 0, 'f', 1)
-                       .arg(battery, 0, 'f', 1)
-                       .arg(latitude, 0, 'f', 6)
-                       .arg(longitude, 0, 'f', 6);
-
-  m_pFlightParamsDisplay->setText(params);
-  logMessage("generate random flight parameters", Qgis::MessageLevel::Success);
-}
-
-void MainWindow::refreshBasicData() {
-  logMessage("generate random weather data", Qgis::MessageLevel::Info);
-  QStringList weatherTypes = {"Sunny", "Cloudy", "Rainy", "Snowy", "Foggy"};
-  QString weather = weatherTypes[QRandomGenerator::global()->bounded(5)];
-
-  ws::EnvManager &envManager = ws::EnvManager::getInstance();
-  double temperature =
-      QRandomGenerator::global()->bounded(envManager.minTemperature * 10,
-                                          envManager.maxTemperature * 10) /
-      10.0;
-
-  double pressure =
-      QRandomGenerator::global()->bounded(envManager.minPressure * 10,
-                                          envManager.maxPressure * 10) /
-      10.0;
-
-  m_pWeatherLabel->setText(weather);
-  m_pTemperatureLabel->setText(QString("%1 C").arg(temperature, 0, 'f', 1));
-  m_pPressureLabel->setText(
-      QString("%1 hPa").arg(pressure, 0, 'f', 1)); // 注意这里有两个闭合括号
 }

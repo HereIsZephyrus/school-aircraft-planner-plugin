@@ -69,6 +69,49 @@ ws::WindowManager::WindowManager() {
 ws::WindowManager::~WindowManager() {
     delete pDefaultObject;
 }
+
+
+// add new slot function at the end of the file
+QString ws::FlightManager::queryFlightParameters() {
+  logMessage("generate random flight parameters", Qgis::MessageLevel::Info);
+  double latitude = QRandomGenerator::global()->bounded(-90, 90);
+  double longitude = QRandomGenerator::global()->bounded(-180, 180);
+
+  QString params = QString("Current Flight Parameters:\n"
+                           "Speed: %1 m/s\n"
+                           "Altitude: %2 m\n"
+                           "Battery: %3%\n"
+                           "Position: (%4, %5)")
+                       .arg(mFlightSpeed, 0, 'f', 1)
+                       .arg(mFlightAltitude, 0, 'f', 1)
+                       .arg(mFlightBattery, 0, 'f', 1)
+                       .arg(latitude, 0, 'f', 6)
+                       .arg(longitude, 0, 'f', 6);
+                       
+  logMessage("generate random flight parameters", Qgis::MessageLevel::Success);
+  return params;
+}
+
+
+void ws::EnvManager::generateRandomWeather() {
+  logMessage("generate random weather data", Qgis::MessageLevel::Info);
+  WeatherType weather = static_cast<WeatherType>(QRandomGenerator::global()->bounded(5));
+
+  ws::EnvManager &envManager = ws::EnvManager::getInstance();
+  double temperature =
+      QRandomGenerator::global()->bounded(envManager.minTemperature * 10,
+                                          envManager.maxTemperature * 10) /
+      10.0;
+
+  double pressure =
+      QRandomGenerator::global()->bounded(envManager.minPressure * 10,
+                                          envManager.maxPressure * 10) /
+      10.0;
+
+  setWeather(weather);
+  setTemperature(temperature);
+  setPressure(pressure);
+}
 /*
 
 void ws::FlightManager::generateFlightRoute(float height) // 生成航线
