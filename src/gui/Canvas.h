@@ -12,14 +12,12 @@ class Canvas : public QStackedWidget {
 public:
   Canvas(QWidget *parent = nullptr);
   ~Canvas();
-  void init3DWidget();
-  void init2DWidget();
-  void resetView();
 
 private slots:
+  void loadModel(const QString &objFilePath);
   void switchTo2D();
   void switchTo3D();
-  void loadModel(const QString &objFilePath);
+  void viewReset();
 
 private:
   QLabel *mpImageLabel;
@@ -31,6 +29,9 @@ private:
   QPushButton *mpBtnSwitchTo2D;
   QPushButton *mpBtnManualMode;
   QPushButton *mpBtnAutoMode;
+
+  void init3DWidget();
+  void init2DWidget();
   // void setTianDiTuMap(double lat, double lon, int zoom);
 };
 

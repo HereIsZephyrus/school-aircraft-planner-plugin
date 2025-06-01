@@ -13,10 +13,10 @@
 #include <QtMath>
 #include <cfloat>
 #include <memory>
-#include "../core/WorkspaceState.h"
 namespace gl{
 
-class Primitive{
+class Primitive : public QObject{
+  Q_OBJECT
 
 protected:
     QOpenGLVertexArrayObject vao;
@@ -59,6 +59,11 @@ public:
 class RoutePath : public ColorPrimitive{
 public:
   RoutePath(GLfloat* vertices, GLuint vertexNum, const QVector4D& color=QVector4D(1.0f, 1.0f, 1.0f, 1.0f));
+};
+
+class HomePoint : public ColorPrimitive{
+public:
+  HomePoint(const QVector4D& color=QVector4D(1.0f, 1.0f, 1.0f, 1.0f));
 };
 
 class ControlPoints : public ColorPrimitive{

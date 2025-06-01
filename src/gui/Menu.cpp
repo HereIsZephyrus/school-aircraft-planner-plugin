@@ -26,12 +26,9 @@ QMenu* MenuBar::createViewMenu(QWidget *parent) {
   QAction *p3DViewAction = viewMenu->addAction(tr("3D View"));
   QAction *p2DViewAction = viewMenu->addAction(tr("2D View"));
   QAction *pResetViewAction = viewMenu->addAction(tr("Reset View"));
-  connect(p3DViewAction, &QAction::triggered, this,
-          [this]() { emit viewChanged(ws::CanvasType::ThreeD); });
-  connect(p2DViewAction, &QAction::triggered, this,
-          [this]() { emit viewChanged(ws::CanvasType::TwoD); });
-  connect(pResetViewAction, &QAction::triggered, this,
-          [this]() { emit viewReset(); });
+  connect(p3DViewAction, &QAction::triggered, this, &MenuBar::switchTo3D);
+  connect(p2DViewAction, &QAction::triggered, this, &MenuBar::switchTo2D);
+  connect(pResetViewAction, &QAction::triggered, this, &MenuBar::viewReset);
   logMessage("create view menu", Qgis::MessageLevel::Success);
 
   return viewMenu;
@@ -44,16 +41,11 @@ QMenu* MenuBar::createSimulationMenu(QWidget *parent) {
   QAction *resumeAction = simulationMenu->addAction(tr("Resume Simulation"));
   QAction *returnAction = simulationMenu->addAction(tr("Return Home"));
   QAction *stopAction = simulationMenu->addAction(tr("Stop Simulation"));
-  connect(startAction, &QAction::triggered, this,
-          [this]() { emit simulationStart(); });
-  connect(pauseAction, &QAction::triggered, this,
-          [this]() { emit simulationPause(); });
-  connect(resumeAction, &QAction::triggered, this,
-          [this]() { emit simulationResume(); });
-  connect(returnAction, &QAction::triggered, this,
-          [this]() { emit simulationReturnHome(); });
-  connect(stopAction, &QAction::triggered, this,
-          [this]() { emit simulationStop(); });
+  connect(startAction, &QAction::triggered, this, &MenuBar::simulationStart);
+  connect(pauseAction, &QAction::triggered, this, &MenuBar::simulationPause);
+  connect(resumeAction, &QAction::triggered, this, &MenuBar::simulationResume);
+  connect(returnAction, &QAction::triggered, this, &MenuBar::simulationReturnHome);
+  connect(stopAction, &QAction::triggered, this, &MenuBar::simulationStop);
   logMessage("create simulation menu", Qgis::MessageLevel::Success);
 
   return simulationMenu;
@@ -62,8 +54,7 @@ QMenu* MenuBar::createSimulationMenu(QWidget *parent) {
 QMenu* MenuBar::createRouteMenu(QWidget *parent) {
   QMenu* routeMenu = new QMenu(tr("Route Planning"), parent);
   QAction *createRouteAction = routeMenu->addAction(tr("Create route"));
-  connect(createRouteAction, &QAction::triggered, this,
-          [this]() { emit createRoute(); });
+  connect(createRouteAction, &QAction::triggered, this, &MenuBar::createRoute);
 
   logMessage("create route planning menu", Qgis::MessageLevel::Success);
 
@@ -77,10 +68,8 @@ QMenu* MenuBar::createSettingMenu(QWidget *parent) {
   QAction *environmentalParamsAction = settingMenu->addAction(tr("Environmental parameters")); // environmental parameters
 
   MainWindow &mainWindow = MainWindow::getInstance();
-  connect(flightParamsAction, &QAction::triggered, this,
-          [this]() { emit showFlightParamsDialog(); });
-  connect(environmentalParamsAction, &QAction::triggered, this,
-          [this]() { emit showEnvironmentalParamsDialog(); });
+  connect(flightParamsAction, &QAction::triggered, this, &MenuBar::refreshFlightParams);
+  connect(environmentalParamsAction, &QAction::triggered, this, &MenuBar::refreshEnvironmentalParams);
   logMessage("create setting menu", Qgis::MessageLevel::Success);
 
   return settingMenu;
@@ -90,8 +79,7 @@ QMenu* MenuBar::createHelpMenu(QWidget *parent) {
   QMenu* helpMenu = new QMenu(tr("Help"), parent);
   MainWindow &mainWindow = MainWindow::getInstance();
   QAction *userManualAction = helpMenu->addAction(tr("User Manual"));
-  connect(userManualAction, &QAction::triggered, this,
-          [this]() { emit showUserManual(); });
+  connect(userManualAction, &QAction::triggered, this, &MenuBar::showUserManual);
 
   logMessage("create help menu", Qgis::MessageLevel::Success);
   return helpMenu;

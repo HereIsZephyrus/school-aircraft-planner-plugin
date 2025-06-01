@@ -3,8 +3,8 @@ File:RoutePlanner.h
 Author:wkj
 Date:2025.3.13
 ****************************************************************************/
-#pragma once
-
+#ifndef ROUTE_PLANNER_H
+#define ROUTE_PLANNER_H
 #include <QLineF>
 #include <QObject>
 #include <QPoint>
@@ -15,22 +15,16 @@ Date:2025.3.13
 #include <QMouseEvent>
 #include <qtransform.h>
 #include <cfloat>
+#include <memory>
 
-enum FlightPattern { SCAN_LINES, SPIRAL };
+/*
 class RoutePlanner : public QObject {
   Q_OBJECT
 public:
-  void setFlightPattern(FlightPattern pattern);
-  void setTurnRadius(float radius);
+  
 
 private:
-  // check if the point is in the convex hull
-  bool pointInConvexHull(const QVector3D &point);
-  // check if the line is in the convex hull
-  bool lineInConvexHull(const QLineF &line);
-  FlightPattern m_pattern = SCAN_LINES;
-  float m_scanSpacing = 10.0f; // scan line spacing
-  float m_turnRadius = 5.0f;   // turn radius
+  
   QVector<QVector3D> generateScanLines();
   QVector<QVector3D> generateSpiral();
   QVector<QVector3D> optimizePath(const QVector<QVector3D> &path);
@@ -41,8 +35,6 @@ signals:
 public:
   explicit RoutePlanner(QObject *parent = nullptr);
 
-  // calculate convex hull
-  QVector<QVector3D> calculateConvexHull();
   // generate flight path
   void generateFlightPath();
   QVector<QVector3D> generateScanLines(float spacing);
@@ -52,12 +44,6 @@ public:
   const QVector<QVector3D> &convexHull() const { return m_convexHull; }
   // route path
   const QVector<QVector3D> &routePath() const { return m_flightPath; }
-  bool m_editingMode = false;          // edit mode
-  bool mCreateRoute = false;           // create route mode
-  bool m_isAddingControlPoint = false; // add control point mode
-  bool isAddingControlPoint() const {
-    return m_isAddingControlPoint;
-  } // add control point mode
   int selectedPointIndex() const { return mnSelectedPoint; }
   void setSelectedPoint(int index);
   void removeSelectedPoint();
@@ -76,7 +62,7 @@ private:
   QVector3D m_homePoint;
 public slots:
   void enterRoutePlanningMode();
-  void addControlPoint(const QVector3D &point);
+  
   void setEditingMode(bool enabled);
   void handleMouseMove(QMouseEvent *event);
   bool isEditing();
@@ -95,3 +81,95 @@ private:
 
   void updateConvexHull(); // update convex hull
 };
+*/
+
+namespace gl{
+class RoutePath;
+class HomePoint;
+class ControlPoints;
+class ConvexHull;
+};
+
+enum class FlightPattern : unsigned char{
+  SCANLINE,
+  SPIRAL,
+  TOUR,
+};
+
+enum class RouteDrawMode : unsigned char{
+  AVAILABLE,
+  CREATING_CONTROL_POINTS,
+  CREATING_CONVEX_HULL,
+  CREATING_ROUTE_PATH,
+  CREATING_HOME_POINT,
+  EDITING_ROUTE_PATH,
+  EDITING_CONTROL_POINTS,
+  EDITING_CONVEX_HULL,
+  EDITING_HOME_POINT,
+};
+
+class Route{
+public:
+  explicit Route(FlightPattern pattern, float turnRadius, float scanSpacing, std::shared_ptr<gl::ControlPoints> controlPoints, std::shared_ptr<gl::ConvexHull> convexHull, std::shared_ptr<gl::RoutePath> path, std::shared_ptr<gl::HomePoint> homePoint);
+  ~Route() = default;
+  
+private:
+  FlightPattern mPattern;
+  float mTurnRadius;
+  float mScanSpacing;
+  std::shared_ptr<gl::RoutePath> path;
+  std::shared_ptr<gl::HomePoint> homePoint;
+  std::shared_ptr<gl::ControlPoints> controlPoints;
+  std::shared_ptr<gl::ConvexHull> convexHull;
+};
+
+class RoutePlanner{
+private:
+  RoutePlanner();
+public:
+  ~RoutePlanner(){
+    for (auto &route : mRoutes) {
+      route->path.reset();
+      route->controlPoints.reset();
+      route->convexHull.reset();
+    }
+  }
+  static RoutePlanner& getInstance() {
+    static RoutePlanner instance;
+    return instance;
+  }
+  RoutePlanner(const RoutePlanner&) = delete;
+  RoutePlanner& operator=(const RoutePlanner&) = delete;
+  FlightPattern flightPattern() const {return mPattern;}
+  RouteDrawMode drawMode() const {return mDrawMode;}
+  float turnRadius() const {return mTurnRadius;}
+  float scanSpacing() const {return mScanSpacing;}
+  void setFlightPattern(FlightPattern pattern){mPattern = pattern;}
+  void setTurnRadius(float radius){mTurnRadius = radius;}
+  void setScanSpacing(float spacing){mScanSpacing = spacing;}
+  void setDrawMode(RouteDrawMode mode){mDrawMode = mode;}
+
+private slots:
+  void createRoute();
+  void editRoute();
+
+private:
+  QVector<std::shared_ptr<Route>> mRoutes;
+  FlightPattern mPattern;
+  RouteDrawMode mDrawMode;
+  float mScanSpacing; // scan line spacing
+  float mTurnRadius;   // turn radius
+  void addControlPoint(const QVector3D &point);
+  void generateScanLinePath(const QVector3D &homePointLocation, const QVector<QVector3D> &convexHullLocation, QVector<QVector3D> &routePathLocation);
+  void generateSpiralPath(const QVector3D &homePointLocation, const QVector<QVector3D> &convexHullLocation, QVector<QVector3D> &routePathLocation);
+  void generateTourPath(const QVector<QVector3D> &controlPointsLocation, const QVector3D &homePointLocation, const QVector<QVector3D> &convexHullLocation, QVector<QVector3D> &routePathLocation);
+  void optimizePath(const QVector<QVector3D> &path);
+
+  void generateControlPoints(QVector<QVector3D> &controlPointsLocation);
+  void generateConvexHull(QVector<QVector3D> &controlPointsLocation, QVector<QVector3D> &convexHullLocation);
+  void generateRoutePath(QVector<QVector3D> &controlPointsLocation, QVector<QVector3D> &convexHullLocation, FlightPattern pattern, QVector<QVector3D> &routePathLocation);
+  QVector3D generateHomePoint();
+  static bool pointInConvexHull(const QVector3D &point, const QVector<QVector3D> &convexHull);
+  static bool lineInConvexHull(const QLineF &line, const QVector<QVector3D> &convexHull);
+};
+#endif

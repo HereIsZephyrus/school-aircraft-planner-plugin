@@ -30,11 +30,12 @@ void Canvas::switchTo2D() {
   logMessage("switch to 2D map view", Qgis::MessageLevel::Success);
 }
 
-void Canvas::resetView() {
+void Canvas::viewReset() {
   Camera::getInstance().resetView();
   logMessage("reset view", Qgis::MessageLevel::Success);
 }
 
+void Canvas::loadModel(const QString &objFilePath) {mpOpenGLWidget->loadModel(objFilePath);}
 
 void Canvas::init3DWidget() {
   mpRoutePlanner = std::make_unique<RoutePlanner>();

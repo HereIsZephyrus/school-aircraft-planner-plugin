@@ -28,8 +28,6 @@ set(RESOURCES
 )
 
 set(CORE_SOURCES
-    ${CMAKE_CURRENT_SOURCE_DIR}/core/RouteData.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/core/RouteData.h
     ${CMAKE_CURRENT_SOURCE_DIR}/core/RoutePlanner.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/core/RoutePlanner.h
     ${CMAKE_CURRENT_SOURCE_DIR}/core/WorkspaceState.cpp

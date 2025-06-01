@@ -84,8 +84,8 @@ void RouteGroup::createButtons() {
 }
 
 void RouteGroup::createSlots() {
-    connect(mpBtnCreateRoute, &QPushButton::clicked, this, [this]() { emit createRoute(); });
-    connect(mpBtnEditRoute, &QPushButton::clicked, this, [this]() { emit editRoute(); });
+    connect(mpBtnCreateRoute, &QPushButton::clicked, this, &RouteGroup::createRoute);
+    connect(mpBtnEditRoute, &QPushButton::clicked, this, &RouteGroup::editRoute);
 }
 
 RouteGroup::RouteGroup(QWidget* parent) : FunctionGroup(tr("Route Planning"), "routeGroup", parent) {
@@ -113,11 +113,11 @@ void FlightSimGroup::createSpins() {
 }
 
 void FlightSimGroup::createSlots() {
-    connect(mpBtnStart, &QPushButton::clicked, this, [this]() { emit simulationStart(); });
-    connect(mpBtnPause, &QPushButton::clicked, this, [this]() { emit simulationPause(); });
-    connect(mpBtnResume, &QPushButton::clicked, this, [this]() { emit simulationResume(); });
-    connect(mpBtnReturn, &QPushButton::clicked, this, [this]() { emit simulationReturnHome(); });
-    connect(mpBtnStop, &QPushButton::clicked, this, [this]() { emit simulationStop(); });
+    connect(mpBtnStart, &QPushButton::clicked, this, &FlightSimGroup::simulationStart);
+    connect(mpBtnPause, &QPushButton::clicked, this, &FlightSimGroup::simulationPause);
+    connect(mpBtnResume, &QPushButton::clicked, this, &FlightSimGroup::simulationResume);
+    connect(mpBtnReturn, &QPushButton::clicked, this, &FlightSimGroup::simulationReturnHome);
+    connect(mpBtnStop, &QPushButton::clicked, this, &FlightSimGroup::simulationStop);
 }
 
 void FlightSimGroup::createButtons() {
@@ -160,7 +160,7 @@ FlightSimGroup::FlightSimGroup(QWidget* parent) : FunctionGroup(tr("Flight Simul
 }
 
 void FlightQueryGroup::createSlots() {
-    connect(mpBtnQueryParams, &QPushButton::clicked, this, [this]() { emit queryFlightParams(); });
+    connect(mpBtnQueryParams, &QPushButton::clicked, this, &FlightQueryGroup::queryFlightParams);
 }
 
 void FlightQueryGroup::createDialog() {
@@ -226,7 +226,7 @@ FlightQueryGroup::FlightQueryGroup(QWidget* parent) : FunctionGroup(tr("Flight Q
 }
 
 void EnvQueryGroup::createSlots() {
-    connect(mpBtnRefreshData, &QPushButton::clicked, this, [this]() { emit queryEnvParams(); });
+    connect(mpBtnRefreshData, &QPushButton::clicked, this, &EnvQueryGroup::queryEnvParams);
 }
 
 void EnvQueryGroup::refreshEnvParams() {

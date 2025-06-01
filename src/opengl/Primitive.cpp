@@ -1,5 +1,6 @@
 #include "Primitive.h"
 #include "../log/QgisDebug.h"
+#include "../core/WorkspaceState.h"
 #include "Camera.h"
 namespace gl {
 using Material = ModelData::Material;

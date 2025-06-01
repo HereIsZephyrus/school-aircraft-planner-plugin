@@ -1,4 +1,5 @@
-#pragma once
+#ifndef WORKSPACE_STATE_H
+#define WORKSPACE_STATE_H
 #include <QString>
 #include <QList>
 #include <QDir>
@@ -68,6 +69,7 @@ public:
     void addObjTexturePair(const ObjTexturePair& objTexturePair) {mObjTexturePairs.append(objTexturePair);}
     QList<ObjTexturePair> getObjTexturePairs() const {return mObjTexturePairs;}
     ObjTexturePair getObjTexturePair(int index) const;
+    
 private:
     QString mRootDir;
     //QString mPath3D;
@@ -105,7 +107,10 @@ public:
     static constexpr int maxTemperature = 50;
     static constexpr int minPressure = 800;
     static constexpr int maxPressure = 1100;
+
+private slots:
     void generateRandomWeather();
+
 private:
     WeatherType mWeather;
     double mTemperature;
@@ -141,6 +146,9 @@ public:
     static constexpr int maxFlightBattery = 100;
     static constexpr int minBaseHeight = 0;
     static constexpr int maxBaseHeight = 100;
+
+private slots:
+    void queryFlightParameters();
 private:
     double mFlightSpeed,mFlightAltitude,mFlightBattery;
     double mBaseHeight, mCurrentHeight;
@@ -148,13 +156,12 @@ private:
     QQuaternion mAircraftOrientation;
     QVector<QVector3D> mFlightPath;
     QVector3D mHomePosition;
-    void queryFlightParameters();
 };
-/*
+
 class AnimationManager{
 private:
     AnimationManager();
-    ~AnimationManager();
+    ~AnimationManager() = default;
 public:
     static AnimationManager& getInstance() {
         static AnimationManager instance;
@@ -166,27 +173,25 @@ public:
     double getAnimationSpeed() const {return mAnimationSpeed;}
     void setAnimationDirection(AnimationDirection direction) {mAnimationDirection = direction;}
     AnimationDirection getAnimationDirection() const {return mAnimationDirection;}
-    
-    void startSimulation(float speed);      // 开始模拟
-    void pauseSimulation();                 // 暂停模拟
-    void resumeSimulation();                // 继续模拟
-    void returnToHome();                    // 自动返回
+
+private slots:
+    void startSimulation();
+    void pauseSimulation();
+    void resumeSimulation();
+    void returnToHome();
     void stopSimulation();
+
 private:
     double mAnimationSpeed;
-    QTimer mAnimationDirection;
-    m_animationTimer = new QTimer(this);
-  connect(m_animationTimer, &QTimer::timeout, this,
-          &OpenGLCanvas::updateAnimation);
-  logMessage("m_animationTimer connected", Qgis::MessageLevel::Info);
-    QTimer *m_animationTimer;
-    float m_animationProgress; // 0~1之间的进度值
-    bool m_isAnimating;
+    AnimationDirection mAnimationDirection;
+    float mAnimationProgress;
+    bool mIsAnimating;
     void updateAnimation();
     void drawAircraft(const QVector3D &position, const QQuaternion &orientation);
     QVector<Vertex> createAircraftModel();
-    bool m_cameraFollowAircraft; // 跟随摄像机
-    QVector3D m_viewTranslation; // 图平移
+    bool mCameraFollowAircraft;
+    QVector3D mViewTranslation;
 };
-*/
 }
+
+#endif

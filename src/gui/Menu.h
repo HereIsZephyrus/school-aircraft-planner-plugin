@@ -34,7 +34,8 @@ signals:
     void routeMenuTriggered();
     void settingMenuTriggered();
     void helpMenuTriggered();
-    void viewChanged(ws::CanvasType viewType);
+    void switchTo3D();
+    void switchTo2D();
     void viewReset();
     void simulationStart();
     void simulationPause();
@@ -42,8 +43,8 @@ signals:
     void simulationReturnHome();
     void simulationStop();
     void createRoute();
-    void showFlightParamsDialog();
-    void showEnvironmentalParamsDialog();
+    void refreshFlightParams();
+    void refreshEnvironmentalParams();
     void showUserManual();
 };
 #endif

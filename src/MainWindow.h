@@ -34,9 +34,9 @@ private:
   LeftDockWidget *mpLeftDockWidget;
   RightDockWidget *mpRightDockWidget;
   QSize setWindowSize(QRect screenGeometry, int maxWidth, int maxHeight, int minWidth, int minHeight);
-  void createSlots();
   void initWindowStatus();
   void showUserManual();
+  void createSlots();
 };
 
 #endif // MAINWINDOW_H

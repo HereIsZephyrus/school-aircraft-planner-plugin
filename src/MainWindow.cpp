@@ -30,12 +30,13 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent) {
 
   mpLeftDockWidget = new LeftDockWidget(this);
   addDockWidget(Qt::LeftDockWidgetArea, mpLeftDockWidget);
-  mpRightDockWidget = new RightDockWidget(this);
-  addDockWidget(Qt::RightDockWidgetArea, mpRightDockWidget);
   if (!mpLeftDockWidget) {
     logMessage("Failed to create left dock widget", Qgis::MessageLevel::Error);
     return;
   }
+
+  mpRightDockWidget = new RightDockWidget(this);
+  addDockWidget(Qt::RightDockWidgetArea, mpRightDockWidget);
   if (!mpRightDockWidget) {
     logMessage("Failed to create right dock widget", Qgis::MessageLevel::Error);
     return;
@@ -49,6 +50,44 @@ MainWindow::~MainWindow() {
   logMessage("MainWindow destroyed", Qgis::MessageLevel::Success);
 }
 
+void MainWindow::createSlots() {
+  using namespace ws;
+  connect(mpLeftDockWidget, &LeftDockWidget::switchTo3D, mpCanvas, &Canvas::switchTo3D);
+  connect(mpLeftDockWidget, &LeftDockWidget::switchTo2D, mpCanvas, &Canvas::switchTo2D);
+  connect(mpLeftDockWidget, &LeftDockWidget::viewReset, mpCanvas, &Canvas::viewReset);
+  connect(mpLeftDockWidget, &LeftDockWidget::createRoute, mpCanvas, &RoutePlanner::createRoute);
+  connect(mpLeftDockWidget, &LeftDockWidget::editRoute, mpCanvas, &RoutePlanner::editRoute);
+  connect(mpLeftDockWidget, &LeftDockWidget::simulationStart, mpCanvas, &AnimationManager::startSimulation);
+  connect(mpLeftDockWidget, &LeftDockWidget::simulationPause, mpCanvas, &AnimationManager::pauseSimulation);
+  connect(mpLeftDockWidget, &LeftDockWidget::simulationResume, mpCanvas, &AnimationManager::resumeSimulation);
+  connect(mpLeftDockWidget, &LeftDockWidget::simulationReturnHome, mpCanvas, &AnimationManager::returnToHome);
+  connect(mpLeftDockWidget, &LeftDockWidget::simulationStop, mpCanvas, &AnimationManager::stopSimulation);
+  connect(mpLeftDockWidget, &LeftDockWidget::queryFlightParams, mpCanvas, &FlightManager::queryFlightParameters);
+  connect(mpLeftDockWidget, &LeftDockWidget::queryEnvParams, mpCanvas, &EnvManager::generateRandomWeather);
+  connect(mpRightDockWidget, &RightDockWidget::createRoute, mpCanvas, &RoutePlanner::createRoute);
+  connect(mpRightDockWidget, &RightDockWidget::editRoute, mpCanvas, &RoutePlanner::editRoute);
+  connect(mpRightDockWidget, &RightDockWidget::simulationStart, mpCanvas, &AnimationManager::startSimulation);
+  connect(mpRightDockWidget, &RightDockWidget::simulationPause, mpCanvas, &AnimationManager::pauseSimulation);
+  connect(mpRightDockWidget, &RightDockWidget::simulationResume, mpCanvas, &AnimationManager::resumeSimulation);
+  connect(mpRightDockWidget, &RightDockWidget::simulationReturnHome, mpCanvas, &AnimationManager::returnToHome);
+  connect(mpRightDockWidget, &RightDockWidget::simulationStop, mpCanvas, &AnimationManager::stopSimulation);
+  connect(mpRightDockWidget, &RightDockWidget::queryFlightParams, mpCanvas, &FlightManager::queryFlightParameters);
+  connect(mpRightDockWidget, &RightDockWidget::queryEnvParams, mpCanvas, &EnvManager::generateRandomWeather);
+  connect(mpMenuBar, &MenuBar::showUserManual, this, &MainWindow::showUserManual);
+  connect(mpMenuBar, &MenuBar::projectMenuTriggered, mpCanvas, &Canvas::loadModel);
+  connect(mpMenuBar, &MenuBar::viewMenuTriggered, mpCanvas, &Canvas::switchTo3D);
+  connect(mpMenuBar, &MenuBar::switchTo2D, mpCanvas, &Canvas::switchTo2D);
+  connect(mpMenuBar, &MenuBar::viewReset, mpCanvas, &Canvas::viewReset);
+  connect(mpMenuBar, &MenuBar::simulationStart, mpCanvas, &AnimationManager::startSimulation);
+  connect(mpMenuBar, &MenuBar::simulationPause, mpCanvas, &AnimationManager::pauseSimulation);
+  connect(mpMenuBar, &MenuBar::simulationResume, mpCanvas, &AnimationManager::resumeSimulation);
+  connect(mpMenuBar, &MenuBar::simulationReturnHome, mpCanvas, &AnimationManager::returnToHome);
+  connect(mpMenuBar, &MenuBar::simulationStop, mpCanvas, &AnimationManager::stopSimulation);
+  connect(mpMenuBar, &MenuBar::createRoute, mpCanvas, &RoutePlanner::createRoute);
+  connect(mpMenuBar, &MenuBar::refreshFlightParams, mpCanvas, &FlightManager::queryFlightParameters);
+  connect(mpMenuBar, &MenuBar::refreshEnvironmentalParams, mpCanvas, &EnvManager::generateRandomWeather);
+}
+
 QSize MainWindow::setWindowSize(QRect screenGeometry, int maxWidth, int maxHeight, int minWidth, int minHeight) {
   // calc current screen size
   double width_d = screenGeometry.width() * 0.8;
@@ -60,6 +99,7 @@ QSize MainWindow::setWindowSize(QRect screenGeometry, int maxWidth, int maxHeigh
   height = qMax(minHeight, height);
   return QSize(width, height);
 }
+
 void MainWindow::initWindowStatus() {
   StyleManager::initializeStyle(); // initialize global style
   QScreen *screen = QApplication::primaryScreen();
@@ -72,127 +112,6 @@ void MainWindow::initWindowStatus() {
 
   setWindowFlags(Qt::Window);
   setWindowTitle("3D Flight Simulation");
-}
-
-void MainWindow::createSlots() {
-  logMessage("create slots", Qgis::MessageLevel::Info);
-  QDoubleSpinBox *pBaseHeightSpin =
-      this->safeFindChild<QDoubleSpinBox *>("pBaseHeightSpin");
-  QDoubleSpinBox *pHeightSpin =
-      this->safeFindChild<QDoubleSpinBox *>("pHeightSpin");
-  QDoubleSpinBox *pSpeedSpin =
-      this->safeFindChild<QDoubleSpinBox *>("pSpeedSpin");
-  QDoubleSpinBox *pWidthSpin =
-      this->safeFindChild<QDoubleSpinBox *>("pWidthSpin");
-  QPushButton *pBtnAddControlPoint =
-      this->safeFindChild<QPushButton *>("pBtnAddControlPoint");
-  QPushButton *pBtnCreateRoute =
-      this->safeFindChild<QPushButton *>("pBtnCreateRoute");
-  QPushButton *pBtnEditPoint =
-      this->safeFindChild<QPushButton *>("pBtnEditPoint");
-  QPushButton *pBtnGenerate =
-      this->safeFindChild<QPushButton *>("pBtnGenerate");
-  QPushButton *pBtnPause = this->safeFindChild<QPushButton *>("pBtnPause");
-  QPushButton *pBtnQueryParams =
-      this->safeFindChild<QPushButton *>("pBtnQueryParams");
-  QPushButton *pBtnRefreshData =
-      this->safeFindChild<QPushButton *>("pBtnRefreshData");
-  QPushButton *pBtnResume = this->safeFindChild<QPushButton *>("pBtnResume");
-  QPushButton *pBtnReturn = this->safeFindChild<QPushButton *>("pBtnReturn");
-  QPushButton *pBtnSetHome = this->safeFindChild<QPushButton *>("pBtnSetHome");
-  QPushButton *pBtnStart = this->safeFindChild<QPushButton *>("pBtnStart");
-  QPushButton *pBtnStop = this->safeFindChild<QPushButton *>("pBtnStop");
-
-  connect(pBtnSetHome, &QPushButton::clicked, [this]() {
-    if (!mpRoutePlanner->m_settingHomePointMode) {
-      // enter setting home point mode
-      mpRoutePlanner->setSettingHomePointMode(true);
-      logMessage("enter setting home point mode", Qgis::MessageLevel::Success);
-    }
-  });
-  connect(pBtnQueryParams, &QPushButton::clicked, this,
-          &MainWindow::queryFlightParameters);
-  connect(pBtnRefreshData, &QPushButton::clicked, this,
-          &MainWindow::refreshBasicData);
-  logMessage("connect left widget to slots", Qgis::MessageLevel::Success);
-
-  // connect signal in main window constructor
-  connect(mpStackedWidget, &QStackedWidget::currentChanged, this,
-          [=](int index) {
-            if (index == 0 &&
-                ws::WindowManager::getInstance().getCurrentCanvas() ==
-                    ws::CanvasType::ThreeD) { // assume OpenGLCanvas is the
-                                              // first page (index 0)
-              mpOpenGLWidget->setFocus();     // switch back to force focus
-            }
-          });
-  logMessage("connect signal in main window constructor",
-             Qgis::MessageLevel::Info);
-  // ================= signal and slot connection =================
-
-  connect(mpBtnReset, &QPushButton::clicked, this, &MainWindow::resetView);
-  logMessage("connect reset view button to reset view",
-             Qgis::MessageLevel::Info);
-  connect(mpBtnSwitchTo3D, &QPushButton::clicked, this,
-          &MainWindow::switchTo3D);
-  logMessage("connect switch to 3D button to switch to 3D",
-             Qgis::MessageLevel::Info);
-  connect(mpBtnSwitchTo2D, &QPushButton::clicked, this,
-          &MainWindow::switchTo2D);
-  logMessage("connect switch to 2D button to switch to 2D",
-             Qgis::MessageLevel::Info);
-
-  connect(pBtnCreateRoute, &QPushButton::clicked, mpRoutePlanner.get(),
-          &RoutePlanner::enterRoutePlanningMode); // start route planning
-  logMessage("connect create route button to enter route planning mode",
-             Qgis::MessageLevel::Info);
-  connect(pBtnAddControlPoint, &QPushButton::clicked, [this]() {
-    if (!mpRoutePlanner->m_isAddingControlPoint) {
-      mpRoutePlanner->m_isAddingControlPoint =
-          true; // enter "add control point" mode
-    } else
-      mpRoutePlanner->m_isAddingControlPoint = false; // exit
-  });
-  logMessage("connect add control point button to enter add control point mode",
-             Qgis::MessageLevel::Info);
-  connect(pBtnEditPoint, &QPushButton::clicked, [this]() {
-    if (!mpRoutePlanner->m_editingMode) {
-      mpRoutePlanner->m_editingMode = true; // enter "edit point" mode
-    } else
-      mpRoutePlanner->m_editingMode = false; // exit
-  });
-  logMessage("connect edit point button to enter edit point mode",
-             Qgis::MessageLevel::Info);
-  connect(pBtnGenerate, &QPushButton::clicked, [=]() {
-    // mpOpenGLWidget->generateFlightRoute(pHeightSpin->value());
-  });
-  logMessage("connect generate flight route button to generate flight route",
-             Qgis::MessageLevel::Info);
-  /*
-  connect(pHeightSpin, SIGNAL(valueChanged(double)), mpOpenGLWidget.get(),
-          SLOT(updateFlightHeight(double))); //传递行高到MyOpenGLWidget类中
-  logMessage("connect height spin box to update flight height",
-  Qgis::MessageLevel::Info); connect(pWidthSpin, SIGNAL(valueChanged(double)),
-  mpRoutePlanner.get(), SLOT(setScanSpacing(double)));
-  //传递航带宽度到RoutePlanner类中 logMessage("connect width spin box to set
-  scan spacing", Qgis::MessageLevel::Info);
-*/
-  /*
-  // flight simulation related connections
-  connect(pBtnStart, &QPushButton::clicked,
-          [=]() { mpOpenGLWidget->startSimulation(pSpeedSpin->value()); });
-  connect(pBtnPause, &QPushButton::clicked, mpOpenGLWidget.get(),
-          &OpenGLCanvas::pauseSimulation);
-  connect(pBtnResume, &QPushButton::clicked, mpOpenGLWidget.get(),
-          &OpenGLCanvas::resumeSimulation);
-  connect(pBtnReturn, &QPushButton::clicked, mpOpenGLWidget.get(),
-          &OpenGLCanvas::returnToHome);
-  connect(pBtnStop, &QPushButton::clicked, mpOpenGLWidget.get(),
-          &OpenGLCanvas::stopSimulation);
-  connect(pBaseHeightSpin, SIGNAL(valueChanged(double)), mpOpenGLWidget.get(),
-          SLOT(ws::FlightManager::getInstance().setBaseHeight(double)));
-  logMessage("connected all slots on main window", Qgis::MessageLevel::Success);
-  */
 }
 
 void MainWindow::showUserManual() {
