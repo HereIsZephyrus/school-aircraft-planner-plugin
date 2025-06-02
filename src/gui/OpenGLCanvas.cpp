@@ -20,14 +20,6 @@
 #include "../core/WorkspaceState.h"
 
 OpenGLCanvas::OpenGLCanvas(QWidget *parent) : QOpenGLWidget(parent) {
-  QSurfaceFormat format;
-  format.setVersion(4, 1);
-  format.setProfile(QSurfaceFormat::CoreProfile);
-  format.setDepthBufferSize(24);
-  format.setStencilBufferSize(8);
-  format.setSamples(4);
-  setFormat(format);
-
   setFocusPolicy(Qt::StrongFocus);
   setFocus();
 
@@ -50,11 +42,17 @@ void OpenGLCanvas::initializeSharedContext() {
     return;
   }
 
+  QSurfaceFormat format;
+  format.setVersion(4, 1);
+  format.setProfile(QSurfaceFormat::CoreProfile);
+  format.setDepthBufferSize(24);
+  format.setStencilBufferSize(8);
+  format.setSamples(4);
+  
   mSharedContext = new QOpenGLContext();
-  mSharedContext->setFormat(format());
+  mSharedContext->setFormat(format);
   mSharedContext->setShareContext(context());
   
-  // 确保共享上下文正确设置
   if (!mSharedContext->create()) {
     logMessage("Failed to create shared context", Qgis::MessageLevel::Critical);
     delete mSharedContext;
@@ -62,15 +60,12 @@ void OpenGLCanvas::initializeSharedContext() {
     return;
   }
 
-  // 验证共享是否成功
   if (mSharedContext->shareContext() != context()) {
     logMessage("Context sharing failed", Qgis::MessageLevel::Critical);
     delete mSharedContext;
     mSharedContext = nullptr;
     return;
   }
-  
-  logMessage("Shared context created successfully", Qgis::MessageLevel::Success);
 }
 
 OpenGLCanvas::~OpenGLCanvas() {
@@ -132,7 +127,7 @@ void OpenGLCanvas::initializeGL() {
   glEnable(GL_BLEND);
   glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
-  // 在初始化OpenGL函数后创建共享上下文
+  basePlaneWidget = std::make_shared<gl::BasePlane>();
   initializeSharedContext();
   
   if (!mSharedContext) {
@@ -156,6 +151,7 @@ void OpenGLCanvas::paintGL() {
   }
   if (!isVisible())
     return;
+
   glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
   glEnable(GL_DEPTH_TEST);
@@ -166,7 +162,13 @@ void OpenGLCanvas::paintGL() {
   QMatrix4x4 view = camera.viewMatrix();
   QMatrix4x4 projection = camera.projectionMatrix();
 
-  mpScene->paintScene(view, projection);
+  if (basePlaneWidget)
+    basePlaneWidget->draw(view, projection);
+
+  if (mpScene) {
+    mpScene->paintScene(view, projection);
+  }
+  
   GLenum err;
   while ((err = glGetError()) != GL_NO_ERROR) {
     logMessage(QString("OpenGL error in paintGL: %1").arg(err), 
@@ -179,8 +181,8 @@ OpenGLScene::OpenGLScene(QOpenGLContext* sharedContext) : mSharedContext(sharedC
     logMessage("Shared context is null in OpenGLScene constructor", Qgis::MessageLevel::Critical);
     return;
   }
+  logMessage("Shared context is valid in OpenGLScene constructor", Qgis::MessageLevel::Info);
 
-  // 创建离屏表面
   mSurface = new QOffscreenSurface();
   mSurface->setFormat(mSharedContext->format());
   mSurface->create();
@@ -192,7 +194,6 @@ OpenGLScene::OpenGLScene(QOpenGLContext* sharedContext) : mSharedContext(sharedC
     return;
   }
 
-  // 在共享上下文中初始化basePlaneWidget
   mSharedContext->makeCurrent(mSurface);
   basePlaneWidget = std::make_shared<gl::BasePlane>();
   mSharedContext->doneCurrent();
@@ -214,15 +215,12 @@ void OpenGLScene::cleanupResources() {
     return;
   }
 
-  // 确保在创建资源的上下文中销毁资源
   mSharedContext->makeCurrent(mSurface);
   
-  // 先释放纹理资源
   if (modelWidget) {
     modelWidget->cleanupTextures();
   }
   
-  // 然后释放其他资源
   basePlaneWidget = nullptr;
   modelWidget = nullptr;
   

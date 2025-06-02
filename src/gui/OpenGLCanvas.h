@@ -48,6 +48,7 @@ private:
   QPoint mLastMousePos;
   QOpenGLContext* mSharedContext;
   void initializeSharedContext();
+  std::shared_ptr<gl::BasePlane> basePlaneWidget;
 
 public slots:
   void handleMouseMove(QMouseEvent *event);
@@ -61,7 +62,7 @@ public:
   void paintScene(const QMatrix4x4 &view, const QMatrix4x4 &projection);
   std::shared_ptr<gl::BasePlane> initBasePlane();
   void loadModel(const QString &objFilePath);
-  void setSharedContext(QOpenGLContext* context);
+  void setSharedContext(QOpenGLContext* context){mSharedContext = context;}
   void cleanupResources();
 
 protected:
