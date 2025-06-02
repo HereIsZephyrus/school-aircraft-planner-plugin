@@ -62,6 +62,12 @@ Primitive::~Primitive() {
     this->shader = nullptr;
     delete[] this->vertices;
   }
+  if (QOpenGLContext::currentContext()) {
+    this->vao.destroy();
+    this->vbo.destroy();
+    this->shader = nullptr;
+    delete[] this->vertices;
+  }
   logMessage("Primitive destroyed", Qgis::MessageLevel::Success);
 }
 
@@ -197,12 +203,16 @@ BasePlane::BasePlane(const QVector4D &color)
 
 RoutePath::RoutePath(const QVector<QVector3D>& vertices, const QVector4D& color)
     : ColorPrimitive(GL_LINE_STRIP, vertices, color) {
+RoutePath::RoutePath(const QVector<QVector3D>& vertices, const QVector4D& color)
+    : ColorPrimitive(GL_LINE_STRIP, vertices, color) {
   logMessage("start constructing shader", Qgis::MessageLevel::Info);
   constructShader(QStringLiteral(":/schoolcore/shaders/line.vs"), QStringLiteral(":/schoolcore/shaders/line.fs"));
   initShaderAllocate();
   logMessage("RoutePath initialized", Qgis::MessageLevel::Info);
 }
 
+ControlPoints::ControlPoints(const QVector<QVector3D>& vertices, const QVector4D& color)
+    : ColorPrimitive(GL_POINTS, vertices, color) {
 ControlPoints::ControlPoints(const QVector<QVector3D>& vertices, const QVector4D& color)
     : ColorPrimitive(GL_POINTS, vertices, color) {
   logMessage("start constructing shader", Qgis::MessageLevel::Info);

@@ -21,17 +21,30 @@ QObject *ws::WindowManager::pDefaultObject = nullptr;
 void initializeWorkspaceState() {
   PathManager::getInstance();
   logMessage("WorkspaceState initialized", Qgis::MessageLevel::Success);
+QObject *ws::WindowManager::pDefaultObject = nullptr;
+
+void initializeWorkspaceState() {
+  PathManager::getInstance();
+  logMessage("WorkspaceState initialized", Qgis::MessageLevel::Success);
 }
+} // namespace ws
 } // namespace ws
 
 ws::PathManager::PathManager() {
   QProcessEnvironment env = QProcessEnvironment::systemEnvironment();
   mRootDir = GetHomeDirectory();
+  QProcessEnvironment env = QProcessEnvironment::systemEnvironment();
+  mRootDir = GetHomeDirectory();
 }
 
 ws::PathManager::~PathManager() { mObjTexturePairs.clear(); }
+ws::PathManager::~PathManager() { mObjTexturePairs.clear(); }
 
 void ws::PathManager::findAllObjAndTexturePaths() {
+  QDir dir(mRootDir);
+  QStringList objFiles = dir.entryList(QStringList() << "*.obj", QDir::Files);
+  QStringList textureFiles =
+      dir.entryList(QStringList() << "*.jpg", QDir::Files);
   QDir dir(mRootDir);
   QStringList objFiles = dir.entryList(QStringList() << "*.obj", QDir::Files);
   QStringList textureFiles =
@@ -43,9 +56,16 @@ ObjTexturePair ws::PathManager::getObjTexturePair(int index) const {
     throw std::out_of_range("Index out of range");
   }
   return mObjTexturePairs[index];
+  if (index < 0 || index >= mObjTexturePairs.size()) {
+    throw std::out_of_range("Index out of range");
+  }
+  return mObjTexturePairs[index];
 }
 
 ws::EnvManager::EnvManager() {
+  mWeather = WeatherType::Sunny;
+  mTemperature = 25.0;
+  mPressure = 1013.25;
   mWeather = WeatherType::Sunny;
   mTemperature = 25.0;
   mPressure = 1013.25;
@@ -57,7 +77,12 @@ ws::FlightManager::FlightManager() {
   mFlightAltitude = 100.0;
   mFlightBattery = 100.0;
   mBaseHeight = 0.0;
+  mFlightSpeed = 10.0;
+  mFlightAltitude = 100.0;
+  mFlightBattery = 100.0;
+  mBaseHeight = 0.0;
 }
+ws::FlightManager::~FlightManager() { mFlightPath.clear(); }
 ws::FlightManager::~FlightManager() { mFlightPath.clear(); }
 
 ws::WindowManager::WindowManager()
@@ -183,6 +208,7 @@ void ws::AnimationManager::returnToHome() {
   mIsAnimating = false;
   mIsPaused = false;
 }
+
 
 void ws::AnimationManager::stopSimulation() {
   mIsAnimating = false;
