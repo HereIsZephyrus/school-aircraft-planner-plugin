@@ -50,6 +50,8 @@ RightDockWidget::RightDockWidget(QWidget *parent) : QDockWidget(parent) {
   mpMainContainer = new QWidget(this);
   setWidget(mpMainContainer);
   mpMainLayout = new QVBoxLayout(mpMainContainer);
+  mpMainLayout->setContentsMargins(0, 0, 0, 0);
+  mpMainLayout->setSpacing(0);
   mpFileTreeWidget = new FileTreeWidget(mpMainContainer);
   mpMainLayout->addWidget(mpFileTreeWidget);
   mpToolTreeWidget = new ToolTreeWidget(mpMainContainer);

@@ -29,6 +29,7 @@ void LeftDockWidget::createDockContent(QWidget *parent) {
   mpDockContent = new QWidget(parent);
   mpDockContent->setObjectName("dockContent");
   mpDockContent->setMinimumWidth(175);
+  mpDockContent->setStyleSheet("background-color: black;");
   mpScrollArea->setWidget(mpDockContent);
   logMessage("create dock content", Qgis::MessageLevel::Info);
 }
@@ -170,16 +171,16 @@ void FlightSimGroup::createButtons() {
   mpControlRow2->setObjectName("controlRow2");
   mpBtnResume = new QPushButton("Resume", this);
   mpBtnResume->setObjectName("resumeButton");
-  mpBtnReturn = new QPushButton("Return Home", this);
-  mpBtnReturn->setObjectName("returnButton");
+  mpBtnStop = new QPushButton("Stop", this);
+  mpBtnStop->setObjectName("stopButton");
   mpControlRow2->addWidget(mpBtnResume);
-  mpControlRow2->addWidget(mpBtnReturn);
+  mpControlRow2->addWidget(mpBtnStop);
 
   mpControlRow3 = new QHBoxLayout();
   mpControlRow3->setObjectName("controlRow3");
-  mpBtnStop = new QPushButton("Stop Simulation", this);
-  mpBtnStop->setObjectName("stopButton");
-  mpControlRow3->addWidget(mpBtnStop);
+  mpBtnReturn = new QPushButton("Return Home", this);
+  mpBtnReturn->setObjectName("returnButton");
+  mpControlRow3->addWidget(mpBtnReturn);
   logMessage("create flight sim group buttons", Qgis::MessageLevel::Info);
 }
 
@@ -380,12 +381,19 @@ LeftDockWidget::LeftDockWidget(QWidget *parent) : QDockWidget(parent) {
   createScrollArea(this);
   createDockContent(mpScrollArea);
   mpMainLayout = new QVBoxLayout(mpDockContent);
+  mpMainLayout->setContentsMargins(0, 0, 0, 0);
+  mpMainLayout->setSpacing(0);
   mpViewGroup = new ViewGroup(mpDockContent);
+  mpMainLayout->addWidget(mpViewGroup);
   mpRouteGroup = new RouteGroup(mpDockContent);
+  mpMainLayout->addWidget(mpRouteGroup);
   mpFlightSimGroup = new FlightSimGroup(mpDockContent);
+  mpMainLayout->addWidget(mpFlightSimGroup);
   mpMainLayout->addStretch();
   logMessage("Add stretch", Qgis::MessageLevel::Info);
   mpFlightQueryGroup = new FlightQueryGroup(mpDockContent);
+  mpMainLayout->addWidget(mpFlightQueryGroup);
   mpEnvQueryGroup = new EnvQueryGroup(mpDockContent);
+  mpMainLayout->addWidget(mpEnvQueryGroup);
   logMessage("left dock widget created", Qgis::MessageLevel::Success);
 }
