@@ -56,7 +56,9 @@ private:
   std::shared_ptr<gl::ConvexHull> convexHull;
 };
 
-class RoutePlanner {
+class RoutePlanner : public QObject {
+  Q_OBJECT
+  
 private:
   RoutePlanner();
 
@@ -79,7 +81,7 @@ public:
   void setScanSpacing(float spacing) { mScanSpacing = spacing; }
   void setDrawMode(RouteDrawMode mode) { mDrawMode = mode; }
 
-private slots:
+public slots:
   void createRoute();
   void editRoute();
 

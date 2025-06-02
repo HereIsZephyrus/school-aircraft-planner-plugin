@@ -3,9 +3,15 @@
 #include "../log/QgisDebug.h"
 #include <QFileDialog>
 
+RightDockWidget::~RightDockWidget() {
+  logMessage("RightDockWidget destroyed", Qgis::MessageLevel::Success);
+}
+
 void FileTreeWidget::createSlots() {
   connect(mpSelectDirectoryButton, &QToolButton::clicked, this,
           &FileTreeWidget::onSelectDirectoryClicked);
+  connect(this, &QTreeWidget::itemDoubleClicked, this,
+          &FileTreeWidget::onTreeItemDoubleClicked);
   connect(this, &QTreeWidget::itemExpanded, this,
           &FileTreeWidget::onTreeItemExpanded);
 }
@@ -17,10 +23,6 @@ void FileTreeWidget::createSelectDirectoryButton() {
   mpSelectDirectoryButton->setText(tr("Select Directory"));
   logMessage("connect select directory button to onSelectDirectoryClicked",
              Qgis::MessageLevel::Info);
-
-  connect(this, &QTreeWidget::itemDoubleClicked, this,
-          &FileTreeWidget::onTreeItemDoubleClicked);
-  mpMainLayout->addWidget(mpSelectDirectoryButton);
 }
 
 FileTreeWidget::FileTreeWidget(QWidget *parent) : QTreeWidget(parent) {
@@ -28,11 +30,14 @@ FileTreeWidget::FileTreeWidget(QWidget *parent) : QTreeWidget(parent) {
   setHeaderLabel(tr("File List"));
 
   createSelectDirectoryButton();
-  createSlots();
-
+  mpMainLayout = new QVBoxLayout(this);
+  mpMainLayout->addWidget(mpSelectDirectoryButton);
   mpRootItem = nullptr;
   QString dirPath = ws::PathManager::getInstance().getRootDir();
+  logMessage("init empty file tree", Qgis::MessageLevel::Info);
   loadDirectoryFiles(dirPath);
+
+  createSlots();
   logMessage("create file tree", Qgis::MessageLevel::Success);
 }
 
@@ -57,64 +62,56 @@ RightDockWidget::RightDockWidget(QWidget *parent) : QDockWidget(parent) {
 
 JoyDockWidget::JoyDockWidget(QWidget *parent) : QWidget(parent) {
   setObjectName("joyDockWidget");
+  
   mpMainLayout = new QVBoxLayout(this);
-  mpControlDock = new QDockWidget(tr("Flight Control"), this);
+  mpMainLayout->setContentsMargins(0, 0, 0, 0);
+  
   mpControlPanel = new QWidget(this);
+  mpControlPanel->setObjectName("controlPanel");
+  
+  QVBoxLayout* controlLayout = new QVBoxLayout(mpControlPanel);
+  controlLayout->setContentsMargins(20, 20, 20, 20);
+  controlLayout->setSpacing(30);
 
-  mpMainLayout = new QVBoxLayout(mpControlPanel);
-  mpMainLayout->setContentsMargins(20, 20, 20, 20); // 增加边距
-  mpMainLayout->setSpacing(30);                     // 摇杆与按钮间距
-
-  mpJoystickLayout = new QHBoxLayout(mpControlPanel);
+  mpJoystickLayout = new QHBoxLayout();
   mpJoystickLayout->setSpacing(40);
 
-  // m_leftJoystick = new JoystickWidget();
-  // m_rightJoystick = new JoystickWidget();
-
-  // 设置大尺寸摇杆
-  const int joystickSize = 180; // 摇杆尺寸
-  // m_leftJoystick->setFixedSize(joystickSize, joystickSize);
-  // m_rightJoystick->setFixedSize(joystickSize, joystickSize);
-
+  const int joystickSize = 180;
   QString joystickStyle = "background-color: #333333;"
-                          "border-radius: " +
-                          QString::number(joystickSize / 2) + "px;";
-  // m_leftJoystick->setStyleSheet(joystickStyle);
-  // m_rightJoystick->setStyleSheet(joystickStyle);
+                         "border-radius: " +
+                         QString::number(joystickSize / 2) + "px;";
 
-  // joystickLayout->addWidget(m_leftJoystick);
-  // joystickLayout->addWidget(m_rightJoystick);
-  mpMainLayout->addLayout(mpJoystickLayout);
+  controlLayout->addLayout(mpJoystickLayout);
 
-  // 按钮行（保持大尺寸）===================================
-  mpButtonLayout = new QHBoxLayout(mpControlPanel);
+  mpButtonLayout = new QHBoxLayout();
   mpButtonLayout->setAlignment(Qt::AlignHCenter);
-  mpButtonLayout->setSpacing(30); // 按钮间距
+  mpButtonLayout->setSpacing(30);
 
   mpManualBtn = new QPushButton("手动模式", mpControlPanel);
   mpAutoBtn = new QPushButton("自动模式", mpControlPanel);
 
-  // 按钮样式（保持大尺寸但调整比例）
   QString buttonStyle = "QPushButton {"
-                        "  background-color: #4A4A4A;"
-                        "  border: 2px solid #5A5A5A;"
-                        "  border-radius: 8px;"
-                        "  padding: 15px 30px;"         // 增大内边距
-                        "  min-width: 140px;"           // 保持大宽度
-                        "  min-height: 45px;"           // 保持大高度
-                        "  font: bold 16px '微软雅黑';" // 字体稍增大
-                        "}"
-                        "QPushButton:hover {"
-                        "  background-color: #5A5A5A;"
-                        "}";
+                       "  background-color: #4A4A4A;"
+                       "  border: 2px solid #5A5A5A;"
+                       "  border-radius: 8px;"
+                       "  padding: 15px 30px;"
+                       "  min-width: 140px;"
+                       "  min-height: 45px;"
+                       "  font: bold 16px '微软雅黑';"
+                       "}"
+                       "QPushButton:hover {"
+                       "  background-color: #5A5A5A;"
+                       "}";
   mpManualBtn->setStyleSheet(buttonStyle);
   mpAutoBtn->setStyleSheet(buttonStyle);
 
   mpButtonLayout->addWidget(mpManualBtn);
   mpButtonLayout->addWidget(mpAutoBtn);
-  mpMainLayout->addLayout(mpButtonLayout);
+  
+  controlLayout->addLayout(mpButtonLayout);
 
-  mpControlDock->setWidget(mpControlPanel);
+  mpMainLayout->addWidget(mpControlPanel);
+
   logMessage("create joy dock widget", Qgis::MessageLevel::Success);
 }
 
@@ -290,4 +287,25 @@ ParameterToolbox::ParameterToolbox(QTreeWidget *parent)
   mpFlightParams->setText(0, ("Flight Parameters"));
   mpEnvironmentParams = new QTreeWidgetItem(this);
   mpEnvironmentParams->setText(0, ("Environment Parameters"));
+}
+
+void JoyDockWidget::handleJoystickMove(float dx, float dy) {
+    // 处理摇杆移动
+    // TODO: 实现摇杆控制逻辑
+    logMessage("Joystick moved: dx=" + QString::number(dx) + ", dy=" + QString::number(dy), 
+               Qgis::MessageLevel::Info);
+}
+
+void JoyDockWidget::switchToManualMode() {
+    // 切换到手动模式
+    mpManualBtn->setEnabled(false);
+    mpAutoBtn->setEnabled(true);
+    logMessage("Switched to manual mode", Qgis::MessageLevel::Info);
+}
+
+void JoyDockWidget::switchToAutoMode() {
+    // 切换到自动模式
+    mpManualBtn->setEnabled(true);
+    mpAutoBtn->setEnabled(false);
+    logMessage("Switched to auto mode", Qgis::MessageLevel::Info);
 }

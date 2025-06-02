@@ -1,12 +1,28 @@
 #include "QgisDebug.h"
 #include <QCoreApplication>
+#include <QDir>
+#include <QDateTime>
+#include <QFile>
+#include <QTextStream>
+
+static QString getLogDir() {
+    static QString logDir;
+    if (logDir.isEmpty()) {
+        if (QCoreApplication::instance()) {
+            logDir = QCoreApplication::applicationDirPath() + "/.3Dschool/logs";
+            QDir().mkpath(logDir);
+        } else {
+            logDir = QDir::tempPath() + "/.3Dschool/logs";
+            QDir().mkpath(logDir);
+        }
+    }
+    return logDir;
+}
 
 void logMessage(const QString &message, Qgis::MessageLevel level) {
     //QgsMessageLog::logMessage(message, "SchoolPlugin3D", level);
 
-    QString logDir = QCoreApplication::applicationDirPath() + "/.3Dschool/logs";
-    QDir().mkpath(logDir);
-    
+    QString logDir = getLogDir();
     QString logFile = logDir + "/3Dschool_" + QDateTime::currentDateTime().toString("yyyy-MM-dd-hh-mm") + ".log";
     QFile file(logFile);
     

@@ -333,3 +333,10 @@ QVector<QPointF> RoutePlanner::calculateIntersections(const QLineF &scanLine, co
 QVector<QVector3D> RoutePlanner::optimizePath(const QVector<QVector3D> &path) {
   return path;
 }
+
+void RoutePlanner::editRoute() {
+    mDrawMode = RouteDrawMode::EDITING_ROUTE_PATH;
+    // 默认实现：清空当前路线并重新创建
+    mRoutes.clear();
+    createRoute();
+}

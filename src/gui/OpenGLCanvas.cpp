@@ -39,9 +39,35 @@ OpenGLCanvas::OpenGLCanvas(QWidget *parent) : QOpenGLWidget(parent) {
 
 OpenGLCanvas::~OpenGLCanvas() {
   logMessage("ready to destroy OpenGLCanvas", Qgis::MessageLevel::Info);
-  makeCurrent();
-  doneCurrent();
-  updateTimer->stop();
+  
+  if (updateTimer) {
+    updateTimer->stop();
+    updateTimer = nullptr;
+  }
+  
+  QOpenGLContext* ctx = context();
+  if (!ctx) {
+    logMessage("OpenGL context is null", Qgis::MessageLevel::Critical);
+    return;
+  }
+  
+  if (!ctx->isValid()) {
+    logMessage("OpenGL context is not valid", Qgis::MessageLevel::Critical);
+    return;
+  }
+  
+  logMessage("OpenGL context is valid", Qgis::MessageLevel::Info);
+  
+  try {
+    makeCurrent();
+    logMessage("OpenGLCanvas::makeCurrent", Qgis::MessageLevel::Info);
+    mpScene = nullptr;
+    doneCurrent();
+    logMessage("OpenGLCanvas::doneCurrent", Qgis::MessageLevel::Info);
+  } catch (const std::exception& e) {
+    logMessage("Error during OpenGL cleanup: " + QString(e.what()), Qgis::MessageLevel::Critical);
+  }
+  
   logMessage("OpenGLCanvas destroyed", Qgis::MessageLevel::Success);
 }
 
@@ -90,6 +116,7 @@ OpenGLScene::OpenGLScene() {
 OpenGLScene::~OpenGLScene() {
   basePlaneWidget = nullptr;
   modelWidget = nullptr;
+  routes.clear();
 }
 void OpenGLScene::paintScene(const QMatrix4x4 &view,
                              const QMatrix4x4 &projection) {

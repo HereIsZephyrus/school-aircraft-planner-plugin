@@ -162,8 +162,9 @@ private:
     QVector3D mHomePosition;
 };
 
-/*
-class AnimationManager{
+class AnimationManager : public QObject {
+    Q_OBJECT
+
 private:
     AnimationManager();
     ~AnimationManager() = default;
@@ -179,7 +180,7 @@ public:
     void setAnimationDirection(QVector3D direction) {mAnimationDirection = direction;}
     QVector3D getAnimationDirection() const {return mAnimationDirection;}
 
-private slots:
+public slots:
     void startSimulation();
     void pauseSimulation();
     void resumeSimulation();
@@ -191,13 +192,12 @@ private:
     QVector3D mAnimationDirection;
     float mAnimationProgress;
     bool mIsAnimating;
+    bool mIsPaused;
     void updateAnimation();
     void drawAircraft(const QVector3D &position, const QQuaternion &orientation);
-    //QVector<Vertex> createAircraftModel();
     bool mCameraFollowAircraft;
     QVector3D mViewTranslation;
 };
-*/
 }
 
 #endif

@@ -3,6 +3,7 @@
 #include "../core/WorkspaceState.h"
 #include "Camera.h"
 #include <GL/gl.h>
+#include <QOpenGLContext>
 namespace gl {
 using Material = ModelData::Material;
 using Texture = QOpenGLTexture;
@@ -74,10 +75,12 @@ Primitive::Primitive(GLenum primitiveType, GLuint stride)
 
 Primitive::~Primitive() {
   logMessage("ready to destroy Primitive", Qgis::MessageLevel::Info);
-  this->vao.destroy();
-  this->vbo.destroy();
-  this->shader = nullptr;
-  delete[] this->vertices;
+  if (QOpenGLContext::currentContext()) {
+    this->vao.destroy();
+    this->vbo.destroy();
+    this->shader = nullptr;
+    delete[] this->vertices;
+  }
   logMessage("Primitive destroyed", Qgis::MessageLevel::Success);
 }
 

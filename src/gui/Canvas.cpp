@@ -33,6 +33,8 @@ void Canvas::loadModel(const QString &objFilePath) {
 
 void Canvas::init3DWidget() {
   mpOpenGLWidget = new OpenGLCanvas(this);
+  addWidget(mpOpenGLWidget);
+  logMessage("create 3D view widget", Qgis::MessageLevel::Success);
 }
 void Canvas::init2DWidget() {
   // create QLabel to display local image
@@ -48,6 +50,12 @@ void Canvas::init2DWidget() {
       true); // let image adapt to label size, keep ratio
   mpImageLabel->setSizePolicy(QSizePolicy::Ignored,
                               QSizePolicy::Ignored); // set size policy
-  logMessage("create QLabel to display local map image",
-             Qgis::MessageLevel::Success);
+  addWidget(mpImageLabel);
+  logMessage("create QLabel to display local map image",Qgis::MessageLevel::Success);
+}
+
+Canvas::~Canvas() {
+    delete mpImageLabel;
+    delete mpOpenGLWidget;
+    logMessage("Canvas destroyed", Qgis::MessageLevel::Success);
 }

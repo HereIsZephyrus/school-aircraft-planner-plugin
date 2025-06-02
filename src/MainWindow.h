@@ -10,6 +10,7 @@ Date:2025.1.6
 #include "gui/Menu.h"
 #include "gui/LeftDockWidget.h"
 #include "gui/RightDockWidget.h"
+#include "log/QgisDebug.h"
 #include <QAction>
 #include <QApplication>
 #include <QKeyEvent>
@@ -20,12 +21,17 @@ class MainWindow : public QMainWindow {
 
 public:
   static MainWindow& getInstance(QWidget *parent = nullptr) {
+    if (!QApplication::instance()) {
+      logMessage("QApplication must be created before MainWindow", Qgis::MessageLevel::Critical);
+      throw std::runtime_error("QApplication must be created before MainWindow");
+    }
     static MainWindow instance(parent);
     return instance;
   }
   ~MainWindow();
   MainWindow(const MainWindow&) = delete;
   MainWindow& operator=(const MainWindow&) = delete;
+  void release();
 
 private:
   MainWindow(QWidget *parent = nullptr);

@@ -26,7 +26,13 @@ class LeftDockWidget : public QDockWidget {
 
 public:
   LeftDockWidget(QWidget *parent = nullptr);
-  ~LeftDockWidget() = default;
+  ~LeftDockWidget();
+
+  RouteGroup *getRouteGroup() const { return mpRouteGroup; }
+  ViewGroup *getViewGroup() const { return mpViewGroup; }
+  FlightSimGroup *getFlightSimGroup() const { return mpFlightSimGroup; }
+  FlightQueryGroup *getFlightQueryGroup() const { return mpFlightQueryGroup; }
+  EnvQueryGroup *getEnvQueryGroup() const { return mpEnvQueryGroup; }
 
 private:
   QVBoxLayout *mpMainLayout;
@@ -45,15 +51,8 @@ class FunctionGroup : public QGroupBox {
   Q_OBJECT
 
 public:
-  FunctionGroup(const QString &title, const QString &objectName,
-                QWidget *parent = nullptr)
-      : QGroupBox(title, parent) {
-    setObjectName(objectName);
-    mpGroupLayout = new QVBoxLayout(this);
-    QString groupLayoutName = objectName + "Layout";
-    mpGroupLayout->setObjectName(groupLayoutName);
-  }
-  ~FunctionGroup(){};
+  FunctionGroup(const QString &title, const QString &objectName, QWidget *parent = nullptr);
+  ~FunctionGroup() = default;
 
 protected:
   QVBoxLayout *mpGroupLayout;
@@ -143,6 +142,7 @@ public:
 
 private:
   void createSlots() override;
+  void createButtons() override;
   void createDialog();
   void refreshFlightParams();
   QPushButton *mpBtnQueryParams;

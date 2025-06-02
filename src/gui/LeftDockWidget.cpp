@@ -11,26 +11,41 @@
 #include <QScrollArea>
 #include <QVBoxLayout>
 
+LeftDockWidget::~LeftDockWidget() {
+  logMessage("LeftDockWidget destroyed", Qgis::MessageLevel::Success);
+}
+
 void LeftDockWidget::createScrollArea(QWidget *parent) {
   mpScrollArea = new QScrollArea(parent);
   mpScrollArea->setObjectName("leftDockWidgetScrollArea");
   mpScrollArea->setWidgetResizable(true);
   mpScrollArea->setHorizontalScrollBarPolicy(Qt::ScrollBarAsNeeded);
   mpScrollArea->setVerticalScrollBarPolicy(Qt::ScrollBarAsNeeded);
-  mpMainLayout->addWidget(mpScrollArea);
+  setWidget(mpScrollArea);
+  logMessage("create scroll area", Qgis::MessageLevel::Info);
 }
 
 void LeftDockWidget::createDockContent(QWidget *parent) {
   mpDockContent = new QWidget(parent);
   mpDockContent->setObjectName("dockContent");
   mpDockContent->setMinimumWidth(175);
-  mpMainLayout->addWidget(mpDockContent);
+  mpScrollArea->setWidget(mpDockContent);
+  logMessage("create dock content", Qgis::MessageLevel::Info);
+}
+
+FunctionGroup::FunctionGroup(const QString &title, const QString &objectName, QWidget *parent)
+    : QGroupBox(title, parent) {
+  setObjectName(objectName);
+  mpGroupLayout = new QVBoxLayout(this);
+  QString groupLayoutName = objectName + "Layout";
+  mpGroupLayout->setObjectName(groupLayoutName);
 }
 
 void ViewGroup::createSlots() {
   connect(mpBtnSwitchTo3D, &QPushButton::clicked, this, &ViewGroup::switchTo3D);
   connect(mpBtnSwitchTo2D, &QPushButton::clicked, this, &ViewGroup::switchTo2D);
   connect(mpBtnReset, &QPushButton::clicked, this, &ViewGroup::viewReset);
+  logMessage("create view group slots", Qgis::MessageLevel::Info);
 }
 
 ViewGroup::ViewGroup(QWidget *parent)
@@ -71,6 +86,7 @@ void RouteGroup::createSpins() {
   mpWidthSpin->setRange(1.0, 300.0);
   mpWidthSpin->setValue(10.0);
   mpWidthSpin->setSuffix(" m");
+  logMessage("create route group spins", Qgis::MessageLevel::Info);
 }
 
 void RouteGroup::createButtons() {
@@ -91,12 +107,14 @@ void RouteGroup::createButtons() {
 
   mpButtonLayout->addWidget(mpBtnCreateRoute);
   mpButtonLayout->addWidget(mpBtnEditRoute);
+  logMessage("create button layout", Qgis::MessageLevel::Info);
 }
 
 void RouteGroup::createSlots() {
   connect(mpBtnCreateRoute, &QPushButton::clicked, this,
           &RouteGroup::createRoute);
   connect(mpBtnEditRoute, &QPushButton::clicked, this, &RouteGroup::editRoute);
+  logMessage("create route group slots", Qgis::MessageLevel::Info);
 }
 
 RouteGroup::RouteGroup(QWidget *parent)
@@ -105,7 +123,6 @@ RouteGroup::RouteGroup(QWidget *parent)
   mpGroupLayout->addWidget(mpBaseHeightSpin);
   mpGroupLayout->addWidget(mpHeightSpin);
   mpGroupLayout->addWidget(mpWidthSpin);
-  mpGroupLayout->addWidget(mpButtonContainer);
   createButtons();
   mpGroupLayout->addWidget(mpButtonContainer);
   createSlots();
@@ -122,6 +139,7 @@ void FlightSimGroup::createSpins() {
                         FlightManager::maxFlightSpeed);
   mpSpeedSpin->setValue(flightManager.getFlightSpeed());
   mpSpeedSpin->setSuffix(" m/s");
+  logMessage("create flight sim group spins", Qgis::MessageLevel::Info);
 }
 
 void FlightSimGroup::createSlots() {
@@ -135,10 +153,11 @@ void FlightSimGroup::createSlots() {
           &FlightSimGroup::simulationReturnHome);
   connect(mpBtnStop, &QPushButton::clicked, this,
           &FlightSimGroup::simulationStop);
+  logMessage("create flight sim group slots", Qgis::MessageLevel::Info);
 }
 
 void FlightSimGroup::createButtons() {
-  mpControlRow1 = new QHBoxLayout(this);
+  mpControlRow1 = new QHBoxLayout();
   mpControlRow1->setObjectName("controlRow1");
   mpBtnStart = new QPushButton("Start", this);
   mpBtnStart->setObjectName("startButton");
@@ -161,14 +180,14 @@ void FlightSimGroup::createButtons() {
   mpBtnStop = new QPushButton("Stop Simulation", this);
   mpBtnStop->setObjectName("stopButton");
   mpControlRow3->addWidget(mpBtnStop);
+  logMessage("create flight sim group buttons", Qgis::MessageLevel::Info);
 }
 
 FlightSimGroup::FlightSimGroup(QWidget *parent)
     : FunctionGroup(tr("Flight Simulation"), "flightSimGroup", parent) {
-  setObjectName("flightSimGroup");
   createSpins();
   createButtons();
-  
+
   mpSpeedLayout = new QFormLayout();
   mpSpeedLayout->addRow("Flight Speed:", mpSpeedSpin);
   mpGroupLayout->addLayout(mpSpeedLayout);
@@ -241,14 +260,19 @@ void FlightQueryGroup::createSlots() {
           &FlightQueryGroup::refreshFlightParams);
 }
 
+void FlightQueryGroup::createButtons() {
+  mpBtnQueryParams = new QPushButton("Query Parameters", this);
+  mpBtnQueryParams->setObjectName("pBtnQueryParams");
+}
+
 FlightQueryGroup::FlightQueryGroup(QWidget *parent)
     : FunctionGroup(tr("Flight Query"), "flightQueryGroup", parent) {
-  setObjectName("flightQueryGroup");
 
+  createDialog();
+  createButtons();
   mpGroupLayout->addWidget(mpFlightParamsDisplay);
   mpGroupLayout->addWidget(mpBtnQueryParams);
 
-  createDialog();
   createSlots();
 
   logMessage("flight parameters query group created",
@@ -309,8 +333,9 @@ void EnvQueryGroup::refreshEnvParams() {
 }
 
 void EnvQueryGroup::createSlots() {
-  connect(mpBtnRefreshData, &QPushButton::clicked, 
-          &ws::EnvManager::getInstance(), &ws::EnvManager::generateRandomWeather);
+  connect(mpBtnRefreshData, &QPushButton::clicked,
+          &ws::EnvManager::getInstance(),
+          &ws::EnvManager::generateRandomWeather);
   connect(mpEnvParamsButtonBox, &QDialogButtonBox::accepted, mpEnvParamsDialog,
           &QDialog::accept);
   connect(mpEnvParamsButtonBox, &QDialogButtonBox::rejected, mpEnvParamsDialog,
@@ -352,13 +377,14 @@ LeftDockWidget::LeftDockWidget(QWidget *parent) : QDockWidget(parent) {
               QDockWidget::DockWidgetFloatable);
   setMinimumWidth(200);
 
-  mpMainLayout = new QVBoxLayout(this);
   createScrollArea(this);
   createDockContent(mpScrollArea);
+  mpMainLayout = new QVBoxLayout(mpDockContent);
   mpViewGroup = new ViewGroup(mpDockContent);
   mpRouteGroup = new RouteGroup(mpDockContent);
   mpFlightSimGroup = new FlightSimGroup(mpDockContent);
   mpMainLayout->addStretch();
+  logMessage("Add stretch", Qgis::MessageLevel::Info);
   mpFlightQueryGroup = new FlightQueryGroup(mpDockContent);
   mpEnvQueryGroup = new EnvQueryGroup(mpDockContent);
   logMessage("left dock widget created", Qgis::MessageLevel::Success);

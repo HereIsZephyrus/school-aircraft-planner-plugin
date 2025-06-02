@@ -4,8 +4,10 @@
 #include "log/QgisDebug.h"
 #include <QAction>
 #include <QApplication>
+#include <QDialog>
 #include <QFile>
 #include <QScreen>
+#include <QTextEdit>
 #include <QTextStream>
 #include <memory>
 
@@ -16,34 +18,50 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent) {
 
   mpCanvas = new Canvas(this);
   QMainWindow::setCentralWidget(mpCanvas);
+  logMessage("set central widget", Qgis::MessageLevel::Info);
   if (!mpCanvas) {
-    logMessage("Failed to create canvas", Qgis::MessageLevel::Error);
-    return;
-  }
-  
-  mpMenuBar = new MenuBar(this);
-  setMenuBar(mpMenuBar);
-  if (!mpMenuBar) {
-    logMessage("Failed to create menu bar", Qgis::MessageLevel::Error);
+    logMessage("Failed to create canvas", Qgis::MessageLevel::Critical);
     return;
   }
 
   mpLeftDockWidget = new LeftDockWidget(this);
   addDockWidget(Qt::LeftDockWidgetArea, mpLeftDockWidget);
+  logMessage("add left dock widget", Qgis::MessageLevel::Info);
   if (!mpLeftDockWidget) {
-    logMessage("Failed to create left dock widget", Qgis::MessageLevel::Error);
+    logMessage("Failed to create left dock widget",
+               Qgis::MessageLevel::Critical);
     return;
   }
 
   mpRightDockWidget = new RightDockWidget(this);
   addDockWidget(Qt::RightDockWidgetArea, mpRightDockWidget);
+  logMessage("add right dock widget", Qgis::MessageLevel::Info);
   if (!mpRightDockWidget) {
-    logMessage("Failed to create right dock widget", Qgis::MessageLevel::Error);
+    logMessage("Failed to create right dock widget",
+               Qgis::MessageLevel::Critical);
+    return;
+  }
+
+  mpMenuBar = new MenuBar(this);
+  setMenuBar(mpMenuBar);
+  logMessage("set menu bar", Qgis::MessageLevel::Info);
+
+  if (!mpMenuBar) {
+    logMessage("Failed to create menu bar", Qgis::MessageLevel::Critical);
     return;
   }
 
   createSlots();
   logMessage("create main window", Qgis::MessageLevel::Success);
+}
+
+void MainWindow::release() {
+  disconnect();
+  delete mpCanvas;
+  delete mpLeftDockWidget;
+  delete mpRightDockWidget;
+  delete mpMenuBar;
+  logMessage("MainWindow released", Qgis::MessageLevel::Success);
 }
 
 MainWindow::~MainWindow() {
@@ -52,43 +70,90 @@ MainWindow::~MainWindow() {
 
 void MainWindow::createSlots() {
   using namespace ws;
-  connect(mpLeftDockWidget, &LeftDockWidget::switchTo3D, mpCanvas, &Canvas::switchTo3D);
-  connect(mpLeftDockWidget, &LeftDockWidget::switchTo2D, mpCanvas, &Canvas::switchTo2D);
-  connect(mpLeftDockWidget, &LeftDockWidget::viewReset, mpCanvas, &Canvas::viewReset);
-  connect(mpLeftDockWidget, &LeftDockWidget::createRoute, mpCanvas, &RoutePlanner::createRoute);
-  connect(mpLeftDockWidget, &LeftDockWidget::editRoute, mpCanvas, &RoutePlanner::editRoute);
-  connect(mpLeftDockWidget, &LeftDockWidget::simulationStart, mpCanvas, &AnimationManager::startSimulation);
-  connect(mpLeftDockWidget, &LeftDockWidget::simulationPause, mpCanvas, &AnimationManager::pauseSimulation);
-  connect(mpLeftDockWidget, &LeftDockWidget::simulationResume, mpCanvas, &AnimationManager::resumeSimulation);
-  connect(mpLeftDockWidget, &LeftDockWidget::simulationReturnHome, mpCanvas, &AnimationManager::returnToHome);
-  connect(mpLeftDockWidget, &LeftDockWidget::simulationStop, mpCanvas, &AnimationManager::stopSimulation);
-  connect(mpLeftDockWidget, &LeftDockWidget::queryFlightParams, mpCanvas, &FlightManager::queryFlightParameters);
-  connect(mpLeftDockWidget, &LeftDockWidget::queryEnvParams, mpCanvas, &EnvManager::generateRandomWeather);
-  connect(mpRightDockWidget, &RightDockWidget::createRoute, mpCanvas, &RoutePlanner::createRoute);
-  connect(mpRightDockWidget, &RightDockWidget::editRoute, mpCanvas, &RoutePlanner::editRoute);
-  connect(mpRightDockWidget, &RightDockWidget::simulationStart, mpCanvas, &AnimationManager::startSimulation);
-  connect(mpRightDockWidget, &RightDockWidget::simulationPause, mpCanvas, &AnimationManager::pauseSimulation);
-  connect(mpRightDockWidget, &RightDockWidget::simulationResume, mpCanvas, &AnimationManager::resumeSimulation);
-  connect(mpRightDockWidget, &RightDockWidget::simulationReturnHome, mpCanvas, &AnimationManager::returnToHome);
-  connect(mpRightDockWidget, &RightDockWidget::simulationStop, mpCanvas, &AnimationManager::stopSimulation);
-  connect(mpRightDockWidget, &RightDockWidget::queryFlightParams, mpCanvas, &FlightManager::queryFlightParameters);
-  connect(mpRightDockWidget, &RightDockWidget::queryEnvParams, mpCanvas, &EnvManager::generateRandomWeather);
-  connect(mpMenuBar, &MenuBar::showUserManual, this, &MainWindow::showUserManual);
-  connect(mpMenuBar, &MenuBar::projectMenuTriggered, mpCanvas, &Canvas::loadModel);
-  connect(mpMenuBar, &MenuBar::viewMenuTriggered, mpCanvas, &Canvas::switchTo3D);
+  connect(mpLeftDockWidget->getViewGroup(), &ViewGroup::switchTo3D, mpCanvas,
+          &Canvas::switchTo3D);
+  connect(mpLeftDockWidget->getViewGroup(), &ViewGroup::switchTo2D, mpCanvas,
+          &Canvas::switchTo2D);
+  connect(mpLeftDockWidget->getViewGroup(), &ViewGroup::viewReset, mpCanvas,
+          &Canvas::viewReset);
+  connect(mpLeftDockWidget->getRouteGroup(), &RouteGroup::createRoute,
+          &RoutePlanner::getInstance(), &RoutePlanner::createRoute);
+  connect(mpLeftDockWidget->getRouteGroup(), &RouteGroup::editRoute,
+          &RoutePlanner::getInstance(), &RoutePlanner::editRoute);
+  connect(mpLeftDockWidget->getFlightSimGroup(),
+          &FlightSimGroup::simulationStart, &AnimationManager::getInstance(),
+          &AnimationManager::startSimulation);
+  connect(mpLeftDockWidget->getFlightSimGroup(),
+          &FlightSimGroup::simulationPause, &AnimationManager::getInstance(),
+          &AnimationManager::pauseSimulation);
+  connect(mpLeftDockWidget->getFlightSimGroup(),
+          &FlightSimGroup::simulationResume, &AnimationManager::getInstance(),
+          &AnimationManager::resumeSimulation);
+  connect(mpLeftDockWidget->getFlightSimGroup(),
+          &FlightSimGroup::simulationReturnHome,
+          &AnimationManager::getInstance(), &AnimationManager::returnToHome);
+  connect(mpLeftDockWidget->getFlightSimGroup(),
+          &FlightSimGroup::simulationStop, &AnimationManager::getInstance(),
+          &AnimationManager::stopSimulation);
+  connect(mpLeftDockWidget->getFlightQueryGroup(),
+          &FlightQueryGroup::queryFlightParams, &FlightManager::getInstance(),
+          &FlightManager::queryFlightParameters);
+  connect(mpLeftDockWidget->getEnvQueryGroup(), &EnvQueryGroup::queryEnvParams,
+          &EnvManager::getInstance(), &EnvManager::generateRandomWeather);
+  connect(mpRightDockWidget->getToolTreeWidget(), &ToolTreeWidget::createRoute,
+          &RoutePlanner::getInstance(), &RoutePlanner::createRoute);
+  connect(mpRightDockWidget->getToolTreeWidget(), &ToolTreeWidget::editRoute,
+          &RoutePlanner::getInstance(), &RoutePlanner::editRoute);
+  connect(mpRightDockWidget->getToolTreeWidget(),
+          &ToolTreeWidget::simulationStart, &AnimationManager::getInstance(),
+          &AnimationManager::startSimulation);
+  connect(mpRightDockWidget->getToolTreeWidget(),
+          &ToolTreeWidget::simulationPause, &AnimationManager::getInstance(),
+          &AnimationManager::pauseSimulation);
+  connect(mpRightDockWidget->getToolTreeWidget(),
+          &ToolTreeWidget::simulationResume, &AnimationManager::getInstance(),
+          &AnimationManager::resumeSimulation);
+  connect(mpRightDockWidget->getToolTreeWidget(),
+          &ToolTreeWidget::simulationReturnHome,
+          &AnimationManager::getInstance(), &AnimationManager::returnToHome);
+  connect(mpRightDockWidget->getToolTreeWidget(),
+          &ToolTreeWidget::simulationStop, &AnimationManager::getInstance(),
+          &AnimationManager::stopSimulation);
+  connect(mpRightDockWidget->getToolTreeWidget(),
+          &ToolTreeWidget::queryFlightParams, &FlightManager::getInstance(),
+          &FlightManager::queryFlightParameters);
+  connect(mpRightDockWidget->getToolTreeWidget(),
+          &ToolTreeWidget::queryEnvParams, &EnvManager::getInstance(),
+          &EnvManager::generateRandomWeather);
+  connect(mpMenuBar, &MenuBar::showUserManual, this,
+          &MainWindow::showUserManual);
+  connect(mpMenuBar, &MenuBar::projectMenuTriggered, mpCanvas,
+          &Canvas::loadModel);
+  connect(mpMenuBar, &MenuBar::viewMenuTriggered, mpCanvas,
+          &Canvas::switchTo3D);
   connect(mpMenuBar, &MenuBar::switchTo2D, mpCanvas, &Canvas::switchTo2D);
   connect(mpMenuBar, &MenuBar::viewReset, mpCanvas, &Canvas::viewReset);
-  connect(mpMenuBar, &MenuBar::simulationStart, mpCanvas, &AnimationManager::startSimulation);
-  connect(mpMenuBar, &MenuBar::simulationPause, mpCanvas, &AnimationManager::pauseSimulation);
-  connect(mpMenuBar, &MenuBar::simulationResume, mpCanvas, &AnimationManager::resumeSimulation);
-  connect(mpMenuBar, &MenuBar::simulationReturnHome, mpCanvas, &AnimationManager::returnToHome);
-  connect(mpMenuBar, &MenuBar::simulationStop, mpCanvas, &AnimationManager::stopSimulation);
-  connect(mpMenuBar, &MenuBar::createRoute, mpCanvas, &RoutePlanner::createRoute);
-  connect(mpMenuBar, &MenuBar::refreshFlightParams, mpCanvas, &FlightManager::queryFlightParameters);
-  connect(mpMenuBar, &MenuBar::refreshEnvironmentalParams, mpCanvas, &EnvManager::generateRandomWeather);
+  connect(mpMenuBar, &MenuBar::simulationStart,
+          &AnimationManager::getInstance(), &AnimationManager::startSimulation);
+  connect(mpMenuBar, &MenuBar::simulationPause,
+          &AnimationManager::getInstance(), &AnimationManager::pauseSimulation);
+  connect(mpMenuBar, &MenuBar::simulationResume,
+          &AnimationManager::getInstance(),
+          &AnimationManager::resumeSimulation);
+  connect(mpMenuBar, &MenuBar::simulationReturnHome,
+          &AnimationManager::getInstance(), &AnimationManager::returnToHome);
+  connect(mpMenuBar, &MenuBar::simulationStop, &AnimationManager::getInstance(),
+          &AnimationManager::stopSimulation);
+  connect(mpMenuBar, &MenuBar::createRoute, &RoutePlanner::getInstance(),
+          &RoutePlanner::createRoute);
+  connect(mpMenuBar, &MenuBar::refreshFlightParams,
+          &FlightManager::getInstance(), &FlightManager::queryFlightParameters);
+  connect(mpMenuBar, &MenuBar::refreshEnvironmentalParams,
+          &EnvManager::getInstance(), &EnvManager::generateRandomWeather);
 }
 
-QSize MainWindow::setWindowSize(QRect screenGeometry, int maxWidth, int maxHeight, int minWidth, int minHeight) {
+QSize MainWindow::setWindowSize(QRect screenGeometry, int maxWidth,
+                                int maxHeight, int minWidth, int minHeight) {
   // calc current screen size
   double width_d = screenGeometry.width() * 0.8;
   double height_d = screenGeometry.height() * 0.8;

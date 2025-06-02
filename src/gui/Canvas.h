@@ -13,7 +13,7 @@ public:
   Canvas(QWidget *parent = nullptr);
   ~Canvas();
 
-private slots:
+public slots:
   void loadModel(const QString &objFilePath);
   void switchTo2D();
   void switchTo3D();

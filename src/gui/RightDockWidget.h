@@ -28,7 +28,9 @@ class RightDockWidget : public QDockWidget {
 
 public:
   RightDockWidget(QWidget *parent = nullptr);
-  ~RightDockWidget() = default;
+  ~RightDockWidget();
+  ToolTreeWidget* getToolTreeWidget() const { return mpToolTreeWidget; }
+  FileTreeWidget* getFileTreeWidget() const { return mpFileTreeWidget; }
 
 private:
   QWidget *mpMainContainer;
@@ -36,6 +38,10 @@ private:
   JoyDockWidget *mJoystickWidget;
   FileTreeWidget *mpFileTreeWidget;
   ToolTreeWidget *mpToolTreeWidget;
+  QScrollArea *mpScrollArea;
+  QWidget *mpDockContent;
+  void createScrollArea(QWidget *parent);
+  void createDockContent(QWidget *parent);
 };
 
 class JoyDockWidget : public QWidget {
