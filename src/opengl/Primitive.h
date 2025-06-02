@@ -157,6 +157,7 @@ public:
   QVector3D getModelCenter() const { return modelData->mBounds.center; }
   const Bounds &getBounds() const { return modelData->mBounds; }
   void setBounds(const Bounds &bounds) { modelData->mBounds = bounds; }
+  void cleanupTextures();
 
 protected:
   void loadModel(const QString &objFilePath);

@@ -50,8 +50,6 @@ Primitive::Primitive(GLenum primitiveType, const QVector<QVector3D>& vertices, G
 Primitive::Primitive(GLenum primitiveType, GLuint stride)
     : shader(nullptr), stride(stride) {
   this->primitiveType = primitiveType;
-  vao.create();
-  vbo.create();
   vbo.setUsagePattern(QOpenGLBuffer::StaticDraw);
   modelMatrix.setToIdentity();
 }
@@ -68,11 +66,63 @@ Primitive::~Primitive() {
 }
 
 void Primitive::checkGLError(const QString &funcName) {
-  GLenum err;
-  while ((err = glGetError()) != GL_NO_ERROR) {
-    logMessage(QString("OpenGL error in %1: %2").arg(funcName).arg(err),
-               Qgis::MessageLevel::Critical);
-  }
+    GLenum err;
+    while ((err = glGetError()) != GL_NO_ERROR) {
+        QString errorMsg;
+        switch (err) {
+            case GL_INVALID_ENUM:
+                errorMsg = "GL_INVALID_ENUM: 枚举参数不合法";
+                break;
+            case GL_INVALID_VALUE:
+                errorMsg = "GL_INVALID_VALUE: 值参数不合法";
+                break;
+            case GL_INVALID_OPERATION:
+                errorMsg = "GL_INVALID_OPERATION: 当前状态下的操作不合法";
+                break;
+            case GL_INVALID_FRAMEBUFFER_OPERATION:
+                errorMsg = "GL_INVALID_FRAMEBUFFER_OPERATION: 帧缓冲操作不合法";
+                break;
+            case GL_OUT_OF_MEMORY:
+                errorMsg = "GL_OUT_OF_MEMORY: 内存不足";
+                break;
+            case GL_STACK_UNDERFLOW:
+                errorMsg = "GL_STACK_UNDERFLOW: 栈下溢";
+                break;
+            case GL_STACK_OVERFLOW:
+                errorMsg = "GL_STACK_OVERFLOW: 栈上溢";
+                break;
+            default:
+                errorMsg = QString("未知错误: 0x%1").arg(err, 0, 16);
+        }
+
+        // 获取当前OpenGL状态信息
+        QString stateInfo;
+        if (QOpenGLContext::currentContext()) {
+            GLint program;
+            glGetIntegerv(GL_CURRENT_PROGRAM, &program);
+            stateInfo += QString("\n当前着色器程序: %1").arg(program);
+
+            GLint vao;
+            glGetIntegerv(GL_VERTEX_ARRAY_BINDING, &vao);
+            stateInfo += QString("\n当前VAO: %1").arg(vao);
+
+            GLint vbo;
+            glGetIntegerv(GL_ARRAY_BUFFER_BINDING, &vbo);
+            stateInfo += QString("\n当前VBO: %1").arg(vbo);
+
+            GLint texture;
+            glGetIntegerv(GL_TEXTURE_BINDING_2D, &texture);
+            stateInfo += QString("\n当前纹理: %1").arg(texture);
+        }
+
+        // 输出详细的错误信息
+        logMessage(QString("OpenGL错误在 %1:\n错误类型: %2\n错误描述: %3%4")
+                  .arg(funcName)
+                  .arg(err)
+                  .arg(errorMsg)
+                  .arg(stateInfo),
+                  Qgis::MessageLevel::Critical);
+    }
 }
 
 void Primitive::setModelMatrix(const QMatrix4x4 &matrix) {
@@ -92,13 +142,17 @@ void ColorPrimitive::draw(const QMatrix4x4 &view, const QMatrix4x4 &projection){
   this->shader->setUniformValue("view", view);
   this->shader->setUniformValue("projection", projection);
   this->vao.bind();
+  this->vbo.bind();
   glDrawArrays(this->primitiveType, 0, this->vertexNum);
+  this->vbo.release();
   this->vao.release();
   this->shader->release();
   checkGLError("ColorPrimitive::draw");
 }
 
 void ColorPrimitive::initShaderAllocate(){
+  vao.create();
+  vbo.create();
   this->vao.bind();
   this->vbo.bind();
   this->shader->bind();
@@ -176,21 +230,21 @@ HomePoint::HomePoint(const QVector<QVector3D>& vertices, const QVector4D& color)
 void Model::initModelData(){
   logMessage("start constructing shader", Qgis::MessageLevel::Info);
   constructShader(QStringLiteral(":/schoolcore/shaders/model.vs"), QStringLiteral(":/schoolcore/shaders/model.fs"));
+  this->vao.create();
+  this->vbo.create();
   this->vao.bind();
   this->vbo.bind();
   this->vbo.setUsagePattern(QOpenGLBuffer::StaticDraw);
-  this->shader->bind();
-  this->shader->enableAttributeArray(0);
-  this->shader->setAttributeBuffer(0, GL_FLOAT, 0, 3, this->stride * sizeof(GLfloat));
-  this->shader->enableAttributeArray(1);
-  this->shader->setAttributeBuffer(1, GL_FLOAT, 3 * sizeof(GLfloat), 2, this->stride * sizeof(GLfloat));
-  logMessage("Model initialized", Qgis::MessageLevel::Info);
+  logMessage("stride is " + QString::number(this->stride), Qgis::MessageLevel::Info);
 
   this->vertexNum = modelData->totalVertices;
+  logMessage("vertexNum: " + QString::number(this->vertexNum), Qgis::MessageLevel::Info);
   GLuint count = this->vertexNum * this->stride;
+  logMessage("count is " + QString::number(count), Qgis::MessageLevel::Info);
   this->vertices = new GLfloat[count];
   GLuint index = 0;
   for (const auto& group : *modelData->materialGroups) {
+    logMessage(QString("group size: %1").arg(group->size()), Qgis::MessageLevel::Info);
     for (const auto& vertex : *group) {
       this->vertices[index++] = vertex.position.x();
       this->vertices[index++] = vertex.position.y();
@@ -199,12 +253,20 @@ void Model::initModelData(){
       this->vertices[index++] = vertex.texCoord.y();
     }
   }
-
   this->vbo.allocate(this->vertices, count * sizeof(GLfloat));
+  
+  this->shader->bind();
+  this->shader->enableAttributeArray(0);
+  this->shader->setAttributeBuffer(0, GL_FLOAT, 0, 3, this->stride * sizeof(GLfloat));
+  this->shader->enableAttributeArray(1);
+  this->shader->setAttributeBuffer(1, GL_FLOAT, 3 * sizeof(GLfloat), 2, this->stride * sizeof(GLfloat));
   this->shader->release();
+  logMessage("Model initialized", Qgis::MessageLevel::Info);
   this->vbo.release();
   this->vao.release();
   checkGLError("Model::Model");
+  logMessage("Texture Size: " + QString::number(modelData->textures->size()), Qgis::MessageLevel::Info);
+  logMessage("Material Size: " + QString::number(modelData->materialGroups->size()), Qgis::MessageLevel::Info);
 }
 
 Model::Model(std::shared_ptr<ModelData> modelData)
@@ -213,42 +275,48 @@ Model::Model(std::shared_ptr<ModelData> modelData)
 }
 
 void Model::draw(const QMatrix4x4 &view, const QMatrix4x4 &projection) {
-    if (!shader) {
-        logMessage("Shader is not set", Qgis::MessageLevel::Critical);
+    if (!shader || !shader->isLinked()) {
+        logMessage("Shader program is not valid or not linked", Qgis::MessageLevel::Critical);
+        return;
+    }
+    if (this->vertexNum == 0 || this->vertices == nullptr) {
+        logMessage("Invalid vertex data", Qgis::MessageLevel::Critical);
         return;
     }
     this->shader->bind();
+    checkGLError("Model::draw - after shader bind");
+    this->vbo.bind();
+    checkGLError("Model::draw - after VBO bind");
+    this->vao.bind();
+    checkGLError("Model::draw - after VAO bind");
     this->shader->setUniformValue("model", this->modelMatrix);
     this->shader->setUniformValue("view", view);
     this->shader->setUniformValue("projection", projection);
-
-    // 绑定纹理
-    if (modelData && modelData->textures) {
-        int textureUnit = 0;
-        for (auto it = modelData->textures->begin(); it != modelData->textures->end(); ++it) {
-            if (it.value()) {
-                it.value()->bind(textureUnit);
-                this->shader->setUniformValue(QString("texture_%1").arg(it.key()).toStdString().c_str(), textureUnit);
-                textureUnit++;
-            }
+    checkGLError("Model::draw - after setting uniforms");
+    if (modelData && modelData->textures && !modelData->textures->isEmpty()) {
+        auto firstTexture = modelData->textures->first();
+        if (firstTexture && firstTexture->isCreated()) {
+            glActiveTexture(GL_TEXTURE0);  // 确保使用纹理单元0
+            firstTexture->bind(0);
+            this->shader->setUniformValue("textureSampler", 0);
+            checkGLError("Model::draw - after texture bind");
         }
     }
 
-    this->vao.bind();
+    // 6. 验证顶点数据
+    if (this->vertexNum == 0 || this->vertices == nullptr) {
+        logMessage("Invalid vertex data", Qgis::MessageLevel::Critical);
+        return;
+    }
+
+    // 7. 绘制
     glDrawArrays(this->primitiveType, 0, this->vertexNum);
-    this->vao.release();
+    checkGLError("Model::draw - after glDrawArrays");
 
-    // 解绑纹理
-    if (modelData && modelData->textures) {
-        for (auto it = modelData->textures->begin(); it != modelData->textures->end(); ++it) {
-            if (it.value()) {
-                it.value()->release();
-            }
-        }
-    }
-
+    // 8. 清理（注意顺序）
+    this->vbo.release();
     this->shader->release();
-    checkGLError("Model::draw");
+    this->vao.release();
 }
 
 bool Primitive::constructShader(const QString& vertexShaderPath, const QString& fragmentShaderPath, const QString& geometryShaderPath) {
@@ -416,7 +484,7 @@ std::pair<pMaterialGroupMap, GLuint> ModelData::loadMaterialGroups(const QString
       else if (parts[0] == "vt") {
         texCoords.append(
             QVector2D(parts[1].toFloat(),
-                     1.0f - parts[2].toFloat()));
+                     parts[2].toFloat()));
       }
       else if (parts[0] == "f") {
         QVector<Vertex> faceVertices;
@@ -597,5 +665,19 @@ Demo::Demo():ColorPrimitive(GL_TRIANGLES,  QVector4D(1.0f, 0.0f, 0.0f, 1.0f)){
   this->shader->release();
   this->vbo.release();
   this->vao.release();
+}
+
+void gl::Model::cleanupTextures() {
+  if (!modelData || !modelData->textures) {
+    return;
+  }
+
+  // 在正确的上下文中清理纹理
+  for (auto it = modelData->textures->begin(); it != modelData->textures->end(); ++it) {
+    if (it.value()) {
+      it.value()->destroy();
+    }
+  }
+  modelData->textures->clear();
 }
 }
