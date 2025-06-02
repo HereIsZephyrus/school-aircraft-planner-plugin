@@ -5,7 +5,7 @@
 
 Camera::Camera() {
     mPosition = QVector3D(0.0f, 0.0f, 5.0f);
-    mWorldUp = QVector3D(0.0f, 1.0f, 0.0f);
+    mWorldUp = QVector3D(0.0f, 0.0f, 1.0f);
     mYaw = YAW;
     mPitch = PITCH;
     mMovementSpeed = SPEED;
