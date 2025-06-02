@@ -10,9 +10,7 @@ Camera::Camera() {
     mMovementSpeed = SPEED;
     mMouseSensitivity = SENSITIVITY;
     mZoom = ZOOM;
-    double width = static_cast<double>(MainWindow::getInstance().width());
-    double height = static_cast<double>(MainWindow::getInstance().height());
-    mAspectRatio = width / height;
+    mAspectRatio = 1.0f;
     mNearPlane = 0.1f;
     mFarPlane = 100.0f;
     

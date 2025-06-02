@@ -36,6 +36,11 @@ OpenGLCanvas::OpenGLCanvas(QWidget *parent) : QOpenGLWidget(parent) {
   connect(updateTimer.get(), &QTimer::timeout, this,
           QOverload<>::of(&QOpenGLWidget::update));
   updateTimer->start();
+
+  // set camera
+  double width = static_cast<double>(this->width());
+  double height = static_cast<double>(this->height());
+  Camera::getInstance().setAspectRatio(width / height);
 }
 
 OpenGLCanvas::~OpenGLCanvas() {
@@ -131,14 +136,10 @@ OpenGLScene::~OpenGLScene() {
 }
 void OpenGLScene::paintScene(const QMatrix4x4 &view,
                              const QMatrix4x4 &projection) {
-  if (basePlaneWidget){
-    logMessage("basePlaneWidget", Qgis::MessageLevel::Info);
+  if (basePlaneWidget)
     basePlaneWidget->draw(view, projection);
-  }
-  if (modelWidget){
-    logMessage("modelWidget", Qgis::MessageLevel::Info);
+  if (modelWidget)
     modelWidget->draw(view, projection);
-  }
 }
 
 void OpenGLCanvas::mousePressEvent(QMouseEvent *event) {
@@ -170,9 +171,11 @@ void OpenGLCanvas::keyReleaseEvent(QKeyEvent *event) {
 }
 
 void OpenGLCanvas::loadModel(const QString &objFilePath) {
+  logMessage("OpenGLCanvas::loadModel", Qgis::MessageLevel::Info);
   mpScene->loadModel(objFilePath);
 }
 void OpenGLScene::loadModel(const QString &objFilePath) {
+  logMessage("OpenGLScene::loadModel", Qgis::MessageLevel::Info);
   modelWidget = std::make_shared<gl::Model>(objFilePath);
   logMessage("Model loaded", Qgis::MessageLevel::Success);
 }

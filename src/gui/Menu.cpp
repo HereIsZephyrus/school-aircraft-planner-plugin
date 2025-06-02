@@ -92,10 +92,16 @@ QMenu *MenuBar::createHelpMenu(QWidget *parent) {
 
 MenuBar::MenuBar(QWidget *parent) : QMenuBar(parent) {
   mpProjectMenu = createProjectMenu(this);
+  addMenu(mpProjectMenu);
   mpViewMenu = createViewMenu(this);
+  addMenu(mpViewMenu);
   mpSimulationMenu = createSimulationMenu(this);
+  addMenu(mpSimulationMenu);
   mpRouteMenu = createRouteMenu(this);
+  addMenu(mpRouteMenu);
   mpSettingMenu = createSettingMenu(this);
+  addMenu(mpSettingMenu);
   mpHelpMenu = createHelpMenu(this);
+  addMenu(mpHelpMenu);
   logMessage("create menu bar", Qgis::MessageLevel::Success);
 }

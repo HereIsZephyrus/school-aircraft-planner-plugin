@@ -174,24 +174,28 @@ void FileTreeWidget::onSelectDirectoryClicked() {
   QString currentDir = ws::PathManager::getInstance().getRootDir();
   QString dirPath = QFileDialog::getExistingDirectory(
       this, tr("Select Directory"), currentDir);
+  logMessage(QString("select file list directory: %1").arg(dirPath),
+             Qgis::MessageLevel::Info);
   if (!dirPath.isEmpty())
-    loadDirectoryFiles(
-        dirPath); // call loadDirectoryFiles to load selected directory
+    loadDirectoryFiles(dirPath); // call loadDirectoryFiles to load selected directory
   logMessage("select file list directory", Qgis::MessageLevel::Success);
 }
 // load file list of specified directory to QTreeWidget
 void FileTreeWidget::loadDirectoryFiles(const QString &path) {
   QDir dir(path);
-  if (!dir.exists())
+  if (!dir.exists()){
+    logMessage(QString("directory not exists: %1").arg(path),
+               Qgis::MessageLevel::Critical);
     return;
+  }
 
-  mpTreeWidget->clear();
+  if (mpTreeWidget)
+    mpTreeWidget->clear();
 
-  if (mpRootItem)
-    delete mpRootItem;
-
+  logMessage("add new root item", Qgis::MessageLevel::Info);
   mpRootItem = new QTreeWidgetItem(mpTreeWidget);
   mpRootItem->setText(0, dir.dirName());
+  logMessage("load directory level", Qgis::MessageLevel::Info);
   loadDirectoryLevel(mpRootItem, path, 1, 3);
 
   logMessage("load file list of specified directory to tree widget",

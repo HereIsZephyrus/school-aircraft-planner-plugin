@@ -28,6 +28,7 @@ void Canvas::viewReset() {
 }
 
 void Canvas::loadModel(const QString &objFilePath) {
+  logMessage("Canvas::loadModel", Qgis::MessageLevel::Info);
   mpOpenGLWidget->loadModel(objFilePath);
 }
 

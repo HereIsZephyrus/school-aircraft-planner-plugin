@@ -143,6 +143,9 @@ public:
   QVector3D calculateModelCenter();
   Bounds mBounds;
   GLuint totalVertices;
+private:
+  static qint64 calcFaceNum(const QString &objFilePath);
+  static bool displayProgress(qint64 progressUpdateInterval);
 };
 class Model : public Primitive {
   std::shared_ptr<ModelData> modelData;
@@ -157,6 +160,7 @@ public:
 
 protected:
   void loadModel(const QString &objFilePath);
+  void initModelData();
 };
 
 class Demo : public ColorPrimitive {
