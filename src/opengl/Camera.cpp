@@ -1,17 +1,19 @@
 #include "Camera.h"
 #include "../log/QgisDebug.h"
+#include "../MainWindow.h"
 #include <QtMath>
 
 Camera::Camera() {
-    // 初始化相机参数
-    mPosition = QVector3D(0.0f, 0.0f, 30.0f);
+    mPosition = QVector3D(0.0f, 0.0f, 5.0f);
     mWorldUp = QVector3D(0.0f, 1.0f, 0.0f);
     mYaw = YAW;
     mPitch = PITCH;
     mMovementSpeed = SPEED;
     mMouseSensitivity = SENSITIVITY;
     mZoom = ZOOM;
-    mAspectRatio = 1.0f;
+    double width = static_cast<double>(MainWindow::getInstance().width());
+    double height = static_cast<double>(MainWindow::getInstance().height());
+    mAspectRatio = width / height;
     mNearPlane = 0.1f;
     mFarPlane = 100.0f;
     
@@ -90,7 +92,6 @@ void Camera::rotate(float yaw, float pitch, bool constrainPitch) {
     mYaw += yaw;
     mPitch += pitch;
 
-    // 限制俯仰角，防止万向节死锁
     if (constrainPitch) {
         mPitch = qBound(-89.0f, mPitch, 89.0f);
     }
@@ -100,7 +101,7 @@ void Camera::rotate(float yaw, float pitch, bool constrainPitch) {
 
 void Camera::handleMouseMove(const QPoint& delta, bool constrainPitch) {
     float xoffset = delta.x() * mMouseSensitivity;
-    float yoffset = -delta.y() * mMouseSensitivity; // 注意y轴方向相反
+    float yoffset = -delta.y() * mMouseSensitivity;
     
     rotate(xoffset, yoffset, constrainPitch);
 }
@@ -120,14 +121,12 @@ void Camera::resetView() {
 }
 
 void Camera::updateCameraVectors() {
-    // 计算新的前向量
     QVector3D front;
     front.setX(qCos(qDegreesToRadians(mYaw)) * qCos(qDegreesToRadians(mPitch)));
     front.setY(qSin(qDegreesToRadians(mPitch)));
     front.setZ(qSin(qDegreesToRadians(mYaw)) * qCos(qDegreesToRadians(mPitch)));
     mFront = front.normalized();
     
-    // 重新计算右向量和上向量
     mRight = QVector3D::crossProduct(mFront, mWorldUp).normalized();
     mUp = QVector3D::crossProduct(mRight, mFront).normalized();
 }

@@ -111,8 +111,6 @@ void OpenGLCanvas::paintGL() {
   Camera &camera = Camera::getInstance();
   QMatrix4x4 view = camera.viewMatrix();
   QMatrix4x4 projection = camera.projectionMatrix();
-  gl::Demo demo;
-  demo.draw(view, projection);
 
   mpScene->paintScene(view, projection);
   GLenum err;
@@ -132,10 +130,14 @@ OpenGLScene::~OpenGLScene() {
 }
 void OpenGLScene::paintScene(const QMatrix4x4 &view,
                              const QMatrix4x4 &projection) {
-  if (basePlaneWidget)
+  if (basePlaneWidget){
+    logMessage("basePlaneWidget", Qgis::MessageLevel::Info);
     basePlaneWidget->draw(view, projection);
-  if (modelWidget)
+  }
+  if (modelWidget){
+    logMessage("modelWidget", Qgis::MessageLevel::Info);
     modelWidget->draw(view, projection);
+  }
 }
 
 void OpenGLCanvas::mousePressEvent(QMouseEvent *event) {

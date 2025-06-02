@@ -1,6 +1,9 @@
-#version 330 core
-out vec4 FragColor;
+#version 410 core
 
-void main(){
-    FragColor = vec4(1.0f, 0.5f, 0.2f, 1.0f);
+uniform vec4 vColor;
+out vec4 fragColor;
+
+void main()
+{
+    fragColor = vColor;
 }
