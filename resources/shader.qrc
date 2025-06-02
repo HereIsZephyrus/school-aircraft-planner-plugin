@@ -8,5 +8,7 @@
         <file>shaders/point.gs</file>
         <file>shaders/model.vs</file>
         <file>shaders/model.fs</file>
+        <file>shaders/demo.vs</file>
+        <file>shaders/demo.fs</file>
     </qresource>
 </RCC> 

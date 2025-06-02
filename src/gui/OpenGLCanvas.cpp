@@ -104,10 +104,22 @@ void OpenGLCanvas::paintGL() {
     return;
   glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+  glEnable(GL_DEPTH_TEST);
+  glEnable(GL_BLEND);
+  glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+  
   Camera &camera = Camera::getInstance();
   QMatrix4x4 view = camera.viewMatrix();
   QMatrix4x4 projection = camera.projectionMatrix();
+  gl::Demo demo;
+  demo.draw(view, projection);
+
   mpScene->paintScene(view, projection);
+  GLenum err;
+  while ((err = glGetError()) != GL_NO_ERROR) {
+    logMessage(QString("OpenGL error in paintGL: %1").arg(err), 
+               Qgis::MessageLevel::Critical);
+  }
 }
 
 OpenGLScene::OpenGLScene() {
@@ -235,6 +247,7 @@ void OpenGLCanvas::mouseMoveEvent(QMouseEvent *event) {
 }
 
 void OpenGLCanvas::wheelEvent(QWheelEvent *event) {
+  /*
   Camera &camera = Camera::getInstance();
   float currentFov = camera.fieldOfView();
   float zoomFactor = camera.zoomFactor();
@@ -245,6 +258,7 @@ void OpenGLCanvas::wheelEvent(QWheelEvent *event) {
     currentFov = qMin(currentFov + zoomFactor, 120.0f);
 
   camera.setFieldOfView(currentFov);
+  */
   update();
 }
 

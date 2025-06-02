@@ -30,7 +30,6 @@ protected:
     void checkGLError(const QString& funcName);
     bool constructShader(const QString& vertexShaderPath, const QString& fragmentShaderPath, const QString& geometryShaderPath="");
 public:
-    Primitive(GLenum primitiveType, GLfloat* vertices, GLuint vertexNum, GLuint stride); // RAII constructor
     Primitive(GLenum primitiveType, const QVector<QVector3D>& vertices, GLuint stride); // RAII constructor
     Primitive(GLenum primitiveType, GLuint stride); // no init data constructor
     void setModelMatrix(const QMatrix4x4 &matrix);
@@ -42,7 +41,6 @@ class ColorPrimitive : public Primitive{
     QVector4D color;
     static constexpr QVector4D DEFAULT_COLOR = QVector4D(1.0f, 1.0f, 1.0f, 1.0f);
 public:
-    ColorPrimitive(GLenum primitiveType, GLfloat* vertices, GLuint vertexNum, const QVector4D& color=DEFAULT_COLOR);
     ColorPrimitive(GLenum primitiveType, const QVector<QVector3D>& vertices, const QVector4D& color=DEFAULT_COLOR);
     ColorPrimitive(GLenum primitiveType, const QVector4D& color=DEFAULT_COLOR);
     void setColor(const QVector4D& color){this->color = color;}
@@ -139,6 +137,12 @@ public:
     void setBounds(const Bounds& bounds){modelData->mBounds = bounds;}
 protected:
     void loadModel(const QString& objFilePath);
+};
+
+class Demo : public Primitive{
+public:
+  Demo();
+  void draw(const QMatrix4x4 &view, const QMatrix4x4 &projection) override;
 };
 }
 
