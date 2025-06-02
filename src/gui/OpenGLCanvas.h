@@ -37,6 +37,7 @@ protected:
   void mousePressEvent(QMouseEvent *event) override;
   void mouseMoveEvent(QMouseEvent *event) override;
   void keyPressEvent(QKeyEvent *event) override;
+  void keyReleaseEvent(QKeyEvent *event) override;
   void wheelEvent(QWheelEvent *event) override;
   std::unique_ptr<QTimer> updateTimer;
   std::unique_ptr<OpenGLScene> mpScene;

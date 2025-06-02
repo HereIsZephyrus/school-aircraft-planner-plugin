@@ -16,6 +16,7 @@
 #include <qgsapplication.h>
 #include <qtimer.h>
 #include <qvector4d.h>
+#include "../core/WorkspaceState.h"
 
 OpenGLCanvas::OpenGLCanvas(QWidget *parent) : QOpenGLWidget(parent) {
   QSurfaceFormat format;
@@ -159,33 +160,12 @@ void OpenGLCanvas::wheelEvent(QWheelEvent *event) {
 }
 
 void OpenGLCanvas::keyPressEvent(QKeyEvent *event) {
-    float step = 1.0f;
-    switch (event->key()) {
-    case Qt::Key_W:
-        Camera::getInstance().moveForward(step);
-        break;
-    case Qt::Key_S:
-        Camera::getInstance().moveBackward(step);
-        break;
-    case Qt::Key_A:
-        Camera::getInstance().moveLeft(step);
-        break;
-    case Qt::Key_D:
-        Camera::getInstance().moveRight(step);
-        break;
-    case Qt::Key_Q:
-        Camera::getInstance().moveUp(step);
-        break;
-    case Qt::Key_E:
-        Camera::getInstance().moveDown(step);
-        break;
-    case Qt::Key_R:
-        Camera::getInstance().resetView();
-        break;
-    default:
-        QOpenGLWidget::keyPressEvent(event);
-        return;
-    }
+    ws::WindowManager::getInstance().keyPressEvent(event);
+    update();
+}
+
+void OpenGLCanvas::keyReleaseEvent(QKeyEvent *event) {
+    ws::WindowManager::getInstance().keyReleaseEvent(event);
     update();
 }
 

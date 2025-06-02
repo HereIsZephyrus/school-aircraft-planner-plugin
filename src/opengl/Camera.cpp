@@ -6,8 +6,7 @@
 Camera::Camera() {
     mPosition = QVector3D(0.0f, 0.0f, 5.0f);
     mWorldUp = QVector3D(0.0f, 0.0f, 1.0f);
-    mYaw = YAW;
-    mPitch = PITCH;
+    mRotation = QQuaternion::fromEulerAngles(0.0f, -YAW, 0.0f); // 初始旋转
     mMovementSpeed = SPEED;
     mMouseSensitivity = SENSITIVITY;
     mZoom = ZOOM;
@@ -30,8 +29,8 @@ void Camera::setPosition(const QVector3D& position) {
 }
 
 void Camera::setUpVector(const QVector3D &up) {
-  mUp = up.normalized();
-  updateCameraVectors();
+    mWorldUp = up.normalized();
+    updateCameraVectors();
 }
 
 void Camera::setAspectRatio(float ratio) {
@@ -88,22 +87,20 @@ void Camera::moveDown(float deltaTime) {
     mPosition -= mUp * velocity;
 }
 
-void Camera::rotate(float yaw, float pitch, bool constrainPitch) {
-    mYaw += yaw;
-    mPitch += pitch;
-
-    if (constrainPitch) {
-        mPitch = qBound(-89.0f, mPitch, 89.0f);
-    }
-
+void Camera::rotate(const QQuaternion& rotation) {
+    mRotation = rotation * mRotation;
     updateCameraVectors();
 }
 
-void Camera::handleMouseMove(const QPoint& delta, bool constrainPitch) {
+void Camera::handleMouseMove(const QPoint& delta) {
     float xoffset = delta.x() * mMouseSensitivity;
     float yoffset = -delta.y() * mMouseSensitivity;
     
-    rotate(xoffset, yoffset, constrainPitch);
+    QQuaternion horizontalRotation = QQuaternion::fromAxisAndAngle(mWorldUp, xoffset);
+    QQuaternion verticalRotation = QQuaternion::fromAxisAndAngle(mRight, yoffset);
+    
+    mRotation = horizontalRotation * verticalRotation * mRotation;
+    updateCameraVectors();
 }
 
 void Camera::handleMouseWheel(int delta) {
@@ -113,19 +110,15 @@ void Camera::handleMouseWheel(int delta) {
 
 void Camera::resetView() {
     mPosition = QVector3D(0.0f, 0.0f, 3.0f);
-    mWorldUp = QVector3D(0.0f, 1.0f, 0.0f);
-    mYaw = YAW;
-    mPitch = PITCH;
+    mWorldUp = QVector3D(0.0f, 0.0f, 1.0f);
+    mRotation = QQuaternion::fromEulerAngles(0.0f, -YAW, 0.0f);
     mZoom = ZOOM;
     updateCameraVectors();
 }
 
 void Camera::updateCameraVectors() {
-    QVector3D front;
-    front.setX(qCos(qDegreesToRadians(mYaw)) * qCos(qDegreesToRadians(mPitch)));
-    front.setY(qSin(qDegreesToRadians(mPitch)));
-    front.setZ(qSin(qDegreesToRadians(mYaw)) * qCos(qDegreesToRadians(mPitch)));
-    mFront = front.normalized();
+    mFront = mRotation.rotatedVector(QVector3D(0.0f, 0.0f, -1.0f));
+    mFront.normalize();
     
     mRight = QVector3D::crossProduct(mFront, mWorldUp).normalized();
     mUp = QVector3D::crossProduct(mRight, mFront).normalized();

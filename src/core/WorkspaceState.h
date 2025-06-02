@@ -5,6 +5,9 @@
 #include <QDir>
 #include <QMatrix4x4>
 #include <QVector3D>
+#include <QMap>
+#include <QKeyEvent>
+#include <QTimer>
 #include <float.h>
 #include <stdexcept>
 
@@ -44,11 +47,20 @@ public:
     QObject* getDefaultObject() const {return pDefaultObject;}
     const Bounds& getBounds() const {return mBounds;}
     void setBounds(const Bounds& bounds) {mBounds = bounds;}
+    void keyPressEvent(QKeyEvent* event);
+    void keyReleaseEvent(QKeyEvent* event);
+    bool isKeyPressed(int key) const;
+    void updateCameraMovement();
+
 private:
     CanvasType mCurrentCanvas;
     static QObject *pDefaultObject;
     bool is3DMapInited,is2DMapInited;
     Bounds mBounds;
+    QMap<int, bool> mKeyStates;
+    QTimer* mUpdateTimer;
+    void update3DCameraMovement();
+    void update2DCameraMovement();
 };
 class PathManager : public QObject{
     Q_OBJECT

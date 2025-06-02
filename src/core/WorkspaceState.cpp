@@ -1,8 +1,10 @@
 #include "WorkspaceState.h"
+#include "../log/QgisDebug.h"
+#include "../opengl/Camera.h"
 #include <QProcessEnvironment>
 #include <QRandomGenerator>
+#include <QTimer>
 #include <cstdlib>
-#include "../log/QgisDebug.h"
 
 static QString GetHomeDirectory() {
 #ifdef _WIN32
@@ -58,15 +60,71 @@ ws::FlightManager::FlightManager() {
 }
 ws::FlightManager::~FlightManager() { mFlightPath.clear(); }
 
-ws::WindowManager::WindowManager() {
-  mCurrentCanvas = CanvasType::ThreeD;
-  is3DMapInited = false;
-  is2DMapInited = false;
+ws::WindowManager::WindowManager()
+    : QObject(nullptr), mCurrentCanvas(CanvasType::ThreeD),
+      is3DMapInited(false), is2DMapInited(false) {
+  // 初始化更新定时器
+  mUpdateTimer = new QTimer(this);
+  connect(mUpdateTimer, &QTimer::timeout, this,
+          &WindowManager::updateCameraMovement);
+  mUpdateTimer->start(16); // 约60fps的更新频率
   if (!pDefaultObject)
     pDefaultObject = new QObject();
   mBounds = Bounds();
 }
-ws::WindowManager::~WindowManager() { delete pDefaultObject; }
+
+ws::WindowManager::~WindowManager() {
+  if (mUpdateTimer) {
+    mUpdateTimer->stop();
+    delete mUpdateTimer;
+  }
+  delete pDefaultObject;
+}
+
+void ws::WindowManager::keyPressEvent(QKeyEvent *event) {
+  mKeyStates[event->key()] = true;
+}
+
+void ws::WindowManager::keyReleaseEvent(QKeyEvent *event) {
+  mKeyStates[event->key()] = false;
+}
+
+bool ws::WindowManager::isKeyPressed(int key) const {
+  return mKeyStates.value(key, false);
+}
+
+void ws::WindowManager::update3DCameraMovement() {
+  float step = 0.5f;
+  Camera &camera = Camera::getInstance();
+  
+  if (isKeyPressed(Qt::Key_W))
+    camera.moveForward(step);
+  if (isKeyPressed(Qt::Key_S))
+    camera.moveBackward(step);
+  if (isKeyPressed(Qt::Key_A))
+    camera.moveLeft(step);
+  if (isKeyPressed(Qt::Key_D))
+    camera.moveRight(step);
+  if (isKeyPressed(Qt::Key_Q))
+    camera.moveUp(step);
+  if (isKeyPressed(Qt::Key_E))
+    camera.moveDown(step);
+  if (isKeyPressed(Qt::Key_R))
+    camera.resetView();
+}
+
+void ws::WindowManager::update2DCameraMovement() {
+  return;
+}
+
+void ws::WindowManager::updateCameraMovement() {
+  if (mCurrentCanvas == CanvasType::ThreeD) {
+    update3DCameraMovement();
+  }
+  if (mCurrentCanvas == CanvasType::TwoD) {
+    update2DCameraMovement();
+  }
+}
 
 // add new slot function at the end of the file
 QString ws::FlightManager::queryFlightParameters() {
@@ -111,35 +169,31 @@ void ws::EnvManager::generateRandomWeather() {
 }
 
 void ws::AnimationManager::startSimulation() {
-    mIsAnimating = true;
-    mIsPaused = false;
-    mAnimationProgress = 0.0f;
+  mIsAnimating = true;
+  mIsPaused = false;
+  mAnimationProgress = 0.0f;
 }
 
-void ws::AnimationManager::pauseSimulation() {
-    mIsPaused = true;
-}
+void ws::AnimationManager::pauseSimulation() { mIsPaused = true; }
 
-void ws::AnimationManager::resumeSimulation() {
-    mIsPaused = false;
-}
+void ws::AnimationManager::resumeSimulation() { mIsPaused = false; }
 
 void ws::AnimationManager::returnToHome() {
-    mAnimationProgress = 0.0f;
-    mIsAnimating = false;
-    mIsPaused = false;
+  mAnimationProgress = 0.0f;
+  mIsAnimating = false;
+  mIsPaused = false;
 }
 
 void ws::AnimationManager::stopSimulation() {
-    mIsAnimating = false;
-    mIsPaused = false;
-    mAnimationProgress = 0.0f;
+  mIsAnimating = false;
+  mIsPaused = false;
+  mAnimationProgress = 0.0f;
 }
 
 ws::AnimationManager::AnimationManager() : QObject() {
-    mIsAnimating = false;
-    mIsPaused = false;
-    mAnimationProgress = 0.0f;
-    mAnimationSpeed = 1.0f;
-    mAnimationDirection = QVector3D(1.0f, 0.0f, 0.0f);
+  mIsAnimating = false;
+  mIsPaused = false;
+  mAnimationProgress = 0.0f;
+  mAnimationSpeed = 1.0f;
+  mAnimationDirection = QVector3D(1.0f, 0.0f, 0.0f);
 }
