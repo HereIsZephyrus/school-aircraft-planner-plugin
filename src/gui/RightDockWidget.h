@@ -72,7 +72,7 @@ private slots:
   //   JoystickWidget *m_rightJoystick = nullptr;
 };
 
-class FileTreeWidget : public QTreeWidget {
+class FileTreeWidget : public QWidget {
   Q_OBJECT
 
 public:
@@ -81,6 +81,7 @@ public:
 
 private:
   void createSelectDirectoryButton();
+  void createTreeWidget();
   void createSlots();
   QToolButton *mpSelectDirectoryButton;
   void loadDirectoryFiles(const QString &path);
@@ -90,6 +91,7 @@ private:
   QString getItemFullPath(QTreeWidgetItem *item);
   QVBoxLayout *mpMainLayout;
   QTreeWidgetItem *mpRootItem;
+  QTreeWidget *mpTreeWidget;
 private slots:
   void onSelectDirectoryClicked();
   void onTreeItemDoubleClicked(QTreeWidgetItem *item, int column);

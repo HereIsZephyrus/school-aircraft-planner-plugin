@@ -10,33 +10,41 @@ RightDockWidget::~RightDockWidget() {
 void FileTreeWidget::createSlots() {
   connect(mpSelectDirectoryButton, &QToolButton::clicked, this,
           &FileTreeWidget::onSelectDirectoryClicked);
-  connect(this, &QTreeWidget::itemDoubleClicked, this,
+  connect(mpTreeWidget, &QTreeWidget::itemDoubleClicked, this,
           &FileTreeWidget::onTreeItemDoubleClicked);
-  connect(this, &QTreeWidget::itemExpanded, this,
+  connect(mpTreeWidget, &QTreeWidget::itemExpanded, this,
           &FileTreeWidget::onTreeItemExpanded);
 }
 
 void FileTreeWidget::createSelectDirectoryButton() {
   // create select directory button
-  mpSelectDirectoryButton = new QToolButton();
+  mpSelectDirectoryButton = new QToolButton(this);
   mpSelectDirectoryButton->setObjectName("selectDirectoryButton");
   mpSelectDirectoryButton->setText(tr("Select Directory"));
+  mpSelectDirectoryButton->move(0, 0);
   logMessage("connect select directory button to onSelectDirectoryClicked",
              Qgis::MessageLevel::Info);
 }
 
-FileTreeWidget::FileTreeWidget(QWidget *parent) : QTreeWidget(parent) {
-  setObjectName("fileTreeWidget");
-  setHeaderLabel(tr("File List"));
-
-  createSelectDirectoryButton();
-  mpMainLayout = new QVBoxLayout(this);
-  mpMainLayout->addWidget(mpSelectDirectoryButton);
+void FileTreeWidget::createTreeWidget() {
+  mpTreeWidget = new QTreeWidget(this);
+  mpTreeWidget->setObjectName("fileTreeWidget");
+  mpTreeWidget->setHeaderLabel(tr("File List"));
   mpRootItem = nullptr;
   QString dirPath = ws::PathManager::getInstance().getRootDir();
   logMessage("init empty file tree", Qgis::MessageLevel::Info);
   loadDirectoryFiles(dirPath);
+}
 
+FileTreeWidget::FileTreeWidget(QWidget *parent) : QWidget(parent) {
+  setObjectName("fileTreeWidget");
+  
+  createSelectDirectoryButton();
+  createTreeWidget();
+  
+  mpMainLayout = new QVBoxLayout(this);
+  mpMainLayout->addWidget(mpSelectDirectoryButton);
+  mpMainLayout->addWidget(mpTreeWidget);
   createSlots();
   logMessage("create file tree", Qgis::MessageLevel::Success);
 }
@@ -177,12 +185,12 @@ void FileTreeWidget::loadDirectoryFiles(const QString &path) {
   if (!dir.exists())
     return;
 
-  clear();
+  mpTreeWidget->clear();
 
   if (mpRootItem)
     delete mpRootItem;
 
-  mpRootItem = new QTreeWidgetItem(this);
+  mpRootItem = new QTreeWidgetItem(mpTreeWidget);
   mpRootItem->setText(0, dir.dirName());
   loadDirectoryLevel(mpRootItem, path, 1, 3);
 
@@ -200,7 +208,7 @@ void FileTreeWidget::loadDirectoryLevel(QTreeWidgetItem *parentItem,
   QFileInfoList files =
       dir.entryInfoList(QDir::Files | QDir::Dirs | QDir::NoDotAndDotDot);
 
-  foreach (const QFileInfo &fileInfo, files) {
+  for (const QFileInfo &fileInfo : files) {
     QTreeWidgetItem *item = new QTreeWidgetItem(parentItem);
     item->setText(0, fileInfo.fileName());
 
