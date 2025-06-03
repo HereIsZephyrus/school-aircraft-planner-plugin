@@ -74,13 +74,13 @@ void OpenGLCanvas::initializeGL() {
   glEnable(GL_BLEND);
   glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
-  // Initialize shared context manager
+  // Initialize shared context manager with our surface
   if (!SharedContextManager::getInstance().initialize(context())) {
     logMessage("Failed to initialize shared context manager", Qgis::MessageLevel::Critical);
     return;
   }
 
-  mpScene = std::make_unique<OpenGLScene>();
+  mpScene = std::make_unique<OpenGLScene>(context());
   logMessage("OpenGL scene initialized", Qgis::MessageLevel::Success);
 }
 
@@ -97,6 +97,10 @@ void OpenGLCanvas::paintGL() {
   if (!isVisible())
     return;
 
+  if (!QOpenGLContext::currentContext()) {
+    logMessage("OpenGL context is not current", Qgis::MessageLevel::Critical);
+    return;
+  }
   glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
   glEnable(GL_DEPTH_TEST);
@@ -118,17 +122,11 @@ void OpenGLCanvas::paintGL() {
   }
 }
 
-OpenGLScene::OpenGLScene() {
-    auto& sharedContextManager = SharedContextManager::getInstance();
-    if (!sharedContextManager.isValid()) {
-        logMessage("Shared context manager is not valid in OpenGLScene constructor", Qgis::MessageLevel::Critical);
-        return;
-    }
-
-    if (sharedContextManager.makeCurrent()) {
-        basePlaneWidget = std::make_shared<gl::BasePlane>();
-        sharedContextManager.doneCurrent();
-    }
+OpenGLScene::OpenGLScene(QOpenGLContext* context) {
+    this->context = context;
+    context->makeCurrent(context->surface());
+    basePlaneWidget = std::make_shared<gl::BasePlane>();
+    context->doneCurrent();
 }
 
 OpenGLScene::~OpenGLScene() {
@@ -137,52 +135,39 @@ OpenGLScene::~OpenGLScene() {
 }
 
 void OpenGLScene::cleanupResources() {
-    auto& sharedContextManager = SharedContextManager::getInstance();
-    if (!sharedContextManager.isValid()) {
-        return;
-    }
-
-    if (sharedContextManager.makeCurrent()) {
+    if (context->makeCurrent(context->surface())) {
         if (modelWidget) {
             modelWidget->cleanupTextures();
         }
-        sharedContextManager.doneCurrent();
+        context->doneCurrent();
     }
 }
 
 void OpenGLScene::paintScene(const QMatrix4x4 &view, const QMatrix4x4 &projection) {
-    auto& sharedContextManager = SharedContextManager::getInstance();
-    if (!sharedContextManager.isValid()) {
-        logMessage("Shared context manager is not valid", Qgis::MessageLevel::Critical);
+    if (!QOpenGLContext::currentContext()) {
+        logMessage("OpenGL context is not current", Qgis::MessageLevel::Critical);
         return;
     }
-
-    if (sharedContextManager.makeCurrent()) {
-        if (basePlaneWidget) {
-            basePlaneWidget->draw(view, projection);
-        }
-        if (modelWidget) {
-            modelWidget->draw(view, projection);
-        }
-        sharedContextManager.doneCurrent();
+    if (basePlaneWidget) {
+        basePlaneWidget->draw(view, projection);
+    }
+    if (modelWidget) {
+        modelWidget->draw(view, projection);
     }
 }
 
 void OpenGLScene::loadModel(const QString &objFilePath) {
     logMessage("OpenGLScene::loadModel", Qgis::MessageLevel::Info);
-    
-    auto& sharedContextManager = SharedContextManager::getInstance();
-    if (!sharedContextManager.isValid()) {
-        logMessage("Shared context manager is not valid", Qgis::MessageLevel::Critical);
+    if (!QOpenGLContext::currentContext()) {
+        logMessage("OpenGL context is not current", Qgis::MessageLevel::Critical);
         return;
     }
-
     // Clean up old resources before loading new model
     cleanupResources();
 
-    if (sharedContextManager.makeCurrent()) {
+    if (context->makeCurrent(context->surface())) {
         modelWidget = std::make_shared<gl::Model>(objFilePath);
-        sharedContextManager.doneCurrent();
+        context->doneCurrent();
         logMessage("Model loaded", Qgis::MessageLevel::Success);
     }
 } 

@@ -3,7 +3,6 @@
 
 SharedContextManager::SharedContextManager()
     : mSharedContext(nullptr)
-    , mOffscreenSurface(nullptr)
     , mIsInitialized(false) {
 }
 
@@ -38,13 +37,10 @@ bool SharedContextManager::initialize(QOpenGLContext* mainContext) {
         return false;
     }
 
-    // Create offscreen surface
-    mOffscreenSurface = new QOffscreenSurface();
-    mOffscreenSurface->setFormat(mSharedContext->format());
-    mOffscreenSurface->create();
+    mSurface = mainContext->surface();
 
-    if (!mOffscreenSurface->isValid()) {
-        logMessage("Failed to create offscreen surface", Qgis::MessageLevel::Critical);
+    if (!mSharedContext->makeCurrent(mSurface)) {
+        logMessage("Failed to make shared context current", Qgis::MessageLevel::Critical);
         cleanup();
         return false;
     }
@@ -63,18 +59,12 @@ void SharedContextManager::cleanup() {
         mSharedContext = nullptr;
     }
 
-    if (mOffscreenSurface) {
-        delete mOffscreenSurface;
-        mOffscreenSurface = nullptr;
-    }
-
     mIsInitialized = false;
     logMessage("Shared context manager cleaned up", Qgis::MessageLevel::Success);
 }
 
 bool SharedContextManager::isValid() const {
-    return mIsInitialized && mSharedContext && mSharedContext->isValid() && 
-           mOffscreenSurface && mOffscreenSurface->isValid();
+    return mIsInitialized && mSharedContext && mSharedContext->isValid();
 }
 
 bool SharedContextManager::makeCurrent() {
@@ -82,7 +72,29 @@ bool SharedContextManager::makeCurrent() {
         logMessage("Cannot make current: shared context manager is not valid", Qgis::MessageLevel::Critical);
         return false;
     }
-    return mSharedContext->makeCurrent(mOffscreenSurface);
+
+    if (!mSharedContext || !mSharedContext->isValid()) {
+        logMessage("Invalid context in SharedContextManager", Qgis::MessageLevel::Critical);
+        return false;
+    }
+
+    if (!mSurface) {
+        logMessage("No offscreen surface in SharedContextManager", Qgis::MessageLevel::Critical);
+        return false;
+    }
+
+    bool success = mSharedContext->makeCurrent(mSurface);
+    if (!success) {
+        logMessage("Failed to make context current", Qgis::MessageLevel::Critical);
+        return false;
+    }
+
+    if (!QOpenGLContext::currentContext()) {
+        logMessage("Context not current after makeCurrent", Qgis::MessageLevel::Critical);
+        return false;
+    }
+
+    return true;
 }
 
 void SharedContextManager::doneCurrent() {

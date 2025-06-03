@@ -54,7 +54,7 @@ public slots:
 
 class OpenGLScene {
 public:
-    OpenGLScene();
+    OpenGLScene(QOpenGLContext* context);
     ~OpenGLScene();
 
     void paintScene(const QMatrix4x4 &view, const QMatrix4x4 &projection);
@@ -65,6 +65,7 @@ protected:
     std::shared_ptr<gl::Model> modelWidget;
     std::shared_ptr<gl::BasePlane> basePlaneWidget;
     QVector<std::shared_ptr<Route>> routes;
+    QOpenGLContext* context;
 };
 
 #endif // OPENGLCANVAS_H

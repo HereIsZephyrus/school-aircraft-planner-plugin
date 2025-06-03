@@ -2,7 +2,7 @@
 #define SHARED_CONTEXT_MANAGER_H
 
 #include <QOpenGLContext>
-#include <QOffscreenSurface>
+#include <QSurface>
 #include <memory>
 
 class SharedContextManager {
@@ -11,7 +11,7 @@ private:
     ~SharedContextManager();
 
     QOpenGLContext* mSharedContext;
-    QOffscreenSurface* mOffscreenSurface;
+    QSurface* mSurface;
     bool mIsInitialized;
 
 public:
@@ -28,7 +28,6 @@ public:
     
     bool isValid() const;
     QOpenGLContext* getSharedContext() const { return mSharedContext; }
-    QOffscreenSurface* getOffscreenSurface() const { return mOffscreenSurface; }
     
     bool makeCurrent();
     void doneCurrent();
