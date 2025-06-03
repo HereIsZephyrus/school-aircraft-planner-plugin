@@ -18,6 +18,7 @@
 #include <qgsapplication.h>
 #include <qtimer.h>
 #include <qvector4d.h>
+#include <qthread.h>
 #include "../core/WorkspaceState.h"
 
 OpenGLCanvas::OpenGLCanvas(QWidget *parent) : QOpenGLWidget(parent) {
@@ -35,8 +36,9 @@ OpenGLCanvas::OpenGLCanvas(QWidget *parent) : QOpenGLWidget(parent) {
   // set timer
   updateTimer = std::make_unique<QTimer>();
   updateTimer->setInterval(16);
+  updateTimer->moveToThread(QApplication::instance()->thread());
   connect(updateTimer.get(), &QTimer::timeout, this,
-          QOverload<>::of(&QOpenGLWidget::update));
+          QOverload<>::of(&QOpenGLWidget::update), Qt::QueuedConnection);
   updateTimer->start();
 
   // set camera
@@ -98,10 +100,6 @@ void OpenGLCanvas::paintGL() {
   if (!isVisible())
     return;
 
-  if (!QOpenGLContext::currentContext()) {
-    logMessage("OpenGL context is not current", Qgis::MessageLevel::Critical);
-    return;
-  }
   glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
   glEnable(GL_DEPTH_TEST);
@@ -127,7 +125,10 @@ OpenGLScene::OpenGLScene(QOpenGLContext* context) {
     this->context = context;
     context->makeCurrent(context->surface());
     basePlaneWidget = std::make_shared<gl::BasePlane>();
+    const QString objFilePath = "/mnt/repo/comprehensive3S/test/Tile_+000_+000.obj";
+    //modelWidget = std::make_shared<gl::Model>(objFilePath);
     context->doneCurrent();
+    logMessage("OpenGLScene initialized", Qgis::MessageLevel::Success);
 }
 
 OpenGLScene::~OpenGLScene() {
