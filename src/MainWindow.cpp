@@ -126,8 +126,8 @@ void MainWindow::createSlots() {
           &EnvManager::generateRandomWeather);
   connect(mpMenuBar, &MenuBar::showUserManual, this,
           &MainWindow::showUserManual);
-  connect(mpMenuBar, &MenuBar::projectMenuTriggered, mpCanvas,
-          &Canvas::loadModel);
+  connect(mpMenuBar, &MenuBar::projectMenuTriggered, mpCanvas->getOpenGLWidget(),
+          &OpenGLCanvas::loadModel);
   connect(mpMenuBar, &MenuBar::viewMenuTriggered, mpCanvas,
           &Canvas::switchTo3D);
   connect(mpMenuBar, &MenuBar::switchTo2D, mpCanvas, &Canvas::switchTo2D);

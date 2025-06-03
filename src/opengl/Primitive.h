@@ -15,7 +15,7 @@
 #include <memory>
 
 namespace gl {
-class Primitive : public QObject {
+class Primitive : public QObject{
   Q_OBJECT
 
 protected:
@@ -153,7 +153,6 @@ public:
   void cleanupTextures();
 
 protected:
-  void loadModel(const QString &objFilePath);
   void initModelData();
 };
 
@@ -166,7 +165,6 @@ public:
 
 
 namespace ModelDataLoader {
-void loadObjModel(const QString &objFilePath,gl::ModelData* modelData);
 QString retriveMtlPath(const QString &objfilePath);
 std::pair<gl::ModelData::pMaterialGroupMap, GLuint>
 loadMaterialGroups(const QString &filePath);

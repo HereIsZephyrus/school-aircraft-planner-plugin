@@ -27,6 +27,7 @@ OpenGLCanvas::OpenGLCanvas(QWidget *parent) : QOpenGLWidget(parent) {
   format.setDepthBufferSize(24);
   format.setStencilBufferSize(8);
   format.setSamples(4);
+  format.setOption(QSurfaceFormat::DebugContext);
   setFormat(format);
   setFocusPolicy(Qt::StrongFocus);
   setFocus();
@@ -163,7 +164,8 @@ void OpenGLScene::loadModel(const QString &objFilePath) {
         return;
     }
     // Clean up old resources before loading new model
-    cleanupResources();
+    if (modelWidget)
+      modelWidget->cleanupTextures();
 
     if (context->makeCurrent(context->surface())) {
         modelWidget = std::make_shared<gl::Model>(objFilePath);

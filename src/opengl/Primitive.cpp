@@ -154,9 +154,7 @@ void ColorPrimitive::draw(const QMatrix4x4 &view, const QMatrix4x4 &projection){
   this->shader->setUniformValue("view", view);
   this->shader->setUniformValue("projection", projection);
   this->vao.bind();
-  this->vbo.bind();
   glDrawArrays(this->primitiveType, 0, this->vertexNum);
-  this->vbo.release();
   this->vao.release();
   this->shader->release();
   checkGLError("ColorPrimitive::draw");
@@ -205,6 +203,9 @@ BasePlane::BasePlane(const QVector4D &color)
   }
   initShaderAllocate();
   logMessage("BasePlane initialized", Qgis::MessageLevel::Info);
+  logMessage(QString("VAO is created: %1, VAO id: %2")
+    .arg(this->vao.isCreated())
+    .arg(this->vao.objectId()));
 }
 
 RoutePath::RoutePath(const QVector<QVector3D>& vertices, const QVector4D& color)
@@ -276,13 +277,16 @@ void Model::initModelData(){
   this->shader->setAttributeBuffer(0, GL_FLOAT, 0, 3, this->stride * sizeof(GLfloat));
   this->shader->enableAttributeArray(1);
   this->shader->setAttributeBuffer(1, GL_FLOAT, 3 * sizeof(GLfloat), 2, this->stride * sizeof(GLfloat));
-  this->shader->release();
   logMessage("Model initialized", Qgis::MessageLevel::Info);
   this->vbo.release();
   this->vao.release();
+  this->shader->release();
   checkGLError("Model::Model");
   logMessage("Texture Size: " + QString::number(modelData->textures->size()), Qgis::MessageLevel::Info);
   logMessage("Material Size: " + QString::number(modelData->materialGroups->size()), Qgis::MessageLevel::Info);
+  logMessage(QString("VAO is created: %1, VAO id: %2")
+    .arg(this->vao.isCreated())
+    .arg(this->vao.objectId()));
 }
 
 Model::Model(std::shared_ptr<ModelData> modelData)
@@ -301,10 +305,6 @@ void Model::draw(const QMatrix4x4 &view, const QMatrix4x4 &projection) {
     }
     this->shader->bind();
     checkGLError("Model::draw - after shader bind");
-    this->vbo.bind();
-    checkGLError("Model::draw - after VBO bind");
-    this->vao.bind();
-    checkGLError("Model::draw - after VAO bind");
     this->shader->setUniformValue("model", this->modelMatrix);
     this->shader->setUniformValue("view", view);
     this->shader->setUniformValue("projection", projection);
@@ -312,27 +312,23 @@ void Model::draw(const QMatrix4x4 &view, const QMatrix4x4 &projection) {
     if (modelData && modelData->textures && !modelData->textures->isEmpty()) {
         auto firstTexture = modelData->textures->first();
         if (firstTexture && firstTexture->isCreated()) {
-            glActiveTexture(GL_TEXTURE0);  // 确保使用纹理单元0
-            firstTexture->bind(0);
-            this->shader->setUniformValue("textureSampler", 0);
+            firstTexture->bind();
             checkGLError("Model::draw - after texture bind");
+            this->shader->setUniformValue("textureSampler", firstTexture->textureId());
+            this->vao.bind();
+            checkGLError("Model::draw - after VAO bind");
+            glDrawArrays(this->primitiveType, 0, this->vertexNum);
+            checkGLError("Model::draw - after glDrawArrays");
+            this->vao.release();
+            firstTexture->release();
         }
     }
 
-    // 6. 验证顶点数据
     if (this->vertexNum == 0 || this->vertices == nullptr) {
         logMessage("Invalid vertex data", Qgis::MessageLevel::Critical);
         return;
     }
-
-    // 7. 绘制
-    glDrawArrays(this->primitiveType, 0, this->vertexNum);
-    checkGLError("Model::draw - after glDrawArrays");
-
-    // 8. 清理（注意顺序）
-    this->vbo.release();
     this->shader->release();
-    this->vao.release();
 }
 
 bool Primitive::constructShader(const QString& vertexShaderPath, const QString& fragmentShaderPath, const QString& geometryShaderPath) {
@@ -442,26 +438,29 @@ Model::Model(const QString& objFilePath):Primitive(GL_TRIANGLES, 5){
     logMessage("Model::Model: OpenGL context is not current", Qgis::MessageLevel::Critical);
     return;
   }
-  loadModel(objFilePath);
+  modelData = std::make_shared<ModelData>(objFilePath);
   logMessage("Model constructed", Qgis::MessageLevel::Success);
   initModelData();
 }
 
 ModelData::ModelData(const QString &objFilePath){
-  ModelDataLoader::loadObjModel(objFilePath,this);
-}
-
-void Model::loadModel(const QString& objFilePath){
   if (!QOpenGLContext::currentContext()) {
-    logMessage("Model::loadModel: OpenGL context is not current", Qgis::MessageLevel::Critical);
+    logMessage("loadObjModel: OpenGL context is not current", Qgis::MessageLevel::Critical);
     return;
   }
-  modelData = std::make_shared<ModelData>(objFilePath);
-  if (!modelData){
-    logMessage("Failed to load model", Qgis::MessageLevel::Critical);
-    return;
+  logMessage(QString("loadObjModel: %1").arg(objFilePath), Qgis::MessageLevel::Info);
+  QString mtlPath = ModelDataLoader::retriveMtlPath(objFilePath);
+  logMessage(QString("mtlPath: %1").arg(mtlPath), Qgis::MessageLevel::Info);
+  if (mtlPath.isEmpty()){
+    logMessage("Mtl file not found", Qgis::MessageLevel::Critical);
   }
-  logMessage("Model data loaded", Qgis::MessageLevel::Success);
+
+  TexturePair mtlResource = ModelDataLoader::loadMtl(mtlPath);
+  auto materialGroupPair = ModelDataLoader::loadMaterialGroups(objFilePath);
+  materialGroups = materialGroupPair.first;
+  totalVertices = materialGroupPair.second;
+  textures = mtlResource.second;
+  materials = mtlResource.first;
 }
 
 Demo::Demo():ColorPrimitive(GL_TRIANGLES,  QVector4D(1.0f, 0.0f, 0.0f, 1.0f)){
@@ -559,27 +558,6 @@ gl::ModelData::TexturePair ModelDataLoader::loadMtl(const QString &mtlPath) {
   }
   logMessage("load mtl", Qgis::MessageLevel::Info);
   return std::make_pair(materials, textures);
-}
-
-void ModelDataLoader::loadObjModel(const QString &objFilePath,gl::ModelData* modelData) {
-  if (!QOpenGLContext::currentContext()) {
-    logMessage("loadObjModel: OpenGL context is not current", Qgis::MessageLevel::Critical);
-    return;
-  }
-  logMessage(QString("loadObjModel: %1").arg(objFilePath), Qgis::MessageLevel::Info);
-  QString mtlPath = retriveMtlPath(objFilePath);
-  logMessage(QString("mtlPath: %1").arg(mtlPath), Qgis::MessageLevel::Info);
-  if (mtlPath.isEmpty()){
-    logMessage("Mtl file not found", Qgis::MessageLevel::Critical);
-    modelData = nullptr;
-    return;
-  }
-
-  gl::ModelData::TexturePair mtlResource = loadMtl(mtlPath);
-  auto materialGroupPair = loadMaterialGroups(objFilePath);
-
-  *modelData = gl::ModelData(mtlResource.first, mtlResource.second,
-                            materialGroupPair.first, materialGroupPair.second);
 }
 
 QString ModelDataLoader::retriveMtlPath(const QString &objfilePath) {

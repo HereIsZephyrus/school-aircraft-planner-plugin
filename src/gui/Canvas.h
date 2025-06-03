@@ -12,9 +12,10 @@ class Canvas : public QStackedWidget {
 public:
   Canvas(QWidget *parent = nullptr);
   ~Canvas();
+  OpenGLCanvas *getOpenGLWidget() const { return mpOpenGLWidget; }
+  QLabel *getImageLabel() const { return mpImageLabel; }    
 
 public slots:
-  void loadModel(const QString &objFilePath);
   void switchTo2D();
   void switchTo3D();
   void viewReset();
