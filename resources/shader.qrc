@@ -10,5 +10,7 @@
         <file>shaders/model.fs</file>
         <file>shaders/demo.vs</file>
         <file>shaders/demo.fs</file>
+        <file>shaders/demomodel.vs</file>
+        <file>shaders/demomodel.fs</file>
     </qresource>
 </RCC> 

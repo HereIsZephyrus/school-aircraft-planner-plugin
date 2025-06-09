@@ -90,70 +90,21 @@ public:
              const QVector4D &color = QVector4D(1.0f, 1.0f, 1.0f, 1.0f));
 };
 
-class ModelData {
-public:
-  struct Material;
-  struct Vertex;
-  using pMaterial = std::shared_ptr<Material>;
-  using pTexture = std::shared_ptr<QOpenGLTexture>;
-  using pMaterialGroup = std::shared_ptr<QVector<Vertex>>;
-  using pMaterialVector = std::shared_ptr<QVector<pMaterial>>;
-  using pTextureMap = std::shared_ptr<QMap<QString, pTexture>>;
-  using pMaterialGroupMap = std::shared_ptr<QMap<QString, pMaterialGroup>>;
-  using TexturePair = std::pair<pMaterialVector, pTextureMap>;
-
-public:
-  ModelData(pMaterialVector materials = nullptr, pTextureMap textures = nullptr,
-            pMaterialGroupMap materialGroups = nullptr,
-            GLuint totalVertices = 0);
-  ModelData(const QString &objFilePath);
-  ~ModelData();
-  struct Material {
-    QString name;
-    QVector3D ambient;
-    QVector3D diffuse;
-    QVector3D specular;
-    float shininess;
-    QString diffuseTexture;
-    Material(const QString &name = "",
-             const QVector3D &ambient = QVector3D(0.2f, 0.2f, 0.2f),
-             const QVector3D &diffuse = QVector3D(0.8f, 0.8f, 0.8f),
-             const QVector3D &specular = QVector3D(1.0f, 1.0f, 1.0f),
-             float shininess = 32.0f, const QString &diffuseTexture = "")
-        : name(name), ambient(ambient), diffuse(diffuse), specular(specular),
-          shininess(shininess), diffuseTexture(diffuseTexture) {}
-  };
-
-  struct Vertex {
-    QVector3D position;
-    QVector2D texCoord;
-    Vertex(QVector3D pos = QVector3D(0, 0, 0), QVector2D tex = QVector2D(0, 0))
-        : position(pos), texCoord(tex) {}
-  };
-  pMaterialVector materials;
-  pTextureMap textures;
-  pMaterialGroupMap materialGroups;
-  Bounds calculateModelBounds();
-  void updateGlobalBounds(const Bounds &bounds);
-  void applyGlobalCentering();
-  QVector3D calculateModelCenter();
-  Bounds mBounds;
-  GLuint totalVertices;
-};
 class Model : public Primitive {
-  std::shared_ptr<ModelData> modelData;
+  QVector<std::shared_ptr<ModelData>> modelData;
 
 public:
-  Model(std::shared_ptr<ModelData> modelData);
-  Model(const QString &objFilePath);
+  Model();
   void draw(const QMatrix4x4 &view, const QMatrix4x4 &projection) override;
   QVector3D getModelCenter() const { return modelData->mBounds.center; }
   const Bounds &getBounds() const { return modelData->mBounds; }
   void setBounds(const Bounds &bounds) { modelData->mBounds = bounds; }
   void cleanupTextures();
+  void loadModel(const QString &objFilePath);
 
 protected:
   void initModelData();
+  void initDemoModelData();
 };
 
 class Demo : public ColorPrimitive {
@@ -163,13 +114,4 @@ public:
 };
 } // namespace gl
 
-
-namespace ModelDataLoader {
-QString retriveMtlPath(const QString &objfilePath);
-std::pair<gl::ModelData::pMaterialGroupMap, GLuint>
-loadMaterialGroups(const QString &filePath);
-gl::ModelData::TexturePair loadMtl(const QString &mtlPath);
-qint64 calcFaceNum(const QString &objFilePath);
-bool displayProgress(qint64 progressUpdateInterval);
-}//namespace ModelDataLoader
 #endif // PRIMITIVE_H

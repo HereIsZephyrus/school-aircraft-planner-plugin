@@ -34,6 +34,8 @@ set(CORE_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/core/WorkspaceState.h
     ${CMAKE_CURRENT_SOURCE_DIR}/core/SharedContextManager.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/core/SharedContextManager.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/core/Model.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/core/Model.h
 )
 
 set(GUI_SOURCES

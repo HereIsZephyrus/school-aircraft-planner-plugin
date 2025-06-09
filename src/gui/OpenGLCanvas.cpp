@@ -84,7 +84,7 @@ void OpenGLCanvas::initializeGL() {
   }
 
   mpScene = std::make_unique<OpenGLScene>(context());
-  logMessage("OpenGL scene initialized", Qgis::MessageLevel::Success);
+  logMessage("OpenGL context initialized", Qgis::MessageLevel::Success);
 }
 
 void OpenGLCanvas::resizeGL(int w, int h) {
@@ -99,7 +99,6 @@ void OpenGLCanvas::paintGL() {
   }
   if (!isVisible())
     return;
-
   glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
   glEnable(GL_DEPTH_TEST);
@@ -126,7 +125,7 @@ OpenGLScene::OpenGLScene(QOpenGLContext* context) {
     context->makeCurrent(context->surface());
     basePlaneWidget = std::make_shared<gl::BasePlane>();
     const QString objFilePath = "/mnt/repo/comprehensive3S/test/Tile_+000_+000.obj";
-    //modelWidget = std::make_shared<gl::Model>(objFilePath);
+    modelWidget = std::make_shared<gl::Model>(objFilePath);
     context->doneCurrent();
     logMessage("OpenGLScene initialized", Qgis::MessageLevel::Success);
 }
@@ -154,6 +153,7 @@ void OpenGLScene::paintScene(const QMatrix4x4 &view, const QMatrix4x4 &projectio
         basePlaneWidget->draw(view, projection);
     }
     if (modelWidget) {
+      logMessage("modelWidget->draw", Qgis::MessageLevel::Info);
         modelWidget->draw(view, projection);
     }
 }
