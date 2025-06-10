@@ -4,8 +4,8 @@
 #include <QFileDialog>
 
 void MenuBar::onProjectMenuTriggered() {
-  QString filePath = QFileDialog::getOpenFileName(this, tr("Open OBJ File"), "",
-                                                  tr("OBJ Files (*.obj)"));
+  QString filePath = QFileDialog::getExistingDirectory(this, tr("Open OBJ File"), "",
+                                                  QFileDialog::ShowDirsOnly);
   if (!filePath.isEmpty()) {
     logMessage("project menu triggered", Qgis::MessageLevel::Info);
     emit projectMenuTriggered(filePath);

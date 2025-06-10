@@ -164,11 +164,11 @@ void OpenGLScene::loadModel(const QString &objFilePath) {
     }
     // Clean up old resources before loading new model
     if (modelWidget)
-      modelWidget->cleanupTextures();
+      modelWidget->clear();
 
-    modelWidget = std::make_shared<gl::Model>(objFilePath);
+    modelWidget = std::make_shared<gl::ModelGroup>(objFilePath);
 
-    Camera::getInstance().setPosition(modelWidget->getModelCenter());
+    Camera::getInstance().setPosition(modelWidget->getBounds().center);
 } 
 void OpenGLCanvas::mousePressEvent(QMouseEvent *event) {
     mLastMousePos = event->pos();

@@ -14,6 +14,7 @@
 #include <QtMath>
 #include <cfloat>
 #include <memory>
+#include <qvector3d.h>
 
 namespace gl {
 class Primitive : public QObject{
@@ -102,13 +103,29 @@ public:
   const Bounds &getBounds() const { return modelData->mBounds; }
   void setBounds(const Bounds &bounds) { modelData->mBounds = bounds; }
   void cleanupTextures();
-  void loadModel(const QString &objFilePath);
 
 protected:
   std::shared_ptr<QOpenGLTexture> texture;
   void generateTexture(const QString &texturePath);
   void initModelData();
   void initDemoModelData();
+};
+
+class ModelGroup{
+public:
+  ModelGroup(QString objFileFolderPath);
+  ~ModelGroup();
+  Bounds getBounds() const{return mBounds;};
+  void draw(const QMatrix4x4 &view, const QMatrix4x4 &projection);
+  void clear();
+  
+private:
+  Bounds mBounds;
+  void calcBounds();
+  QString objFileFolderPath;
+  QString retriveObjFilePath(const QString &subDirPath);
+  QVector<std::shared_ptr<Model>> models;
+  QVector<QString> objFilePaths;
 };
 
 class Demo : public ColorPrimitive {

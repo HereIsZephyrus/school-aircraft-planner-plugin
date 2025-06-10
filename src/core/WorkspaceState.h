@@ -21,6 +21,7 @@ struct Bounds{
             QVector3D max = QVector3D(-FLT_MAX, -FLT_MAX, -FLT_MAX), 
             QVector3D center = QVector3D(0, 0, 0)) 
         : min(min), max(max), center(center) {}
+    void merge(const Bounds& bounds);
 };
 namespace ws{
 void initializeWorkspaceState();

@@ -15,14 +15,12 @@ static QString GetHomeDirectory() {
 #endif
 }
 
-namespace ws {
 QObject *ws::WindowManager::pDefaultObject = nullptr;
 
-void initializeWorkspaceState() {
+void ws::initializeWorkspaceState() {
   PathManager::getInstance();
   logMessage("WorkspaceState initialized", Qgis::MessageLevel::Success);
 }
-} // namespace ws
 
 ws::PathManager::PathManager() {
   QProcessEnvironment env = QProcessEnvironment::systemEnvironment();
@@ -208,4 +206,13 @@ ws::AnimationManager::AnimationManager() : QObject() {
   mAnimationProgress = 0.0f;
   mAnimationSpeed = 1.0f;
   mAnimationDirection = QVector3D(1.0f, 0.0f, 0.0f);
+}
+
+void Bounds::merge(const Bounds& bounds){
+  min = QVector3D(std::min(min.x(), bounds.min.x()), 
+                  std::min(min.y(), bounds.min.y()), 
+                  std::min(min.z(), bounds.min.z()));
+  max = QVector3D(std::max(max.x(), bounds.max.x()), 
+                  std::max(max.y(), bounds.max.y()), 
+                  std::max(max.z(), bounds.max.z()));
 }

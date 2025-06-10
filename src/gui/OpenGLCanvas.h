@@ -62,7 +62,7 @@ public:
     void cleanupResources();
 
 protected:
-    std::shared_ptr<gl::Model> modelWidget;
+    std::shared_ptr<gl::ModelGroup> modelWidget;
     std::shared_ptr<gl::BasePlane> basePlaneWidget;
     QVector<std::shared_ptr<Route>> routes;
     QOpenGLContext* context;

@@ -453,4 +453,59 @@ void gl::Model::cleanupTextures() {
   }
   texture->destroy();
 }
+
+ModelGroup::ModelGroup(QString objFileFolderPath):objFileFolderPath(objFileFolderPath){
+  QDir dir(objFileFolderPath);
+  QStringList subDirs = dir.entryList(QDir::Dirs | QDir::NoDotAndDotDot);
+  for (const QString& subDir : subDirs) {
+    QString subDirPath = dir.filePath(subDir);
+    QString objFilePath = retriveObjFilePath(subDirPath);
+    if (objFilePath.isEmpty()) {
+      logMessage(QString("No obj file found in %1").arg(subDirPath), Qgis::MessageLevel::Critical);
+      continue;
+    }
+    objFilePaths.append(objFilePath);
+    models.append(std::make_shared<Model>(objFilePath));
+  }
+}
+
+QString ModelGroup::retriveObjFilePath(const QString &subDirPath){
+  QDir dir(subDirPath);
+  QStringList fileList = dir.entryList(QDir::Files);
+  for (const QString& fileName : fileList) {
+    if (fileName.endsWith(".obj")) {
+      return dir.filePath(fileName);
+    }
+  }
+  return QString();
+}
+
+void ModelGroup::draw(const QMatrix4x4 &view, const QMatrix4x4 &projection){
+  for (const auto& model : models) {
+    model->draw(view, projection);
+  }
+}
+
+void ModelGroup::clear(){
+  for (const auto& model : models) {
+    model->cleanupTextures();
+  }
+  models.clear();
+  objFilePaths.clear();
+}
+
+ModelGroup::~ModelGroup(){
+  for (const auto& model : models) {
+    model->cleanupTextures();
+  }
+}
+
+void ModelGroup::calcBounds(){
+  Bounds bounds;
+  for (const auto& model : models) {
+    bounds.merge(model->getBounds());
+  }
+  mBounds = bounds;
+  mBounds.center = (mBounds.min + mBounds.max) / 2.0f;
+}
 }
