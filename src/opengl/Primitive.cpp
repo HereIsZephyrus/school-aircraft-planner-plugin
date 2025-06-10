@@ -259,6 +259,14 @@ void ModelGroup::initModelData(){
   }
   this->vbo.allocate(this->vertices, count * sizeof(GLfloat));
   logMessage("start constructing shader", Qgis::MessageLevel::Info);
+  constructShader(QStringLiteral(":/schoolcore/shaders/model.vs"), QStringLiteral(":/schoolcore/shaders/model.fs"));
+  this->shader->bind();
+  this->shader->enableAttributeArray(0);
+  this->shader->setAttributeBuffer(0, GL_FLOAT, 0, 3, this->stride * sizeof(GLfloat));
+  this->shader->enableAttributeArray(1);
+  this->shader->setAttributeBuffer(1, GL_FLOAT, 3 * sizeof(GLfloat), 2, this->stride * sizeof(GLfloat));
+  this->shader->release();
+  /*
   int groupNum = (models.size()-1) / 6 + 1;
   for (int i = 0; i < groupNum; i++) {
     auto newShader = constructMultiShader(QStringLiteral(":/schoolcore/shaders/model.vs"), QStringLiteral(":/schoolcore/shaders/multimodel.fs"));
@@ -269,10 +277,10 @@ void ModelGroup::initModelData(){
     newShader->setAttributeBuffer(1, GL_FLOAT, 3 * sizeof(GLfloat), 2, this->stride * sizeof(GLfloat));
     for (int j = 0; j < 6; j++) {
       if (textures[6 * i + j] && textures[6 * i + j]->isCreated()) {
-        textures[6 * i + j]->bind();
         glActiveTexture(GL_TEXTURE0 + j);
+        textures[6 * i + j]->bind();
         newShader->setUniformValue(QString("textureSampler%1").arg(j).toStdString().c_str(), j);
-        textures[6 * i + j]->release();
+        //textures[6 * i + j]->release();
       } else {
         logMessage("Texture is not created", Qgis::MessageLevel::Critical);
         return;
@@ -281,6 +289,7 @@ void ModelGroup::initModelData(){
     newShader->release();
     shaders.append(newShader);
   }
+  */
   logMessage("Model initialized", Qgis::MessageLevel::Info);
   this->vbo.release();
   this->vao.release();
@@ -288,23 +297,22 @@ void ModelGroup::initModelData(){
 }
 
 void ModelGroup::draw(const QMatrix4x4 &view, const QMatrix4x4 &projection) {
-    /*
     if (!shader || !shader->isLinked()) {
         logMessage("Shader program is not valid or not linked", Qgis::MessageLevel::Critical);
         return;
     }
-    */
     if (this->vertexNum == 0 || this->vertices == nullptr) {
         logMessage("Invalid vertex data", Qgis::MessageLevel::Critical);
         return;
     }
     this->vao.bind();
-    //this->shader->bind();
+    this->shader->bind();
     checkGLError("Model::draw - after shader bind");
-    //this->shader->setUniformValue("model", this->modelMatrix);
-    //this->shader->setUniformValue("view", view);
-    //this->shader->setUniformValue("projection", projection);
+    this->shader->setUniformValue("model", this->modelMatrix);
+    this->shader->setUniformValue("view", view);
+    this->shader->setUniformValue("projection", projection);
     GLuint startIndex = 0;
+    /*
     int groupNum = (models.size()-1) / 6 + 1;
     for (int g = 0; g < groupNum; g++) {
       //logMessage(QString("Drawing group %1").arg(g), Qgis::MessageLevel::Info);
@@ -315,21 +323,14 @@ void ModelGroup::draw(const QMatrix4x4 &view, const QMatrix4x4 &projection) {
       for (int j = 0; j < 6; j++) {
         //logMessage(QString("Drawing texture %1").arg(6 * g + j), Qgis::MessageLevel::Info);
         shaders[g]->setUniformValue("textureID", j);
-        //shaders[g]->setUniformValue(QString("textureSampler%1").arg(j).toStdString().c_str(), j);
+        shaders[g]->setUniformValue(QString("textureSampler%1").arg(j).toStdString().c_str(), j);
         glDrawArrays(this->primitiveType, startIndex, verticesRange[6 * g + j]);
         startIndex += verticesRange[6 * g + j];
       }
       shaders[g]->release();
     }
-    /*
+    */
     for (int i = 0; i < models.size(); i++) {
-      int shaderIndex = i / 6;
-      int textureIndex = i % 6;
-      shaders[shaderIndex]->bind();
-      shaders[shaderIndex]->setUniformValue("textureID", textureIndex);
-      shaders[shaderIndex]->release();
-      glDrawArrays(this->primitiveType, startIndex, verticesRange[i]);
-      startIndex += verticesRange[i];
       if (textures[i] && textures[i]->isCreated()) {
         textures[i]->bind();
         this->shader->setUniformValue("textureSampler", 0);
@@ -343,7 +344,6 @@ void ModelGroup::draw(const QMatrix4x4 &view, const QMatrix4x4 &projection) {
       textures[i]->release();
     }
     this->shader->release();
-    */
     this->vao.release();
 }
 
