@@ -372,7 +372,6 @@ void Model::draw(const QMatrix4x4 &view, const QMatrix4x4 &projection) {
         return;
     }
     this->shader->release();
-    this->vao.release();
 }
 
 bool Primitive::constructShader(const QString& vertexShaderPath, const QString& fragmentShaderPath, const QString& geometryShaderPath) {
@@ -448,35 +447,11 @@ Model::~Model(){
   logMessage("Model destroyed", Qgis::MessageLevel::Success);
 }
 
-Demo::Demo():ColorPrimitive(GL_TRIANGLES,  QVector4D(1.0f, 0.0f, 0.0f, 1.0f)){
-  
-  this->vertexNum = 3;
-  this->vertices = new GLfloat[this->vertexNum * this->stride];
-  this->vertices[0] = -0.5f;
-  this->vertices[1] = -0.5f;
-  this->vertices[2] = 0.0f;
-  this->vertices[3] = 0.5f;
-  this->vertices[4] = -0.5f;
-  this->vertices[5] = 0.0f;
-  this->vertices[6] = 0.0f;
-  this->vertices[7] = 0.5f;
-  this->vertices[8] = 0.0f;
-  
-  this->vao.bind();
-  this->vbo.bind();
-  this->vbo.allocate(this->vertices, this->vertexNum * this->stride * sizeof(GLfloat));
-  constructShader(QStringLiteral(":/schoolcore/shaders/line.vs"), QStringLiteral(":/schoolcore/shaders/line.fs"));
-  if (!shader) {
-    logMessage("Shader is not set", Qgis::MessageLevel::Critical);
-    return;
+  if (progressUpdateInterval >= 97) {
+    progressDialog->close();
+    delete progressDialog;
+    progressDialog = nullptr;
   }
-  this->shader->bind();
-  this->shader->enableAttributeArray(0);
-  this->shader->setAttributeBuffer(0, GL_FLOAT, 0, 3, this->stride * sizeof(GLfloat));
-  this->shader->release();
-  this->vbo.release();
-  this->vao.release();
-}
 
 void gl::Model::cleanupTextures() {
   if (!texture->isCreated()) {

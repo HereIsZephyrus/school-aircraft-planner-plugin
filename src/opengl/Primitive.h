@@ -117,5 +117,4 @@ public:
   // void draw(const QMatrix4x4 &view, const QMatrix4x4 &projection) override;
 };
 } // namespace gl
-
 #endif // PRIMITIVE_H
