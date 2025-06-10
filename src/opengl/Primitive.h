@@ -92,40 +92,29 @@ public:
              const QVector4D &color = QVector4D(1.0f, 1.0f, 1.0f, 1.0f));
 };
 
-class Model : public Primitive {
-  std::shared_ptr<model::ModelData> modelData;
-
+class ModelGroup : public Primitive {
 public:
-  Model(const QString &objFilePath);
-  ~Model();
+  ModelGroup(const QString &objFileFolderPath);
+  ~ModelGroup();
   void draw(const QMatrix4x4 &view, const QMatrix4x4 &projection) override;
-  QVector3D getModelCenter() const { return modelData->mBounds.center; }
-  const Bounds &getBounds() const { return modelData->mBounds; }
-  void setBounds(const Bounds &bounds) { modelData->mBounds = bounds; }
-  void cleanupTextures();
+  QVector3D getCenter() const { return mBounds.center; }
+  const Bounds &getBounds() const { return mBounds; }
+  void clear();
 
 protected:
-  std::shared_ptr<QOpenGLTexture> texture;
-  void generateTexture(const QString &texturePath);
-  void initModelData();
-  void initDemoModelData();
-};
-
-class ModelGroup{
-public:
-  ModelGroup(QString objFileFolderPath);
-  ~ModelGroup();
-  Bounds getBounds() const{return mBounds;};
-  void draw(const QMatrix4x4 &view, const QMatrix4x4 &projection);
-  void clear();
-  
-private:
   Bounds mBounds;
   void calcBounds();
   QString objFileFolderPath;
-  QString retriveObjFilePath(const QString &subDirPath);
-  QVector<std::shared_ptr<Model>> models;
   QVector<QString> objFilePaths;
+  QString retriveObjFilePath(const QString &subDirPath);
+  QVector<std::shared_ptr<QOpenGLTexture>> textures;
+  void generateTexture(const QString &texturePath);
+  void initModelData();
+  void initDemoModelData();
+  QVector<GLuint> verticesRange;
+  QVector<std::shared_ptr<model::ModelData>> models;
+  QVector<std::shared_ptr<QOpenGLShaderProgram>> shaders;
+  std::shared_ptr<QOpenGLShaderProgram> constructMultiShader(const QString& vertexShaderPath, const QString& fragmentShaderPath);
 };
 
 class Demo : public ColorPrimitive {

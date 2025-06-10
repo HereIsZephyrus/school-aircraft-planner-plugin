@@ -216,15 +216,11 @@ HomePoint::HomePoint(const QVector<QVector3D>& vertices, const QVector4D& color)
   logMessage("ConvexHull initialized", Qgis::MessageLevel::Info);
 }
 
-void Model::initModelData(){
+void ModelGroup::initModelData(){
   if (!QOpenGLContext::currentContext()) {
     logMessage("initModelData: OpenGL context is not current", Qgis::MessageLevel::Critical);
     return;
   }
-  logMessage("modelData->texturePath: " + modelData->texturePath, Qgis::MessageLevel::Info);
-  generateTexture(modelData->texturePath);
-  logMessage("start constructing shader", Qgis::MessageLevel::Info);
-  constructShader(QStringLiteral(":/schoolcore/shaders/model.vs"), QStringLiteral(":/schoolcore/shaders/model.fs"));
   if (this->vao.isCreated()) {
     logMessage("VAO is already created", Qgis::MessageLevel::Warning);
   } else {
@@ -238,141 +234,147 @@ void Model::initModelData(){
   this->vbo.create();
   this->vao.bind();
   this->vbo.bind();
-  this->shader->bind();
   this->vbo.setUsagePattern(QOpenGLBuffer::StaticDraw);
   logMessage("stride is " + QString::number(this->stride), Qgis::MessageLevel::Info);
 
-  this->vertexNum = modelData->vertices.size();
+  for (const auto& model : models) {
+    generateTexture(model->texturePath);
+    GLuint modelVertexNum = model->vertices.size();
+    this->vertexNum += modelVertexNum;
+    verticesRange.append(modelVertexNum);
+  }
   logMessage("vertexNum: " + QString::number(this->vertexNum), Qgis::MessageLevel::Info);
   GLuint count = this->vertexNum * this->stride;
   logMessage("count is " + QString::number(count), Qgis::MessageLevel::Info);
   this->vertices = new GLfloat[count];
   GLuint index = 0;
-  for (const auto& vertex : modelData->vertices) {
-    this->vertices[index++] = vertex.position.x();
-    this->vertices[index++] = vertex.position.y();
-    this->vertices[index++] = vertex.position.z();
-    this->vertices[index++] = vertex.texCoord.x();
-    this->vertices[index++] = vertex.texCoord.y();
+  for (const auto& model : models) {
+    for (const auto& vertex : model->vertices) {
+      this->vertices[index++] = vertex.position.x();
+      this->vertices[index++] = vertex.position.y();
+      this->vertices[index++] = vertex.position.z();
+      this->vertices[index++] = vertex.texCoord.x();
+      this->vertices[index++] = vertex.texCoord.y();
+    }
   }
   this->vbo.allocate(this->vertices, count * sizeof(GLfloat));
-  
-  this->shader->enableAttributeArray(0);
-  this->shader->setAttributeBuffer(0, GL_FLOAT, 0, 3, this->stride * sizeof(GLfloat));
-  this->shader->enableAttributeArray(1);
-  this->shader->setAttributeBuffer(1, GL_FLOAT, 3 * sizeof(GLfloat), 2, this->stride * sizeof(GLfloat));
+  logMessage("start constructing shader", Qgis::MessageLevel::Info);
+  int groupNum = (models.size()-1) / 6 + 1;
+  for (int i = 0; i < groupNum; i++) {
+    auto newShader = constructMultiShader(QStringLiteral(":/schoolcore/shaders/model.vs"), QStringLiteral(":/schoolcore/shaders/multimodel.fs"));
+    newShader->bind();
+    newShader->enableAttributeArray(0);
+    newShader->setAttributeBuffer(0, GL_FLOAT, 0, 3, this->stride * sizeof(GLfloat));
+    newShader->enableAttributeArray(1);
+    newShader->setAttributeBuffer(1, GL_FLOAT, 3 * sizeof(GLfloat), 2, this->stride * sizeof(GLfloat));
+    for (int j = 0; j < 6; j++) {
+      if (textures[6 * i + j] && textures[6 * i + j]->isCreated()) {
+        textures[6 * i + j]->bind();
+        glActiveTexture(GL_TEXTURE0 + j);
+        newShader->setUniformValue(QString("textureSampler%1").arg(j).toStdString().c_str(), j);
+        textures[6 * i + j]->release();
+      } else {
+        logMessage("Texture is not created", Qgis::MessageLevel::Critical);
+        return;
+      }
+    }
+    newShader->release();
+    shaders.append(newShader);
+  }
   logMessage("Model initialized", Qgis::MessageLevel::Info);
   this->vbo.release();
   this->vao.release();
-  this->shader->release();
   checkGLError("Model::Model");
 }
 
-void Model::initDemoModelData(){
-  logMessage("initDemoModelData", Qgis::MessageLevel::Info);
-  //create a cube
-  generateTexture(modelData->texturePath);
-  this->vertexNum = 36;
-  constructShader(QStringLiteral(":/schoolcore/shaders/model.vs"), QStringLiteral(":/schoolcore/shaders/model.fs"));
-  this->vao.create();
-  this->vbo.create();
-  this->vao.bind();
-  this->vbo.bind();
-  this->shader->bind();
-  this->vbo.setUsagePattern(QOpenGLBuffer::StaticDraw);
-
-  GLfloat cubeVertices[] = {
-    //face-front
-    -10.0f, -10.0f, 10.0f, 0.0f, 0.0f,
-    10.0f, -10.0f, 10.0f, 1.0f, 0.0f,
-    10.0f, 10.0f, 10.0f, 1.0f, 1.0f,
-    10.0f, 10.0f, 10.0f, 1.0f, 1.0f,
-    -10.0f, 10.0f, 10.0f, 0.0f, 1.0f,
-    -10.0f, 10.0f, 10.0f, 0.0f, 1.0f,
-    //face-back
-    -10.0f, -10.0f, -10.0f, 0.0f, 0.0f,
-    10.0f, -10.0f, -10.0f, 1.0f, 0.0f,
-    10.0f, 10.0f, -10.0f, 1.0f, 1.0f,
-    10.0f, 10.0f, -10.0f, 0.0f, 1.0f,
-    -10.0f, -10.0f, -10.0f, 0.0f, 0.0f,
-    -10.0f, 10.0f, -10.0f, 0.0f, 0.0f,
-    //face-left
-    -10.0f, -10.0f, 10.0f, 0.0f, 0.0f,
-    -10.0f, -10.0f, -10.0f, 1.0f, 0.0f,
-    -10.0f, 10.0f, -10.0f, 1.0f, 1.0f,
-    -10.0f, 10.0f, 10.0f, 0.0f, 1.0f,
-    -10.0f, 10.0f, 10.0f, 0.0f, 1.0f,
-    -10.0f, 10.0f, -10.0f, 1.0f, 1.0f,
-    //face-right
-    -10.0f, -10.0f, 10.0f, 0.0f, 0.0f,
-    10.0f, -10.0f, 10.0f, 1.0f, 0.0f,
-    10.0f, 10.0f, -10.0f, 1.0f, 1.0f,
-    -10.0f, -10.0f, -10.0f, 0.0f, 0.0f,
-    -10.0f, -10.0f, 10.0f, 1.0f, 0.0f,
-    10.0f, 10.0f, 10.0f, 1.0f, 1.0f,
-    //face-top
-    -10.0f, 10.0f, 10.0f, 0.0f, 0.0f,
-    10.0f, 10.0f, 10.0f, 1.0f, 0.0f,
-    -10.0f, 10.0f, -10.0f, 1.0f, 1.0f,
-    -10.0f, 10.0f, 10.0f, 0.0f, 0.0f,
-    10.0f, 10.0f, 10.0f, 1.0f, 0.0f,
-    -10.0f, 10.0f, -10.0f, 1.0f, 1.0f,
-    //face-bottom
-    -10.0f, -10.0f, 10.0f, 0.0f, 0.0f,
-    10.0f, -10.0f, 10.0f, 1.0f, 0.0f,
-    10.0f, -10.0f, -10.0f, 1.0f, 1.0f,
-    -10.0f, -10.0f, 10.0f, 0.0f, 0.0f,
-    10.0f, -10.0f, 10.0f, 1.0f, 0.0f,
-    10.0f, -10.0f, -10.0f, 1.0f, 1.0f,
-  };
-  
-  this->vertices = new GLfloat[this->vertexNum * this->stride];
-  memcpy(this->vertices, cubeVertices, sizeof(cubeVertices));
-  this->vbo.allocate(this->vertices, this->vertexNum * this->stride * sizeof(GLfloat));
-
-  this->shader->enableAttributeArray(0);
-  this->shader->setAttributeBuffer(0, GL_FLOAT, 0, 3, this->stride * sizeof(GLfloat));
-  this->shader->enableAttributeArray(1);
-  this->shader->setAttributeBuffer(1, GL_FLOAT, 3 * sizeof(GLfloat), 2, this->stride * sizeof(GLfloat));
-  logMessage("Model initialized", Qgis::MessageLevel::Info);
-  this->vbo.release();
-  this->vao.release();
-  this->shader->release();
-  logMessage("initDemoModelData done", Qgis::MessageLevel::Info);
-}
-
-void Model::draw(const QMatrix4x4 &view, const QMatrix4x4 &projection) {
+void ModelGroup::draw(const QMatrix4x4 &view, const QMatrix4x4 &projection) {
+    /*
     if (!shader || !shader->isLinked()) {
         logMessage("Shader program is not valid or not linked", Qgis::MessageLevel::Critical);
         return;
     }
+    */
     if (this->vertexNum == 0 || this->vertices == nullptr) {
         logMessage("Invalid vertex data", Qgis::MessageLevel::Critical);
         return;
     }
     this->vao.bind();
-    this->shader->bind();
+    //this->shader->bind();
     checkGLError("Model::draw - after shader bind");
-    this->shader->setUniformValue("model", this->modelMatrix);
-    this->shader->setUniformValue("view", view);
-    this->shader->setUniformValue("projection", projection);
-    if (texture && texture->isCreated()) {
-      texture->bind();
-      this->shader->setUniformValue("textureSampler",0);
-    }else {
-      logMessage("Texture is not created", Qgis::MessageLevel::Critical);
-      return;
+    //this->shader->setUniformValue("model", this->modelMatrix);
+    //this->shader->setUniformValue("view", view);
+    //this->shader->setUniformValue("projection", projection);
+    GLuint startIndex = 0;
+    int groupNum = (models.size()-1) / 6 + 1;
+    for (int g = 0; g < groupNum; g++) {
+      //logMessage(QString("Drawing group %1").arg(g), Qgis::MessageLevel::Info);
+      shaders[g]->bind();
+      shaders[g]->setUniformValue("model", this->modelMatrix);
+      shaders[g]->setUniformValue("view", view);
+      shaders[g]->setUniformValue("projection", projection);
+      for (int j = 0; j < 6; j++) {
+        //logMessage(QString("Drawing texture %1").arg(6 * g + j), Qgis::MessageLevel::Info);
+        shaders[g]->setUniformValue("textureID", j);
+        //shaders[g]->setUniformValue(QString("textureSampler%1").arg(j).toStdString().c_str(), j);
+        glDrawArrays(this->primitiveType, startIndex, verticesRange[6 * g + j]);
+        startIndex += verticesRange[6 * g + j];
+      }
+      shaders[g]->release();
     }
-    glDrawArrays(this->primitiveType, 0, this->vertexNum);
-    checkGLError("Model::draw - after setting uniforms");
-    texture->release();
-
-    if (this->vertexNum == 0 || this->vertices == nullptr) {
-        logMessage("Invalid vertex data", Qgis::MessageLevel::Critical);
+    /*
+    for (int i = 0; i < models.size(); i++) {
+      int shaderIndex = i / 6;
+      int textureIndex = i % 6;
+      shaders[shaderIndex]->bind();
+      shaders[shaderIndex]->setUniformValue("textureID", textureIndex);
+      shaders[shaderIndex]->release();
+      glDrawArrays(this->primitiveType, startIndex, verticesRange[i]);
+      startIndex += verticesRange[i];
+      if (textures[i] && textures[i]->isCreated()) {
+        textures[i]->bind();
+        this->shader->setUniformValue("textureSampler", 0);
+      } else {
+        logMessage("Texture is not created", Qgis::MessageLevel::Critical);
         return;
+      }
+      glDrawArrays(this->primitiveType, startIndex, verticesRange[i]);
+      startIndex += verticesRange[i];
+      checkGLError("Model::draw - after setting uniforms");
+      textures[i]->release();
     }
     this->shader->release();
+    */
+    this->vao.release();
 }
+
+std::shared_ptr<QOpenGLShaderProgram> ModelGroup::constructMultiShader(const QString& vertexShaderPath, const QString& fragmentShaderPath) {
+  // check if opengl context is current
+  if (!QOpenGLContext::currentContext()) {
+    logMessage("constructShader: OpenGL context is not current", Qgis::MessageLevel::Critical);
+    return nullptr;
+  }
+  auto shader = std::make_shared<QOpenGLShaderProgram>();
+  logMessage(QString("Constructing shader from %1 and %2").arg(vertexShaderPath).arg(fragmentShaderPath), Qgis::MessageLevel::Info);
+  if (!shader->addShaderFromSourceFile(QOpenGLShader::Vertex,
+                                       vertexShaderPath)) {
+    logMessage(QString("Shader Error:") + this->shader->log(),
+               Qgis::MessageLevel::Critical);
+    return nullptr;
+  }
+  if (!shader->addShaderFromSourceFile(QOpenGLShader::Fragment,
+                                       fragmentShaderPath)) {
+    logMessage(QString("Shader Error:") + this->shader->log(),
+               Qgis::MessageLevel::Critical);
+    return nullptr;
+  }
+  if (!shader->link()) {
+    logMessage(QString("Shader Link Error:") + this->shader->log(),
+               Qgis::MessageLevel::Critical);
+    return nullptr;
+  }
+  return shader;
+}
+
 
 bool Primitive::constructShader(const QString& vertexShaderPath, const QString& fragmentShaderPath, const QString& geometryShaderPath) {
   // check if opengl context is current
@@ -415,46 +417,31 @@ bool Primitive::constructShader(const QString& vertexShaderPath, const QString& 
   return true;
 }
 
-void Model::generateTexture(const QString &texturePath){
+void ModelGroup::generateTexture(const QString &texturePath){
   if (texturePath.isEmpty()) {
     logMessage("Texture path is empty", Qgis::MessageLevel::Critical);
     return;
   }
-  texture = std::make_shared<QOpenGLTexture>(QImage(texturePath).mirrored());
-  texture->setMinificationFilter(QOpenGLTexture::LinearMipMapLinear);
-  texture->setMagnificationFilter(QOpenGLTexture::Linear);
-  texture->setWrapMode(QOpenGLTexture::Repeat);
+  textures.append(std::make_shared<QOpenGLTexture>(QImage(texturePath).mirrored()));
+  textures.back()->setMinificationFilter(QOpenGLTexture::LinearMipMapLinear);
+  textures.back()->setMagnificationFilter(QOpenGLTexture::Linear);
+  textures.back()->setWrapMode(QOpenGLTexture::Repeat);
   logMessage("Texture generated", Qgis::MessageLevel::Success);
 }
 
-Model::Model(const QString& objFilePath):Primitive(GL_TRIANGLES, 5){
-  if (!QOpenGLContext::currentContext()) {
-    logMessage("Model::Model: OpenGL context is not current", Qgis::MessageLevel::Critical);
-    return;
+ModelGroup::~ModelGroup(){
+  for (const auto& texture : textures) {
+    if (texture && texture->isCreated()) {
+      texture->destroy();
+    }
   }
-  modelData = std::make_shared<model::ModelData>(objFilePath);
-  initModelData();
-  //initDemoModelData();
-  logMessage("Model constructed", Qgis::MessageLevel::Success);
+  textures.clear();
+  models.clear();
+  objFilePaths.clear();
+  logMessage("ModelGroup destroyed", Qgis::MessageLevel::Success);
 }
 
-Model::~Model(){
-  if (texture && texture->isCreated()) {
-    texture->destroy();
-  }
-  modelData.reset();
-  modelData = nullptr;
-  logMessage("Model destroyed", Qgis::MessageLevel::Success);
-}
-
-void gl::Model::cleanupTextures() {
-  if (!texture->isCreated()) {
-    return;
-  }
-  texture->destroy();
-}
-
-ModelGroup::ModelGroup(QString objFileFolderPath):objFileFolderPath(objFileFolderPath){
+ModelGroup::ModelGroup(const QString &objFileFolderPath):Primitive(GL_TRIANGLES, 5),objFileFolderPath(objFileFolderPath){
   QDir dir(objFileFolderPath);
   QStringList subDirs = dir.entryList(QDir::Dirs | QDir::NoDotAndDotDot);
   for (const QString& subDir : subDirs) {
@@ -465,8 +452,10 @@ ModelGroup::ModelGroup(QString objFileFolderPath):objFileFolderPath(objFileFolde
       continue;
     }
     objFilePaths.append(objFilePath);
-    models.append(std::make_shared<Model>(objFilePath));
+    models.append(std::make_shared<model::ModelData>(objFilePath));
   }
+  initModelData();
+  this->calcBounds();
 }
 
 QString ModelGroup::retriveObjFilePath(const QString &subDirPath){
@@ -480,30 +469,22 @@ QString ModelGroup::retriveObjFilePath(const QString &subDirPath){
   return QString();
 }
 
-void ModelGroup::draw(const QMatrix4x4 &view, const QMatrix4x4 &projection){
-  for (const auto& model : models) {
-    model->draw(view, projection);
-  }
-}
-
 void ModelGroup::clear(){
-  for (const auto& model : models) {
-    model->cleanupTextures();
+  for (const auto& texture : textures) {
+    if (texture && texture->isCreated()) {
+      texture->destroy();
+    }
   }
+  textures.clear();
   models.clear();
   objFilePaths.clear();
-}
-
-ModelGroup::~ModelGroup(){
-  for (const auto& model : models) {
-    model->cleanupTextures();
-  }
+  logMessage("ModelGroup cleared", Qgis::MessageLevel::Success);
 }
 
 void ModelGroup::calcBounds(){
   Bounds bounds;
   for (const auto& model : models) {
-    bounds.merge(model->getBounds());
+    bounds.merge(model->mBounds);
   }
   mBounds = bounds;
   mBounds.center = (mBounds.min + mBounds.max) / 2.0f;
