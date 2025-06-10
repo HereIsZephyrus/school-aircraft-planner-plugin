@@ -1,59 +1,46 @@
 #include "Model.h"
+#include "../log/QgisDebug.h"
+#include <QProgressDialog>
+#include <QCoreApplication>
+#include <qstringliteral.h>
 
-
-gl::ModelData::TexturePair ModelDataLoader::loadMtl(const QString &mtlPath) {
-  if (!QOpenGLContext::currentContext()) {
-    logMessage("loadMtl: OpenGL context is not current", Qgis::MessageLevel::Critical);
-    return std::make_pair(nullptr, nullptr);
-  }
-  using Material = gl::ModelData::Material;
+using namespace model;
+void model::loadMtl(const QString &mtlPath, Material &material, QString &texturePath) {
+  logMessage("loadMtl: " + mtlPath, Qgis::MessageLevel::Info);
   QFile file(mtlPath);
-  if (!file.open(QIODevice::ReadOnly | QIODevice::Text)){
-    logMessage(QString("Failed to open mtl file: %1").arg(mtlPath), Qgis::MessageLevel::Critical);
-    return std::make_pair(nullptr, nullptr);
+  
+  if (!file.open(QIODevice::ReadOnly | QIODevice::Text)) {
+    logMessage("Cannot open file: " + mtlPath, Qgis::MessageLevel::Critical);
+    return;
   }
-  gl::ModelData::pMaterialVector materials = std::make_shared<gl::MaterialVector>();
-  gl::ModelData::pTextureMap textures = std::make_shared<gl::TextureMap>();
-  gl::ModelData::pMaterial currentMaterial = std::make_shared<gl::Material>();
+
   QTextStream in(&file);
   while (!in.atEnd()) {
     QString line = in.readLine().trimmed();
     QStringList parts = line.split(" ", Qt::SkipEmptyParts);
     if (parts.isEmpty())
       continue;
-
-    if (parts[0] == "newmtl") {
-      if (!currentMaterial->name.isEmpty()) {
-        materials->append(currentMaterial);
-      }
-      currentMaterial = std::make_shared<Material>();
-      currentMaterial->name = parts[1];
-      logMessage(QString("newmtl: %1").arg(currentMaterial->name), Qgis::MessageLevel::Info);
-    } else if (parts[0] == "map_Kd") {
-      QString texPath = QFileInfo(mtlPath).absolutePath() + "/" + parts[1];
-      logMessage(QString("texPath: %1").arg(texPath), Qgis::MessageLevel::Info);
-      if (!textures->contains(currentMaterial->name)) {
-        QImage img(texPath);
-        if (!img.isNull()) {
-          std::shared_ptr<QOpenGLTexture> texture =
-              std::make_shared<QOpenGLTexture>(img.mirrored());
-          texture->setMinificationFilter(QOpenGLTexture::LinearMipMapLinear);
-          texture->setMagnificationFilter(QOpenGLTexture::Linear);
-          textures->insert(currentMaterial->name, texture);
-          logMessage("insert texture", Qgis::MessageLevel::Info);
-        }
-      }
+    if (parts[0] == "map_Kd") {
+      texturePath = QFileInfo(mtlPath).absolutePath() + "/" + parts[1];
+      logMessage(QString("texPath: %1").arg(texturePath), Qgis::MessageLevel::Info);
+    }
+    if (parts[0] == "Kd") {
+      material.diffuse = QVector3D(parts[1].toFloat(), parts[2].toFloat(), parts[3].toFloat());
+    }
+    if (parts[0] == "Ks") {
+      material.specular = QVector3D(parts[1].toFloat(), parts[2].toFloat(), parts[3].toFloat());
+    }
+    if (parts[0] == "Ns") {
+      material.shininess = parts[1].toFloat();
+    }
+    if (parts[0] == "Ka") {
+      material.ambient = QVector3D(parts[1].toFloat(), parts[2].toFloat(), parts[3].toFloat());
     }
   }
-  if (!currentMaterial->name.isEmpty()) {
-    materials->append(currentMaterial);
-    logMessage(QString("append material: %1").arg(currentMaterial->name), Qgis::MessageLevel::Info);
-  }
-  logMessage("load mtl", Qgis::MessageLevel::Info);
-  return std::make_pair(materials, textures);
+  file.close();
 }
 
-QString ModelDataLoader::retriveMtlPath(const QString &objfilePath) {
+QString model::retriveMtlPath(const QString &objfilePath) {
   QFile objFile(objfilePath);
   QString mtlPath;
   if (objFile.open(QIODevice::ReadOnly | QIODevice::Text)) {
@@ -71,19 +58,15 @@ QString ModelDataLoader::retriveMtlPath(const QString &objfilePath) {
   return mtlPath;
 }
 
-std::pair<gl::ModelData::pMaterialGroupMap, GLuint> ModelDataLoader::loadMaterialGroups(const QString &objFilePath) {
+void model::loadVertices(const QString &objFilePath, QVector<Vertex> &vertices) {
   logMessage(QString("loadMaterialGroups: %1").arg(objFilePath), Qgis::MessageLevel::Info);
-  using Vertex = gl::ModelData::Vertex;
-  gl::ModelData::pMaterialGroupMap materialGroups = std::make_shared<gl::MaterialGroupMap>();
+  QVector<QVector3D> positions;
+  QVector<QVector2D> texCoords;
   QFile objFile(objFilePath);
-  GLuint totalVertices = 0;
   bool isCanceled = false;
   if (objFile.open(QIODevice::ReadOnly | QIODevice::Text)) {
     logMessage("open obj file to read", Qgis::MessageLevel::Info);
     QTextStream in(&objFile);
-    QVector<QVector3D> positions;
-    QVector<QVector2D> texCoords;
-    QString currentMaterial;
     const qint64 totalSize = objFile.size();
     qint64 processedBytes = 0;
     qint64 lastProgressUpdate = 0;
@@ -92,35 +75,29 @@ std::pair<gl::ModelData::pMaterialGroupMap, GLuint> ModelDataLoader::loadMateria
     while (!in.atEnd()) {
       QString line = in.readLine().trimmed();
       processedBytes += line.length() + 1; // +1 for newline
-      
+      /*
       if (processedBytes - lastProgressUpdate >= progressUpdateInterval) {
         isCanceled = displayProgress(progressUpdateInterval);
         lastProgressUpdate = processedBytes;
       }
-      
-      if (isCanceled)
-        return std::make_pair(nullptr, 0);
-
+      */
+      if (isCanceled){
+        vertices.clear();
+        return;
+      }
+        
       QStringList parts = line.split(" ", Qt::SkipEmptyParts);
       if (parts.isEmpty())
         continue;
 
-      if (parts[0] == "usemtl") {
-        currentMaterial = parts[1];
-        if (!materialGroups->contains(currentMaterial))
-          (*materialGroups)[currentMaterial] = std::make_shared<gl::MaterialGroup>();
-      }
       else if (parts[0] == "v") {
-        positions.append(QVector3D(parts[1].toFloat(), parts[2].toFloat(),
-                                 parts[3].toFloat()));
+        positions.append(QVector3D(parts[1].toFloat(), parts[2].toFloat(),parts[3].toFloat()));
       }
       else if (parts[0] == "vt") {
         texCoords.append(
-            QVector2D(parts[1].toFloat(),
-                     parts[2].toFloat()));
+            QVector2D(parts[1].toFloat(), parts[2].toFloat()));
       }
       else if (parts[0] == "f") {
-        QVector<Vertex> faceVertices;
         for (int i = 1; i <= 3; ++i) {
           QStringList indices = parts[i].split("/", Qt::KeepEmptyParts);
 
@@ -133,22 +110,19 @@ std::pair<gl::ModelData::pMaterialGroupMap, GLuint> ModelDataLoader::loadMateria
             int texIndex = indices[1].toInt() - 1;
             if (texIndex >= 0 && texIndex < texCoords.size()) {
               vertex.texCoord = texCoords[texIndex];
-              vertex.texCoord.setY(1.0f - vertex.texCoord.y());
+              //vertex.texCoord.setY(1.0f - vertex.texCoord.y());
             }
           }
-          (*materialGroups)[currentMaterial]->append(vertex);
-          totalVertices++;
+          vertices.append(vertex);
         }
       }
     }
     objFile.close();
   }
-  logMessage("load material groups", Qgis::MessageLevel::Info);
-  return std::make_pair(materialGroups, totalVertices);
+  logMessage("load obj file", Qgis::MessageLevel::Info);
 }
 
-
-qint64 ModelDataLoader::calcFaceNum(const QString &objFilePath) {
+qint64 model::calcFaceNum(const QString &objFilePath) {
   QFile objFile(objFilePath);
   if (objFile.open(QIODevice::ReadOnly | QIODevice::Text)) {
     qint64 fileSize = objFile.size();
@@ -158,7 +132,7 @@ qint64 ModelDataLoader::calcFaceNum(const QString &objFilePath) {
   return 0;
 }
 
-bool ModelDataLoader::displayProgress(qint64 progressUpdateInterval) {
+bool model::displayProgress(qint64 progressUpdateInterval) {
   static QProgressDialog* progressDialog = nullptr;
   
   if (!progressDialog) {
@@ -187,4 +161,51 @@ bool ModelDataLoader::displayProgress(qint64 progressUpdateInterval) {
 
   QCoreApplication::processEvents();
   return false;
+}
+
+model::ModelData::ModelData(const QString &objFilePath): objFilePath(objFilePath) {
+  loadVertices(objFilePath, vertices);
+  QString mtlPath = retriveMtlPath(objFilePath);
+  logMessage("mtlPath: " + mtlPath, Qgis::MessageLevel::Info);
+  loadMtl(mtlPath, material, texturePath);
+  mBounds = calculateModelBounds();
+}
+
+model::ModelData::~ModelData() {
+  vertices.clear();
+}
+
+Bounds model::ModelData::calculateModelBounds() {
+  Bounds bounds;
+  bounds.min = QVector3D(FLT_MAX, FLT_MAX, FLT_MAX);
+  bounds.max = QVector3D(-FLT_MAX, -FLT_MAX, -FLT_MAX);
+
+  for (const auto &v : vertices) {
+      bounds.min.setX(qMin(bounds.min.x(), v.position.x()));
+      bounds.min.setY(qMin(bounds.min.y(), v.position.y()));
+      bounds.min.setZ(qMin(bounds.min.z(), v.position.z()));
+
+      bounds.max.setX(qMax(bounds.max.x(), v.position.x()));
+      bounds.max.setY(qMax(bounds.max.y(), v.position.y()));
+      bounds.max.setZ(qMax(bounds.max.z(), v.position.z()));
+  }
+
+  bounds.center = QVector3D((bounds.min.x() + bounds.max.x()) / 2.0f, (bounds.min.y() + bounds.max.y()) / 2.0f, (bounds.min.z() + bounds.max.z()) / 2.0f);
+  return bounds;
+}
+
+QVector3D model::ModelData::calculateModelCenter() {
+  float minX = FLT_MAX, maxX = -FLT_MAX;
+  float minY = FLT_MAX, maxY = -FLT_MAX;
+  float minZ = FLT_MAX, maxZ = -FLT_MAX;
+
+  for (const auto &v : vertices) {
+      minX = qMin(minX, v.position.x());
+      maxX = qMax(maxX, v.position.x());
+      minY = qMin(minY, v.position.y());
+      maxY = qMax(maxY, v.position.y());
+      minZ = qMin(minZ, v.position.z());
+      maxZ = qMax(maxZ, v.position.z());
+  }
+  return QVector3D((minX + maxX) / 2.0f, (minY + maxY) / 2.0f, (minZ + maxZ) / 2.0f);
 }

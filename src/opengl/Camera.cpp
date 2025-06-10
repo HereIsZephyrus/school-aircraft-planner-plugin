@@ -12,7 +12,7 @@ Camera::Camera() {
     mZoom = ZOOM;
     mAspectRatio = 1.0f;
     mNearPlane = 0.1f;
-    mFarPlane = 100.0f;
+    mFarPlane = 1000.0f;
     
     updateCameraVectors();
 }

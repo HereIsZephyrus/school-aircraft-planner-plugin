@@ -1,6 +1,7 @@
 #ifndef PRIMITIVE_H
 #define PRIMITIVE_H
 #include "../core/WorkspaceState.h"
+#include "../core/Model.h"
 #include <QOpenGLBuffer>
 #include <QOpenGLFunctions>
 #include <QOpenGLShaderProgram>
@@ -91,10 +92,11 @@ public:
 };
 
 class Model : public Primitive {
-  QVector<std::shared_ptr<ModelData>> modelData;
+  std::shared_ptr<model::ModelData> modelData;
 
 public:
-  Model();
+  Model(const QString &objFilePath);
+  ~Model();
   void draw(const QMatrix4x4 &view, const QMatrix4x4 &projection) override;
   QVector3D getModelCenter() const { return modelData->mBounds.center; }
   const Bounds &getBounds() const { return modelData->mBounds; }
@@ -103,6 +105,8 @@ public:
   void loadModel(const QString &objFilePath);
 
 protected:
+  std::shared_ptr<QOpenGLTexture> texture;
+  void generateTexture(const QString &texturePath);
   void initModelData();
   void initDemoModelData();
 };

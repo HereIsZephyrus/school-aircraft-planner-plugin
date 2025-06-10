@@ -38,23 +38,18 @@ public:
     ~ModelData();
     Material material;
     QString texturePath;
-
-
-    pMaterialVector materials;
-    pTextureMap textures;
-    pMaterialGroupMap materialGroups;
+    QString objFilePath;
+    QVector<Vertex> vertices;
     Bounds calculateModelBounds();
     void updateGlobalBounds(const Bounds &bounds);
     void applyGlobalCentering();
     QVector3D calculateModelCenter();
     Bounds mBounds;
-    GLuint totalVertices;
 };
 
 QString retriveMtlPath(const QString &objfilePath);
-std::pair<ModelData::pMaterialGroupMap, GLuint>
-loadMaterialGroups(const QString &filePath);
-TexturePair loadMtl(const QString &mtlPath);
+void loadMtl(const QString &mtlPath, Material &material, QString &texturePath);
+void loadVertices(const QString &objFilePath, QVector<Vertex> &vertices);
 qint64 calcFaceNum(const QString &objFilePath);
 bool displayProgress(qint64 progressUpdateInterval);
 }

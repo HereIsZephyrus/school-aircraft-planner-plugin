@@ -124,23 +124,22 @@ OpenGLScene::OpenGLScene(QOpenGLContext* context) {
     this->context = context;
     context->makeCurrent(context->surface());
     basePlaneWidget = std::make_shared<gl::BasePlane>();
-    const QString objFilePath = "/mnt/repo/comprehensive3S/test/Tile_+000_+000.obj";
-    modelWidget = std::make_shared<gl::Model>(objFilePath);
-    context->doneCurrent();
     logMessage("OpenGLScene initialized", Qgis::MessageLevel::Success);
 }
 
 OpenGLScene::~OpenGLScene() {
+  logMessage("ready to destroy OpenGLScene", Qgis::MessageLevel::Info);
     cleanupResources();
     routes.clear();
 }
 
 void OpenGLScene::cleanupResources() {
     if (context->makeCurrent(context->surface())) {
-        if (modelWidget) {
-            modelWidget->cleanupTextures();
-        }
-        context->doneCurrent();
+      if (basePlaneWidget)
+        basePlaneWidget = nullptr;
+      if (modelWidget)
+          modelWidget = nullptr;
+      context->doneCurrent();
     }
 }
 
@@ -153,7 +152,6 @@ void OpenGLScene::paintScene(const QMatrix4x4 &view, const QMatrix4x4 &projectio
         basePlaneWidget->draw(view, projection);
     }
     if (modelWidget) {
-      logMessage("modelWidget->draw", Qgis::MessageLevel::Info);
         modelWidget->draw(view, projection);
     }
 }
@@ -168,11 +166,9 @@ void OpenGLScene::loadModel(const QString &objFilePath) {
     if (modelWidget)
       modelWidget->cleanupTextures();
 
-    if (context->makeCurrent(context->surface())) {
-        modelWidget = std::make_shared<gl::Model>(objFilePath);
-        context->doneCurrent();
-        logMessage("Model loaded", Qgis::MessageLevel::Success);
-    }
+    modelWidget = std::make_shared<gl::Model>(objFilePath);
+
+    Camera::getInstance().setPosition(modelWidget->getModelCenter());
 } 
 void OpenGLCanvas::mousePressEvent(QMouseEvent *event) {
     mLastMousePos = event->pos();
