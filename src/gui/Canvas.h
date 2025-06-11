@@ -6,6 +6,7 @@
 #include <QPushButton>
 #include <QStackedWidget>
 #include <memory>
+#include <qobjectdefs.h>
 class Canvas : public QStackedWidget {
   Q_OBJECT
 
@@ -31,6 +32,9 @@ private:
   void init3DWidget();
   void init2DWidget();
   // void setTianDiTuMap(double lat, double lon, int zoom);
+
+signals:
+  void refreashParms();
 };
 
 #endif // CANVAS_H

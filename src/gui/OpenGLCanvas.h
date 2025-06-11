@@ -50,6 +50,9 @@ private:
 
 public slots:
     void loadModel(const QString &objFilePath);
+
+signals:
+    void refreash3DParms();
 };
 
 class OpenGLScene {

@@ -59,13 +59,12 @@ ws::EnvManager::~EnvManager() {}
 
 ws::FlightManager::FlightManager() {
   mFlightSpeed = 10.0;
-  mFlightAltitude = 100.0;
   mFlightBattery = 100.0;
   mBaseHeight = 0.0;
   mFlightSpeed = 10.0;
-  mFlightAltitude = 100.0;
   mFlightBattery = 100.0;
   mBaseHeight = 0.0;
+  mMaxAlititude = maxBaseHeight;
 }
 ws::FlightManager::~FlightManager() { mFlightPath.clear(); }
 
@@ -137,22 +136,16 @@ void ws::WindowManager::updateCameraMovement() {
 
 // add new slot function at the end of the file
 QString ws::FlightManager::queryFlightParameters() {
-  logMessage("generate random flight parameters", Qgis::MessageLevel::Info);
-  double latitude = QRandomGenerator::global()->bounded(-90, 90);
-  double longitude = QRandomGenerator::global()->bounded(-180, 180);
-
   QString params = QString("Current Flight Parameters:\n"
                            "Speed: %1 m/s\n"
                            "Altitude: %2 m\n"
                            "Battery: %3%\n"
-                           "Position: (%4, %5)")
+                           "Position:\n (%4, %5)")
                        .arg(mFlightSpeed, 0, 'f', 1)
-                       .arg(mFlightAltitude, 0, 'f', 1)
+                       .arg(mAircraftPosition.z(), 0, 'f', 1)
                        .arg(mFlightBattery, 0, 'f', 1)
-                       .arg(latitude, 0, 'f', 6)
-                       .arg(longitude, 0, 'f', 6);
-
-  logMessage("generate random flight parameters", Qgis::MessageLevel::Success);
+                       .arg(mAircraftPosition.x(), 0, 'f', 4)
+                       .arg(mAircraftPosition.y(), 0, 'f', 4);
   return params;
 }
 

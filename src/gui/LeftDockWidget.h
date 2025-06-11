@@ -14,6 +14,7 @@
 #include <QTreeWidgetItem>
 #include <QVBoxLayout>
 #include <QWidget>
+#include <qobjectdefs.h>
 
 class ViewGroup;
 class RouteGroup;
@@ -144,7 +145,6 @@ private:
   void createSlots() override;
   void createButtons() override;
   void createDialog();
-  void refreshFlightParams();
   QPushButton *mpBtnQueryParams;
   QLabel *mpFlightParamsDisplay;
   QDialog *mpFlightParamsDialog;
@@ -153,6 +153,9 @@ private:
   QDoubleSpinBox *mpAltitudeSpin;
   QDoubleSpinBox *mpBatterySpin;
   QDialogButtonBox *mpFlightParamsButtonBox;
+
+public slots:
+  void refreshFlightParams();
 
 signals:
   void queryFlightParams();

@@ -1,5 +1,7 @@
 #include "MainWindow.h"
 #include "core/WorkspaceState.h"
+#include "gui/Canvas.h"
+#include "gui/LeftDockWidget.h"
 #include "gui/StyleManager.h"
 #include "log/QgisDebug.h"
 #include <QAction>
@@ -69,6 +71,7 @@ MainWindow::~MainWindow() {
 
 void MainWindow::createSlots() {
   using namespace ws;
+  connect(mpCanvas, &Canvas::refreashParms, mpLeftDockWidget->getFlightQueryGroup(), &FlightQueryGroup::refreshFlightParams);
   connect(mpLeftDockWidget->getViewGroup(), &ViewGroup::switchTo3D, mpCanvas,
           &Canvas::switchTo3D);
   connect(mpLeftDockWidget->getViewGroup(), &ViewGroup::switchTo2D, mpCanvas,

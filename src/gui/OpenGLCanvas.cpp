@@ -113,6 +113,7 @@ void OpenGLCanvas::paintGL() {
     mpScene->paintScene(view, projection);
   }
   
+  emit refreash3DParms();
   GLenum err;
   while ((err = glGetError()) != GL_NO_ERROR) {
     logMessage(QString("OpenGL error in paintGL: %1").arg(err), 

@@ -224,7 +224,7 @@ void FlightQueryGroup::createDialog() {
   mpAltitudeSpin = new QDoubleSpinBox(mpFlightParamsDialog);
   mpAltitudeSpin->setRange(FlightManager::minFlightAltitude,
                            FlightManager::maxFlightAltitude);
-  mpAltitudeSpin->setValue(flightManager.getFlightAltitude());
+  mpAltitudeSpin->setValue(flightManager.getMaxAltitude());
   mpFlightParamsForm->addRow(tr("Max Altitude (m):"), mpAltitudeSpin);
 
   mpBatterySpin = new QDoubleSpinBox(mpFlightParamsDialog);
@@ -245,7 +245,6 @@ void FlightQueryGroup::refreshFlightParams() {
   using namespace ws;
   FlightManager &flightManager = FlightManager::getInstance();
   flightManager.setFlightSpeed(mpSpeedSpin->value());
-  flightManager.setFlightAltitude(mpAltitudeSpin->value());
   flightManager.setFlightBattery(mpBatterySpin->value());
   mpFlightParamsDisplay->setText(flightManager.queryFlightParameters());
 }

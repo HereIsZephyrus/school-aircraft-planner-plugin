@@ -9,6 +9,7 @@
 #include <QKeyEvent>
 #include <QTimer>
 #include <float.h>
+#include <qvector3d.h>
 #include <stdexcept>
 
 //use a singleton to manage the workspace state
@@ -146,14 +147,14 @@ public:
     FlightManager& operator=(const FlightManager&) = delete;
     void setFlightSpeed(double speed) {mFlightSpeed = speed;}
     double getFlightSpeed() const {return mFlightSpeed;}
-    void setFlightAltitude(double altitude) {mFlightAltitude = altitude;}
-    double getFlightAltitude() const {return mFlightAltitude;}
     void setFlightBattery(double battery) {mFlightBattery = battery;}
     double getFlightBattery() const {return mFlightBattery;}
     void setBaseHeight(double height) {mBaseHeight = height;}
     double getBaseHeight() const {return mBaseHeight;}
-    void setCurrentHeight(double height) {mCurrentHeight = height - mBaseHeight;}
-    double getCurrentHeight() const {return mCurrentHeight;}
+    void setPorision(QVector3D newPosition) {mAircraftPosition = newPosition;}
+    QVector3D getPosition() const {return mAircraftPosition;}
+    void setMaxAltitude(double alititude) {mMaxAlititude = alititude;}
+    double getMaxAltitude() const {return mMaxAlititude;}
     //void generateFlightRoute(float height);
     static constexpr int minFlightSpeed = 1;
     static constexpr int maxFlightSpeed = 50;
@@ -167,8 +168,8 @@ public:
 public slots:
     QString queryFlightParameters();
 private:
-    double mFlightSpeed,mFlightAltitude,mFlightBattery;
-    double mBaseHeight, mCurrentHeight;
+    double mFlightSpeed,mFlightBattery;
+    double mBaseHeight, mMaxAlititude;
     QVector3D mAircraftPosition;
     QQuaternion mAircraftOrientation;
     QVector<QVector3D> mFlightPath;

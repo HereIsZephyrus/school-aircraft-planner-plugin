@@ -549,7 +549,10 @@ void Drone::initModelData(){
 void Drone::draw(const QMatrix4x4 &view, const QMatrix4x4 &projection){
   Camera &camera = Camera::getInstance();
   QMatrix4x4 cameraModelMatrix;
-  cameraModelMatrix.translate(camera.mPosition + camera.mFront * mDis2Camera - camera.mUp * 0.2 * mDis2Camera);
+  QVector3D dronePosition = camera.mPosition + camera.mFront * mDis2Camera - camera.mUp * 0.2 * mDis2Camera;
+  ws::FlightManager& flightManager = ws::FlightManager::getInstance();
+  flightManager.setPorision(dronePosition);
+  cameraModelMatrix.translate(dronePosition);
   cameraModelMatrix.rotate(camera.mRotation);
   cameraModelMatrix.scale(-0.1, 0.1, 0.1);
   cameraModelMatrix.rotate(90, 0, 0, 1);

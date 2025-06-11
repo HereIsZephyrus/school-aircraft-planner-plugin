@@ -1,11 +1,13 @@
 #include "Canvas.h"
 #include "../core/WorkspaceState.h"
 #include "../log/QgisDebug.h"
+#include "OpenGLCanvas.h"
 
 Canvas::Canvas(QWidget *parent) : QStackedWidget(parent) {
   init2DWidget();
   init3DWidget();
   setCurrentWidget(mpOpenGLWidget);
+  connect(mpOpenGLWidget, &OpenGLCanvas::refreash3DParms, this, &Canvas::refreashParms);
   logMessage("create canvas", Qgis::MessageLevel::Success);
 }
 

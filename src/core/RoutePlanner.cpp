@@ -176,7 +176,7 @@ void RoutePlanner::generateScanLinePath(
     const QVector<QVector3D> &convexHullLocation,
     QVector<QVector3D> &routePathLocation) {
 
-  float currentHeight = ws::FlightManager::getInstance().getCurrentHeight();
+  float currentHeight = ws::FlightManager::getInstance().getPosition().z();
   if (convexHullLocation.size() < 3)
     return;
 
@@ -242,7 +242,7 @@ void RoutePlanner::generateSpiralPath(
     const QVector3D &homePointLocation,
     const QVector<QVector3D> &convexHullLocation,
     QVector<QVector3D> &routePathLocation) {
-  float currentHeight = ws::FlightManager::getInstance().getCurrentHeight();
+  float currentHeight = ws::FlightManager::getInstance().getPosition().z();
   if (convexHullLocation.size() < 3)
     return;
 
