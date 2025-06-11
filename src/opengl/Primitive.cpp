@@ -507,7 +507,6 @@ void ModelGroup::calcBounds(){
 Drone::Drone(const QString &objFilePath) : ColorPrimitive(GL_TRIANGLES) {
   modelData = std::make_shared<model::ModelData>(objFilePath);
   initModelData();
-  mDis2Camera = 10;
   QVector<QVector3D> centerVertices;
   float bound = 0.4f;
   // tempoerary
@@ -573,8 +572,12 @@ void Drone::initModelData(){
 void Drone::draw(const QMatrix4x4 &view, const QMatrix4x4 &projection){
   Camera &camera = Camera::getInstance();
   QMatrix4x4 cameraModelMatrix;
-  QVector3D dronePosition = camera.mPosition + camera.mFront * mDis2Camera; // - camera.mUp * 0.2 * mDis2Camera;
+  QVector3D dronePosition;
   wsp::FlightManager& flightManager = wsp::FlightManager::getInstance();
+  if (flightManager.isManualMode())
+    dronePosition = camera.mPosition + camera.mFront * camera.mDis2Camera;
+  else
+    dronePosition = camera.mPosition;
   flightManager.setPorision(dronePosition);
   cameraModelMatrix.translate(dronePosition);
   cameraModelMatrix.scale(0.1, 0.1, 0.1);

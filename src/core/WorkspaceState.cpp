@@ -65,6 +65,7 @@ wsp::FlightManager::FlightManager() {
   mFlightBattery = 100.0;
   mBaseHeight = 0.0;
   mMaxAlititude = maxBaseHeight;
+  mManualMode = true;
 }
 wsp::FlightManager::~FlightManager() { mFlightPath.clear(); }
 
@@ -199,6 +200,17 @@ wsp::AnimationManager::AnimationManager() : QObject() {
   mAnimationProgress = 0.0f;
   mAnimationSpeed = 1.0f;
   mAnimationDirection = QVector3D(1.0f, 0.0f, 0.0f);
+}
+
+void wsp::FlightManager::setManualMode(bool manual) {
+  mManualMode = manual;
+  if (manual) {
+    logMessage("Flight Manager is now in manual mode", Qgis::MessageLevel::Info);
+    Camera::getInstance().behindView();
+  } else {
+    logMessage("Flight Manager is now in automatic mode", Qgis::MessageLevel::Info);
+    Camera::getInstance().insideView();
+  }
 }
 
 void Bounds::merge(const Bounds& bounds){

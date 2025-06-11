@@ -320,6 +320,7 @@ void JoyDockWidget::switchToManualMode() {
     // 切换到手动模式
     mpManualBtn->setEnabled(false);
     mpAutoBtn->setEnabled(true);
+    wsp::FlightManager::getInstance().setManualMode(true);
     logMessage("Switched to manual mode", Qgis::MessageLevel::Info);
 }
 
@@ -327,5 +328,6 @@ void JoyDockWidget::switchToAutoMode() {
     // 切换到自动模式
     mpManualBtn->setEnabled(true);
     mpAutoBtn->setEnabled(false);
+    wsp::FlightManager::getInstance().setManualMode(false);
     logMessage("Switched to auto mode", Qgis::MessageLevel::Info);
 }

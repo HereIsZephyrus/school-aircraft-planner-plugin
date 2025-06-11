@@ -13,6 +13,7 @@ Camera::Camera() {
     mAspectRatio = 1.0f;
     mNearPlane = 0.1f;
     mFarPlane = 1000.0f;
+    mDis2Camera = 10.0f;
     
     updateCameraVectors();
 }
@@ -136,4 +137,12 @@ QQuaternion Camera::zeroPitchDirect() {
     result = rollQuat * yawQuat;
     
     return result.normalized();
+}
+
+void Camera::behindView(){
+    mPosition -= mFront * mDis2Camera;
+}
+
+void Camera::insideView(){
+    mPosition += mFront * mDis2Camera;
 }

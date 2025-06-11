@@ -155,6 +155,8 @@ public:
     QVector3D getPosition() const {return mAircraftPosition;}
     void setMaxAltitude(double alititude) {mMaxAlititude = alititude;}
     double getMaxAltitude() const {return mMaxAlititude;}
+    void setManualMode(bool manual);
+    bool isManualMode() const {return mManualMode;}
     //void generateFlightRoute(float height);
     static constexpr int minFlightSpeed = 1;
     static constexpr int maxFlightSpeed = 50;
@@ -170,6 +172,7 @@ public slots:
 private:
     double mFlightSpeed,mFlightBattery;
     double mBaseHeight, mMaxAlititude;
+    bool mManualMode;
     QVector3D mAircraftPosition;
     QQuaternion mAircraftOrientation;
     QVector<QVector3D> mFlightPath;

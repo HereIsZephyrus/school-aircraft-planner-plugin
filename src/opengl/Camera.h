@@ -39,6 +39,7 @@ public:
     float mAspectRatio;
     float mNearPlane;
     float mFarPlane;
+    float mDis2Camera;
 
     QMatrix4x4 viewMatrix() const;
     QMatrix4x4 projectionMatrix() const;
@@ -62,6 +63,8 @@ public:
     void handleMouseWheel(int delta);
     
     void resetView();
+    void behindView();
+    void insideView();
     QQuaternion zeroPitchDirect();
 
 private:
