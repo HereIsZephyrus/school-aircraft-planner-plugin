@@ -57,10 +57,12 @@ public:
     void moveDown(float deltaTime);
     
     void rotate(const QQuaternion& rotation);
+    
     void handleMouseMove(const QPoint& delta);
     void handleMouseWheel(int delta);
     
     void resetView();
+    QQuaternion zeroPitchDirect();
 
 private:
     void updateCameraVectors();

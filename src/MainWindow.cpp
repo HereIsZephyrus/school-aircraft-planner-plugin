@@ -152,6 +152,7 @@ void MainWindow::createSlots() {
           &FlightManager::getInstance(), &FlightManager::queryFlightParameters);
   connect(mpMenuBar, &MenuBar::refreshEnvironmentalParams,
           &EnvManager::getInstance(), &EnvManager::generateRandomWeather);
+  //connect(mpRightDockWidget->getJoystickWidget(), &JoyDockWidget::joystickConnected, mpCanvas->getOpenGLWidget(),&OpenGLCanvas::onJoystickConnected);
 }
 
 QSize MainWindow::setWindowSize(QRect screenGeometry, int maxWidth,

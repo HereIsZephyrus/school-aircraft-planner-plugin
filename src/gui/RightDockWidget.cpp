@@ -122,6 +122,12 @@ JoyDockWidget::JoyDockWidget(QWidget *parent) : QWidget(parent) {
 
   mpMainLayout->addWidget(mpControlPanel);
 
+  mpManualBtn->setEnabled(false);
+  connect(mpManualBtn, &QPushButton::clicked, this, [=](){emit manualMode();});
+  connect(mpAutoBtn, &QPushButton::clicked, this, [=](){emit autoMode();});
+  connect(this, &JoyDockWidget::manualMode, this, &JoyDockWidget::switchToManualMode);
+  connect(this, &JoyDockWidget::autoMode, this, &JoyDockWidget::switchToAutoMode);
+
   logMessage("create joy dock widget", Qgis::MessageLevel::Success);
 }
 

@@ -45,7 +45,8 @@ void Camera::setFarPlane(float far) {
 
 QMatrix4x4 Camera::viewMatrix() const {
     QMatrix4x4 view;
-    view.lookAt(mPosition, mPosition + mFront - mUp * 0.3, mUp + mFront * 0.3);
+    view.lookAt(mPosition, mPosition + mFront, mUp);
+    //view.lookAt(mPosition, mPosition + mFront - mUp * 0.3, mUp + mFront * 0.3);
     return view;
 }
 
@@ -120,4 +121,19 @@ void Camera::updateCameraVectors() {
     
     mRight = QVector3D::crossProduct(mFront, mWorldUp).normalized();
     mUp = QVector3D::crossProduct(mRight, mFront).normalized();
+}
+
+QQuaternion Camera::zeroPitchDirect() {
+    float w = mRotation.scalar(), x = mRotation.x(), y = mRotation.y(), z = mRotation.z();
+    float m20 = 2.0f * (x*z - w*y);
+    QQuaternion result;
+    
+    float yaw = qAtan2(2.0f*(x*y + w*z), w*w + x*x - y*y - z*z);
+    float roll = qAtan2(2.0f*(y*z + w*x), w*w - x*x - y*y + z*z);
+    //QQuaternion yawQuat = QQuaternion::fromAxisAndAngle(0, 0, 1, -qRadiansToDegrees(yaw));
+    QQuaternion rollQuat = QQuaternion::fromAxisAndAngle(1, 0, 0, qRadiansToDegrees(roll));
+    QQuaternion yawQuat = QQuaternion::fromAxisAndAngle(0, 0, 1, qRadiansToDegrees(yaw));
+    result = rollQuat * yawQuat;
+    
+    return result.normalized();
 }

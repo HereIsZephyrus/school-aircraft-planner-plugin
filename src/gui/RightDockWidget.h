@@ -31,6 +31,7 @@ public:
   ~RightDockWidget();
   ToolTreeWidget* getToolTreeWidget() const { return mpToolTreeWidget; }
   FileTreeWidget* getFileTreeWidget() const { return mpFileTreeWidget; }
+  JoyDockWidget* getJoystickWidget() const { return mJoystickWidget; }
 
 private:
   QWidget *mpMainContainer;
@@ -61,6 +62,10 @@ private:
   QPushButton *mpAutoBtn;
   QPushButton *mpBtnManualMode;
   QPushButton *mpBtnAutoMode;
+signals:
+  void joystickMove(float dx, float dy);
+  void manualMode();
+  void autoMode();
 private slots:
   void handleJoystickMove(float dx, float dy);
   void switchToManualMode();
