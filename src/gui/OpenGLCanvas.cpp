@@ -17,6 +17,7 @@
 #include <qgis.h>
 #include <qgsapplication.h>
 #include <qtimer.h>
+#include <qvector3d.h>
 #include <qvector4d.h>
 #include <qthread.h>
 #include "../core/WorkspaceState.h"

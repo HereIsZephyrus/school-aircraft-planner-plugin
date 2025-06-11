@@ -6,8 +6,10 @@
 #include <QOpenGLContext>
 #include <QProgressDialog>
 #include <QCoreApplication>
+#include <memory>
 #include <qmatrix4x4.h>
 #include <qvector3d.h>
+#include <qvector4d.h>
 namespace gl {
 Primitive::Primitive(GLenum primitiveType, const QVector<QVector3D>& vertices, GLuint stride){
   this->primitiveType = primitiveType;
@@ -114,6 +116,9 @@ void Primitive::checkGLError(const QString &funcName) {
 
 void Primitive::setModelMatrix(const QMatrix4x4 &matrix) {
   this->modelMatrix = matrix;
+  this->shader->bind();
+  this->shader->setUniformValue("model",this->modelMatrix);
+  this->shader->release();
 }
 
 ColorPrimitive::ColorPrimitive(GLenum primitiveType, const QVector4D& color)
@@ -199,17 +204,21 @@ RoutePath::RoutePath(const QVector<QVector3D>& vertices, const QVector4D& color)
 ControlPoints::ControlPoints(const QVector<QVector3D>& vertices, const QVector4D& color)
     : ColorPrimitive(GL_POINTS, vertices, color) {
   logMessage("start constructing shader", Qgis::MessageLevel::Info);
-  constructShader(QStringLiteral(":/schoolcore/shaders/point.vs"), QStringLiteral(":/schoolcore/shaders/point.fs"));
+  constructShader(QStringLiteral(":/schoolcore/shaders/point.vs"), QStringLiteral(":/schoolcore/shaders/point.fs"), QStringLiteral(":/schoolcore/shaders/point.gs"));
   initShaderAllocate();
   logMessage("ControlPoints initialized", Qgis::MessageLevel::Info);
 }
 
-HomePoint::HomePoint(const QVector<QVector3D>& vertices, const QVector4D& color)
-    : ColorPrimitive(GL_POINTS, vertices, color) {
+SinglePoint::SinglePoint(const QVector<QVector3D>& vertices, const QVector4D& color)
+    : ColorPrimitive(GL_TRIANGLE_STRIP, vertices, color) {
   logMessage("start constructing shader", Qgis::MessageLevel::Info);
-  constructShader(QStringLiteral(":/schoolcore/shaders/point.vs"), QStringLiteral(":/schoolcore/shaders/point.fs"));
+  //constructShader(QStringLiteral(":/schoolcore/shaders/point.vs"), QStringLiteral(":/schoolcore/shaders/point.fs"), QStringLiteral(":/schoolcore/shaders/point.gs"));
+  constructShader(QStringLiteral(":/schoolcore/shaders/line.vs"), QStringLiteral(":/schoolcore/shaders/line.fs"));
   initShaderAllocate();
-  logMessage("HomePoint initialized", Qgis::MessageLevel::Info);
+  this->shader->bind();
+  this->shader->setUniformValue("radius",10);
+  this->shader->release();
+  logMessage("SinglePoint initialized", Qgis::MessageLevel::Info);
 }
 
   ConvexHull::ConvexHull(const QVector<QVector3D>& vertices, const QVector4D& color)
@@ -499,6 +508,21 @@ Drone::Drone(const QString &objFilePath) : ColorPrimitive(GL_TRIANGLES) {
   modelData = std::make_shared<model::ModelData>(objFilePath);
   initModelData();
   mDis2Camera = 10;
+  QVector<QVector3D> centerVertices;
+  float bound = 0.4f;
+  // tempoerary
+  centerVertices.append(QVector3D(-bound, -bound,  bound));
+  centerVertices.append(QVector3D( bound, -bound,  bound));
+  centerVertices.append(QVector3D(-bound,  bound,  bound));
+  centerVertices.append(QVector3D( bound,  bound,  bound));
+  centerVertices.append(QVector3D( bound, -bound, -bound));
+  centerVertices.append(QVector3D(-bound, -bound, -bound));
+  centerVertices.append(QVector3D( bound,  bound, -bound));
+  centerVertices.append(QVector3D(-bound,  bound,  bound));
+  centerVertices.append(QVector3D(-bound, -bound, -bound));
+  centerVertices.append(QVector3D(-bound, -bound,  bound));
+  centerVertices.append(QVector3D( bound, -bound, -bound));
+  center = std::make_shared<SinglePoint>(centerVertices,QVector4D(1.0,0.0,0.0,1.0));
   logMessage("Drone initialized", Qgis::MessageLevel::Info);
 }
 
@@ -561,5 +585,7 @@ void Drone::draw(const QMatrix4x4 &view, const QMatrix4x4 &projection){
   this->shader->setUniformValue("model", cameraModelMatrix);
   this->shader->release();
   ColorPrimitive::draw(view, projection);
+  center->setModelMatrix(cameraModelMatrix);
+  center->draw(view, projection);
 }
 }

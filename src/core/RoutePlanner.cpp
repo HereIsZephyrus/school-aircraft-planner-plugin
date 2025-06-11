@@ -16,7 +16,7 @@ Route::Route(FlightPattern pattern, float turnRadius, float scanSpacing,
              std::shared_ptr<gl::ControlPoints> controlPoints,
              std::shared_ptr<gl::ConvexHull> convexHull,
              std::shared_ptr<gl::RoutePath> path,
-             std::shared_ptr<gl::HomePoint> homePoint) {
+             std::shared_ptr<gl::SinglePoint> homePoint) {
   mPattern = pattern;
   mTurnRadius = turnRadius;
   mScanSpacing = scanSpacing;
@@ -151,8 +151,8 @@ void RoutePlanner::createRoute() {
 
   QVector3D homePointLocation;
   homePointLocation = generateHomePoint();
-  std::shared_ptr<gl::HomePoint> homePoint =
-      std::make_shared<gl::HomePoint>(QVector<QVector3D>{homePointLocation});
+  std::shared_ptr<gl::SinglePoint> homePoint =
+      std::make_shared<gl::SinglePoint>(QVector<QVector3D>{homePointLocation});
 
   QVector<QVector3D> convexHullLocation;
   generateConvexHull(controlPointsLocation, convexHullLocation);

@@ -74,10 +74,12 @@ public:
             const QVector4D &color = QVector4D(1.0f, 1.0f, 1.0f, 1.0f));
 };
 
-class HomePoint : public ColorPrimitive {
+class SinglePoint : public ColorPrimitive {
 public:
-  HomePoint(const QVector<QVector3D> &vertices,
+  SinglePoint(const QVector<QVector3D> &vertices,
             const QVector4D &color = QVector4D(1.0f, 1.0f, 1.0f, 1.0f));
+private:
+  float pointSize;
 };
 
 class ControlPoints : public ColorPrimitive {
@@ -103,6 +105,7 @@ public:
 protected:
   double mDis2Camera;
   std::shared_ptr<model::ModelData> modelData;
+  std::shared_ptr<SinglePoint> center;
   void initModelData();
 };
 
@@ -130,10 +133,5 @@ protected:
   //std::shared_ptr<QOpenGLShaderProgram> constructMultiShader(const QString& vertexShaderPath, const QString& fragmentShaderPath);
 };
 
-class Demo : public ColorPrimitive {
-public:
-  Demo();
-  // void draw(const QMatrix4x4 &view, const QMatrix4x4 &projection) override;
-};
 } // namespace gl
 #endif // PRIMITIVE_H

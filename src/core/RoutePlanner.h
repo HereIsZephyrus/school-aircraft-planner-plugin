@@ -43,7 +43,7 @@ public:
                  std::shared_ptr<gl::ControlPoints> controlPoints,
                  std::shared_ptr<gl::ConvexHull> convexHull,
                  std::shared_ptr<gl::RoutePath> path,
-                 std::shared_ptr<gl::HomePoint> homePoint);
+                 std::shared_ptr<gl::SinglePoint> homePoint);
   ~Route() = default;
 
 private:
@@ -51,7 +51,7 @@ private:
   float mTurnRadius;
   float mScanSpacing;
   std::shared_ptr<gl::RoutePath> path;
-  std::shared_ptr<gl::HomePoint> homePoint;
+  std::shared_ptr<gl::SinglePoint> homePoint;
   std::shared_ptr<gl::ControlPoints> controlPoints;
   std::shared_ptr<gl::ConvexHull> convexHull;
 };

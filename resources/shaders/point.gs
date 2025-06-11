@@ -2,8 +2,8 @@
 
 layout(points) in;
 layout(triangle_strip, max_vertices = 100) out;
-in vec3 geoColor[];
-out vec3 fragColor;
+in vec4 geoColor[];
+out vec4 fragColor;
 const float PI = 3.14159;
 const int resolution = 40;
 uniform float radius;

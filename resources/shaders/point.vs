@@ -4,7 +4,7 @@ uniform vec4 vColor;
 uniform mat4 projection;
 uniform mat4 model;
 uniform mat4 view;
-out vec3 geoColor;
+out vec4 geoColor;
 
 void main()
 {
