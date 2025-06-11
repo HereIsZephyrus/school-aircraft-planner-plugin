@@ -1,10 +1,13 @@
 #include "Primitive.h"
+#include "Camera.h"
 #include "../log/QgisDebug.h"
 #include "../core/WorkspaceState.h"
 #include <GL/gl.h>
 #include <QOpenGLContext>
 #include <QProgressDialog>
 #include <QCoreApplication>
+#include <qmatrix4x4.h>
+#include <qvector3d.h>
 namespace gl {
 Primitive::Primitive(GLenum primitiveType, const QVector<QVector3D>& vertices, GLuint stride){
   this->primitiveType = primitiveType;
@@ -126,7 +129,7 @@ void ColorPrimitive::draw(const QMatrix4x4 &view, const QMatrix4x4 &projection){
   }
   this->shader->bind();
   this->shader->setUniformValue("vColor", this->color);
-  this->shader->setUniformValue("model", this->modelMatrix);
+  //this->shader->setUniformValue("model", this->modelMatrix);
   this->shader->setUniformValue("view", view);
   this->shader->setUniformValue("projection", projection);
   this->vao.bind();
@@ -144,6 +147,7 @@ void ColorPrimitive::initShaderAllocate(){
   this->shader->bind();
   this->shader->enableAttributeArray(0);
   this->shader->setAttributeBuffer(0, GL_FLOAT, 0, 3, this->stride * sizeof(GLfloat));
+  this->shader->setUniformValue("model", this->modelMatrix);
   this->shader->release();
   this->vbo.allocate(this->vertices, this->vertexNum * this->stride * sizeof(GLfloat));
   this->vbo.release();
@@ -265,6 +269,7 @@ void ModelGroup::initModelData(){
   this->shader->setAttributeBuffer(0, GL_FLOAT, 0, 3, this->stride * sizeof(GLfloat));
   this->shader->enableAttributeArray(1);
   this->shader->setAttributeBuffer(1, GL_FLOAT, 3 * sizeof(GLfloat), 2, this->stride * sizeof(GLfloat));
+  this->shader->setUniformValue("model", this->modelMatrix);
   this->shader->release();
   /*
   int groupNum = (models.size()-1) / 6 + 1;
@@ -308,7 +313,7 @@ void ModelGroup::draw(const QMatrix4x4 &view, const QMatrix4x4 &projection) {
     this->vao.bind();
     this->shader->bind();
     checkGLError("Model::draw - after shader bind");
-    this->shader->setUniformValue("model", this->modelMatrix);
+    //this->shader->setUniformValue("model", this->modelMatrix);
     this->shader->setUniformValue("view", view);
     this->shader->setUniformValue("projection", projection);
     GLuint startIndex = 0;
@@ -346,7 +351,7 @@ void ModelGroup::draw(const QMatrix4x4 &view, const QMatrix4x4 &projection) {
     this->shader->release();
     this->vao.release();
 }
-
+/*
 std::shared_ptr<QOpenGLShaderProgram> ModelGroup::constructMultiShader(const QString& vertexShaderPath, const QString& fragmentShaderPath) {
   // check if opengl context is current
   if (!QOpenGLContext::currentContext()) {
@@ -374,7 +379,7 @@ std::shared_ptr<QOpenGLShaderProgram> ModelGroup::constructMultiShader(const QSt
   }
   return shader;
 }
-
+*/
 
 bool Primitive::constructShader(const QString& vertexShaderPath, const QString& fragmentShaderPath, const QString& geometryShaderPath) {
   // check if opengl context is current
@@ -488,5 +493,70 @@ void ModelGroup::calcBounds(){
   }
   mBounds = bounds;
   mBounds.center = (mBounds.min + mBounds.max) / 2.0f;
+}
+
+Drone::Drone(const QString &objFilePath) : ColorPrimitive(GL_TRIANGLES) {
+  modelData = std::make_shared<model::ModelData>(objFilePath);
+  initModelData();
+  mDis2Camera = 10;
+  logMessage("Drone initialized", Qgis::MessageLevel::Info);
+}
+
+Drone::~Drone(){
+  logMessage("Drone destroyed", Qgis::MessageLevel::Success);
+}
+
+void Drone::initModelData(){
+  if (!QOpenGLContext::currentContext()) {
+    logMessage("initModelData: OpenGL context is not current", Qgis::MessageLevel::Critical);
+    return;
+  }
+  if (this->vao.isCreated()) {
+    logMessage("VAO is already created", Qgis::MessageLevel::Warning);
+  } else {
+    logMessage("VAO is not created, creating now", Qgis::MessageLevel::Info);
+    this->vao.create();
+    if (!this->vao.isCreated()) {
+      logMessage("Failed to create VAO", Qgis::MessageLevel::Critical);
+      return;
+    }
+  }
+  this->vbo.create();
+  this->vao.bind();
+  this->vbo.bind();
+  this->vbo.setUsagePattern(QOpenGLBuffer::StaticDraw);
+  logMessage("stride is " + QString::number(this->stride), Qgis::MessageLevel::Info);
+  this->vertexNum = modelData->vertices.size();
+  logMessage("vertexNum: " + QString::number(this->vertexNum), Qgis::MessageLevel::Info);
+  GLuint count = this->vertexNum * this->stride;
+  logMessage("count is " + QString::number(count), Qgis::MessageLevel::Info);
+  this->vertices = new GLfloat[count];
+  GLuint index = 0;
+  for (const auto& vertex : modelData->vertices) {
+    this->vertices[index++] = vertex.position.x();
+    this->vertices[index++] = vertex.position.y();
+    this->vertices[index++] = vertex.position.z();
+  }
+  this->vbo.allocate(this->vertices, count * sizeof(GLfloat));
+  logMessage("start constructing shader", Qgis::MessageLevel::Info);
+  constructShader(QStringLiteral(":/schoolcore/shaders/base.vs"), QStringLiteral(":/schoolcore/shaders/base.fs"));
+  this->vbo.release();
+  this->vao.release();
+  initShaderAllocate();
+  checkGLError("Drone::initModelData");
+}
+
+void Drone::draw(const QMatrix4x4 &view, const QMatrix4x4 &projection){
+  Camera &camera = Camera::getInstance();
+  QMatrix4x4 cameraModelMatrix;
+  cameraModelMatrix.translate(camera.mPosition + camera.mFront * mDis2Camera - camera.mUp * 0.2 * mDis2Camera);
+  cameraModelMatrix.rotate(camera.mRotation);
+  cameraModelMatrix.scale(-0.1, 0.1, 0.1);
+  cameraModelMatrix.rotate(90, 0, 0, 1);
+  cameraModelMatrix.rotate(-30, 1, 0, 0);
+  this->shader->bind();
+  this->shader->setUniformValue("model", cameraModelMatrix);
+  this->shader->release();
+  ColorPrimitive::draw(view, projection);
 }
 }

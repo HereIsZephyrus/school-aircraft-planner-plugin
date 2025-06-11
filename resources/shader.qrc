@@ -8,8 +8,8 @@
         <file>shaders/point.gs</file>
         <file>shaders/model.vs</file>
         <file>shaders/model.fs</file>
-        <file>shaders/demo.vs</file>
-        <file>shaders/demo.fs</file>
+        <file>shaders/base.vs</file>
+        <file>shaders/base.fs</file>
         <file>shaders/demomodel.vs</file>
         <file>shaders/demomodel.fs</file>
         <file>shaders/multimodel.fs</file>

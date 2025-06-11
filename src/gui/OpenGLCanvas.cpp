@@ -124,6 +124,7 @@ OpenGLScene::OpenGLScene(QOpenGLContext* context) {
     this->context = context;
     context->makeCurrent(context->surface());
     basePlaneWidget = std::make_shared<gl::BasePlane>();
+    droneWidget = std::make_shared<gl::Drone>(":/schoolcore/models/drone.obj");
     logMessage("OpenGLScene initialized", Qgis::MessageLevel::Success);
 }
 
@@ -148,11 +149,18 @@ void OpenGLScene::paintScene(const QMatrix4x4 &view, const QMatrix4x4 &projectio
         logMessage("OpenGL context is not current", Qgis::MessageLevel::Critical);
         return;
     }
+    glEnable(GL_CULL_FACE);
+    glCullFace(GL_BACK);
     if (basePlaneWidget) {
         basePlaneWidget->draw(view, projection);
     }
     if (modelWidget) {
         modelWidget->draw(view, projection);
+    }
+    //glDisable(GL_CULL_FACE);
+    glCullFace(GL_FRONT);
+    if (droneWidget) {
+        droneWidget->draw(view, projection);
     }
 }
 

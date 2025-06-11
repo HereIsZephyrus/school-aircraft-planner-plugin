@@ -92,6 +92,20 @@ public:
              const QVector4D &color = QVector4D(1.0f, 1.0f, 1.0f, 1.0f));
 };
 
+class Drone : public ColorPrimitive {
+public:
+  Drone(const QString &objFilePath);
+  ~Drone();
+  void draw(const QMatrix4x4 &view, const QMatrix4x4 &projection) override;
+  QVector3D getCenter() const { return modelData->mBounds.center; }
+  const Bounds &getBounds() const { return modelData->mBounds; }
+
+protected:
+  double mDis2Camera;
+  std::shared_ptr<model::ModelData> modelData;
+  void initModelData();
+};
+
 class ModelGroup : public Primitive {
 public:
   ModelGroup(const QString &objFileFolderPath);
@@ -110,11 +124,10 @@ protected:
   QVector<std::shared_ptr<QOpenGLTexture>> textures;
   void generateTexture(const QString &texturePath);
   void initModelData();
-  void initDemoModelData();
   QVector<GLuint> verticesRange;
   QVector<std::shared_ptr<model::ModelData>> models;
-  QVector<std::shared_ptr<QOpenGLShaderProgram>> shaders;
-  std::shared_ptr<QOpenGLShaderProgram> constructMultiShader(const QString& vertexShaderPath, const QString& fragmentShaderPath);
+  //QVector<std::shared_ptr<QOpenGLShaderProgram>> shaders;
+  //std::shared_ptr<QOpenGLShaderProgram> constructMultiShader(const QString& vertexShaderPath, const QString& fragmentShaderPath);
 };
 
 class Demo : public ColorPrimitive {

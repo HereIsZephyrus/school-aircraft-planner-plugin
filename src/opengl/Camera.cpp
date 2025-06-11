@@ -45,7 +45,7 @@ void Camera::setFarPlane(float far) {
 
 QMatrix4x4 Camera::viewMatrix() const {
     QMatrix4x4 view;
-    view.lookAt(mPosition, mPosition + mFront, mUp);
+    view.lookAt(mPosition, mPosition + mFront - mUp * 0.3, mUp + mFront * 0.3);
     return view;
 }
 
