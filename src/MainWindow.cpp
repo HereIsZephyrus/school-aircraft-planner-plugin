@@ -154,6 +154,8 @@ void MainWindow::createSlots() {
           &EnvManager::getInstance(), &EnvManager::generateRandomWeather);
   connect(mpCanvas->getOpenGLWidget(), &OpenGLCanvas::submitEdit,
           &RoutePlanner::getInstance(), &RoutePlanner::createRoute);
+  connect(mpCanvas->getOpenGLWidget(), &OpenGLCanvas::submitPoint,
+          &RoutePlanner::getInstance(), &RoutePlanner::addControlPoint);
   //connect(mpRightDockWidget->getJoystickWidget(), &JoyDockWidget::joystickConnected, mpCanvas->getOpenGLWidget(),&OpenGLCanvas::onJoystickConnected);
 }
 

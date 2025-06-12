@@ -81,13 +81,17 @@ public:
   void setScanSpacing(float spacing) { mScanSpacing = spacing; }
   void setDrawMode(RouteDrawMode mode) { mDrawMode = mode; }
 
+  std::shared_ptr<gl::ControlPoints> constructDrawingPoints();
+
 public slots:
   void createRoute();
   void createControlPoint();
   void editRoute();
+  void addControlPoint(QVector3D point);
 
 private:
   QVector<std::shared_ptr<Route>> mRoutes;
+  QVector<QVector3D> drawingPoint;
   FlightPattern mPattern;
   RouteDrawMode mDrawMode;
   float mScanSpacing; // scan line spacing

@@ -1,6 +1,7 @@
 #include "RoutePlanner.h"
 #include "../core/WorkspaceState.h"
 #include "../opengl/Camera.h"
+#include "../log/QgisDebug.h"
 #include <QPolygonF>
 #include <QStack>
 #include <QVector3D>
@@ -181,6 +182,16 @@ void RoutePlanner::createControlPoint(){
   wsp::WindowManager::getInstance().setEditing(true);
   Camera& camera = Camera::getInstance();
   camera.mPosition += QVector3D(0, 0, wsp::FlightManager::getInstance().getBaseHeight());
+  drawingPoint.clear();
+}
+
+void RoutePlanner::addControlPoint(QVector3D point) {
+  logMessage(QString("add control point %1, %2, %3")
+               .arg(point.x())
+               .arg(point.y())
+               .arg(point.z()),
+           Qgis::MessageLevel::Info);
+  drawingPoint.append(point);
 }
 
 void RoutePlanner::generateScanLinePath(
@@ -351,4 +362,8 @@ void RoutePlanner::editRoute() {
     // 默认实现：清空当前路线并重新创建
     mRoutes.clear();
     createRoute();
+}
+
+std::shared_ptr<gl::ControlPoints> RoutePlanner::constructDrawingPoints(){
+  return std::make_shared<gl::ControlPoints>(drawingPoint, QVector4D(1.0f, 0.0f, 0.0f, 1.0f));
 }

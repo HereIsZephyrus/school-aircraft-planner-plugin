@@ -157,6 +157,11 @@ void OpenGLScene::paintScene(const QMatrix4x4 &view, const QMatrix4x4 &projectio
     }
     if (wsp::WindowManager::getInstance().isEditing()) {
       selectLine->draw(view, projection);
+      std::shared_ptr<gl::ControlPoints> drawingPoints = RoutePlanner::getInstance().constructDrawingPoints();
+      if (drawingPoints)
+        drawingPoints->draw(view, projection);
+      else
+        logMessage("Failed to construct drawing points", Qgis::MessageLevel::Critical);
     }else{
       //glDisable(GL_CULL_FACE);
       glCullFace(GL_FRONT);
@@ -182,8 +187,10 @@ void OpenGLScene::loadModel(const QString &objFilePath) {
 } 
 void OpenGLCanvas::mousePressEvent(QMouseEvent *event) {
     mLastMousePos = event->pos();
-    if (wsp::WindowManager::getInstance().isEditing() && event->button() == Qt::RightButton)
-      emit submitEdit();
+    if (wsp::WindowManager::getInstance().isEditing()){
+      if (event->button() == Qt::RightButton)
+        emit submitEdit();
+    }
 }
 
 void OpenGLCanvas::mouseMoveEvent(QMouseEvent *event) {
@@ -201,7 +208,14 @@ void OpenGLCanvas::wheelEvent(QWheelEvent *event) {
 }
 
 void OpenGLCanvas::keyPressEvent(QKeyEvent *event) {
-    wsp::WindowManager::getInstance().keyPressEvent(event);
+    wsp::WindowManager& windowManager = wsp::WindowManager::getInstance();
+    windowManager.keyPressEvent(event);
+    if (windowManager.isEditing()) {
+      if (windowManager.isKeyPressed(Qt::Key_Space) || windowManager.isKeyPressed(Qt::Key_Enter)) {
+        QVector3D point = mpScene->getPoint();
+        emit submitPoint(point);
+      }
+    }
     update();
 }
 

@@ -47,14 +47,14 @@ Primitive::Primitive(GLenum primitiveType, GLuint stride)
 }
 
 Primitive::~Primitive() {
-  logMessage("ready to destroy Primitive", Qgis::MessageLevel::Info);
+  //logMessage("ready to destroy Primitive", Qgis::MessageLevel::Info);
   if (QOpenGLContext::currentContext()) {
     this->vao.destroy();
     this->vbo.destroy();
     this->shader = nullptr;
     delete[] this->vertices;
   }
-  logMessage("Primitive destroyed", Qgis::MessageLevel::Success);
+  //logMessage("Primitive destroyed", Qgis::MessageLevel::Success);
 }
 
 void Primitive::checkGLError(const QString &funcName) {
@@ -216,7 +216,7 @@ OrientLine::OrientLine(const QVector<QVector3D>& vertices, const QVector4D& colo
 ControlPoints::ControlPoints(const QVector<QVector3D>& vertices, const QVector4D& color)
     : ColorPrimitive(GL_POINTS, vertices, color) {
   logMessage("start constructing shader", Qgis::MessageLevel::Info);
-  constructShader(QStringLiteral(":/schoolcore/shaders/point.vs"), QStringLiteral(":/schoolcore/shaders/point.fs"), QStringLiteral(":/schoolcore/shaders/point.gs"));
+  constructShader(QStringLiteral(":/schoolcore/shaders/line.vs"), QStringLiteral(":/schoolcore/shaders/line.fs"));
   initShaderAllocate();
   logMessage("ControlPoints initialized", Qgis::MessageLevel::Info);
 }
