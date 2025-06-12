@@ -79,7 +79,7 @@ void MainWindow::createSlots() {
   connect(mpLeftDockWidget->getViewGroup(), &ViewGroup::viewReset, mpCanvas,
           &Canvas::viewReset);
   connect(mpLeftDockWidget->getRouteGroup(), &RouteGroup::createRoute,
-          &RoutePlanner::getInstance(), &RoutePlanner::createRoute);
+          &RoutePlanner::getInstance(), &RoutePlanner::createControlPoint);
   connect(mpLeftDockWidget->getRouteGroup(), &RouteGroup::editRoute,
           &RoutePlanner::getInstance(), &RoutePlanner::editRoute);
   connect(mpLeftDockWidget->getFlightSimGroup(),
@@ -103,7 +103,7 @@ void MainWindow::createSlots() {
   connect(mpLeftDockWidget->getEnvQueryGroup(), &EnvQueryGroup::queryEnvParams,
           &EnvManager::getInstance(), &EnvManager::generateRandomWeather);
   connect(mpRightDockWidget->getToolTreeWidget(), &ToolTreeWidget::createRoute,
-          &RoutePlanner::getInstance(), &RoutePlanner::createRoute);
+          &RoutePlanner::getInstance(), &RoutePlanner::createControlPoint);
   connect(mpRightDockWidget->getToolTreeWidget(), &ToolTreeWidget::editRoute,
           &RoutePlanner::getInstance(), &RoutePlanner::editRoute);
   connect(mpRightDockWidget->getToolTreeWidget(),
@@ -147,11 +147,13 @@ void MainWindow::createSlots() {
   connect(mpMenuBar, &MenuBar::simulationStop, &AnimationManager::getInstance(),
           &AnimationManager::stopSimulation);
   connect(mpMenuBar, &MenuBar::createRoute, &RoutePlanner::getInstance(),
-          &RoutePlanner::createRoute);
+          &RoutePlanner::createControlPoint);
   connect(mpMenuBar, &MenuBar::refreshFlightParams,
           &FlightManager::getInstance(), &FlightManager::queryFlightParameters);
   connect(mpMenuBar, &MenuBar::refreshEnvironmentalParams,
           &EnvManager::getInstance(), &EnvManager::generateRandomWeather);
+  connect(mpCanvas->getOpenGLWidget(), &OpenGLCanvas::submitEdit,
+          &RoutePlanner::getInstance(), &RoutePlanner::createRoute);
   //connect(mpRightDockWidget->getJoystickWidget(), &JoyDockWidget::joystickConnected, mpCanvas->getOpenGLWidget(),&OpenGLCanvas::onJoystickConnected);
 }
 

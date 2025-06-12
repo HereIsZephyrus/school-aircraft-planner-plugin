@@ -159,30 +159,31 @@ void ColorPrimitive::initShaderAllocate(){
   this->vao.release();
 }
 
-BasePlane::BasePlane(const QVector4D &color)
-    : ColorPrimitive(GL_LINES, color) {
+BasePlane::BasePlane(Bounds bounds, double baseHeight, const QVector4D &color) : ColorPrimitive(GL_LINES, color) {
+  logMessage(QString("BasePlane bounds: %1, %2, %3, %4").arg(bounds.min.x()).arg(bounds.min.y()).arg(bounds.max.x()).arg(bounds.max.y()), Qgis::MessageLevel::Info);
+  logMessage(QString("BasePlane baseHeight: %1").arg(baseHeight), Qgis::MessageLevel::Info);
   logMessage("start constructing shader", Qgis::MessageLevel::Info);
   constructShader(QStringLiteral(":/schoolcore/shaders/line.vs"), QStringLiteral(":/schoolcore/shaders/line.fs"));
-  const GLfloat size = DEFAULT_SIZE;
   const GLfloat step = DEFAULT_STEP;
-  this->vertexNum = (2 * size / step + 1) * 2 * 2; // (x + y) * ((size - (-size)) / step + 1) * 2 points(stand for one line)
+  int xNum = (bounds.max.x() - bounds.min.x()) / step + 1;
+  int yNum = (bounds.max.y() - bounds.min.y()) / step + 1;
+  this->vertexNum = 2 * (xNum + yNum); // (x + y) * ((size - (-size)) / step + 1) * 2 points(stand for one line)
   this->vertices = new GLfloat[this->vertexNum * 3];
-  double baseHeight = wsp::FlightManager::getInstance().getBaseHeight();
-  logMessage(QString("Base height: %1").arg(baseHeight), Qgis::MessageLevel::Info);
+  logMessage(QString("BasePlane vertices: %1").arg(this->vertexNum), Qgis::MessageLevel::Info);
   GLuint index = 0;
-  for (GLfloat x = -size; x <= size; x += step) {
+  for (GLfloat x = bounds.min.x(); x <= bounds.max.x(); x += step) {
     this->vertices[index++] = x;
-    this->vertices[index++] = -size;
+    this->vertices[index++] = bounds.min.y();
     this->vertices[index++] = baseHeight;
     this->vertices[index++] = x;
-    this->vertices[index++] = size;
+    this->vertices[index++] = bounds.max.y();
     this->vertices[index++] = baseHeight;
   }
-  for (float y = -size; y <= size; y += step) {
-    this->vertices[index++] = -size;
+  for (float y = bounds.min.y(); y <= bounds.max.y(); y += step) {
+    this->vertices[index++] = bounds.min.x();
     this->vertices[index++] = y;
     this->vertices[index++] = baseHeight;
-    this->vertices[index++] = size;
+    this->vertices[index++] = bounds.max.x();
     this->vertices[index++] = y;
     this->vertices[index++] = baseHeight;
   }
@@ -359,6 +360,8 @@ void ModelGroup::draw(const QMatrix4x4 &view, const QMatrix4x4 &projection) {
     }
     this->shader->release();
     this->vao.release();
+    if (wsp::WindowManager::getInstance().isEditing())
+      this->basePlaneWidget->draw(view, projection);
 }
 /*
 std::shared_ptr<QOpenGLShaderProgram> ModelGroup::constructMultiShader(const QString& vertexShaderPath, const QString& fragmentShaderPath) {
@@ -470,6 +473,7 @@ ModelGroup::ModelGroup(const QString &objFileFolderPath):Primitive(GL_TRIANGLES,
   }
   initModelData();
   this->calcBounds();
+  this->basePlaneWidget = std::make_shared<BasePlane>(mBounds, wsp::FlightManager::getInstance().getBaseHeight());
 }
 
 QString ModelGroup::retriveObjFilePath(const QString &subDirPath){

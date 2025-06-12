@@ -53,6 +53,7 @@ public slots:
 
 signals:
     void refreash3DParms();
+    void submitEdit();
 };
 
 class OpenGLScene {
@@ -66,7 +67,6 @@ public:
 
 protected:
     std::shared_ptr<gl::ModelGroup> modelWidget;
-    std::shared_ptr<gl::BasePlane> basePlaneWidget;
     std::shared_ptr<gl::Drone> droneWidget;
     QVector<std::shared_ptr<Route>> routes;
     QOpenGLContext* context;

@@ -125,7 +125,6 @@ void OpenGLCanvas::paintGL() {
 OpenGLScene::OpenGLScene(QOpenGLContext* context) {
     this->context = context;
     context->makeCurrent(context->surface());
-    basePlaneWidget = std::make_shared<gl::BasePlane>();
     droneWidget = std::make_shared<gl::Drone>(":/schoolcore/models/drone.obj");
     logMessage("OpenGLScene initialized", Qgis::MessageLevel::Success);
 }
@@ -138,8 +137,6 @@ OpenGLScene::~OpenGLScene() {
 
 void OpenGLScene::cleanupResources() {
     if (context->makeCurrent(context->surface())) {
-      if (basePlaneWidget)
-        basePlaneWidget = nullptr;
       if (modelWidget)
           modelWidget = nullptr;
       context->doneCurrent();
@@ -153,16 +150,15 @@ void OpenGLScene::paintScene(const QMatrix4x4 &view, const QMatrix4x4 &projectio
     }
     glEnable(GL_CULL_FACE);
     glCullFace(GL_BACK);
-    if (basePlaneWidget) {
-        basePlaneWidget->draw(view, projection);
-    }
     if (modelWidget) {
         modelWidget->draw(view, projection);
     }
-    //glDisable(GL_CULL_FACE);
-    glCullFace(GL_FRONT);
-    if (droneWidget) {
-        droneWidget->draw(view, projection);
+    if (!wsp::WindowManager::getInstance().isEditing()) {
+      //glDisable(GL_CULL_FACE);
+      glCullFace(GL_FRONT);
+      if (droneWidget) {
+          droneWidget->draw(view, projection);
+      }
     }
 }
 
@@ -182,6 +178,8 @@ void OpenGLScene::loadModel(const QString &objFilePath) {
 } 
 void OpenGLCanvas::mousePressEvent(QMouseEvent *event) {
     mLastMousePos = event->pos();
+    if (wsp::WindowManager::getInstance().isEditing() && event->button() == Qt::RightButton)
+      emit submitEdit();
 }
 
 void OpenGLCanvas::mouseMoveEvent(QMouseEvent *event) {

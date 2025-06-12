@@ -53,6 +53,8 @@ public:
     void keyReleaseEvent(QKeyEvent* event);
     bool isKeyPressed(int key) const;
     void updateCameraMovement();
+    bool isEditing() const {return isEditMode;}
+    void setEditing(bool editing) {isEditMode = editing;}
 
 private:
     CanvasType mCurrentCanvas;
@@ -61,6 +63,7 @@ private:
     Bounds mBounds;
     QMap<int, bool> mKeyStates;
     QTimer* mUpdateTimer;
+    bool isEditMode;
     void update3DCameraMovement();
     void update2DCameraMovement();
 };

@@ -62,10 +62,10 @@ protected:
 class BasePlane : public ColorPrimitive {
   static constexpr GLfloat DEFAULT_SIZE = 100.0f;
   static constexpr GLfloat DEFAULT_STEP = 2.0f;
-  static constexpr QVector4D DEFAULT_COLOR = QVector4D(0.6f, 0.6f, 0.6f, 0.5f);
+  static constexpr QVector4D DEFAULT_COLOR = QVector4D(0.0f, 0.2f, 0.8f, 0.9f);
 
 public:
-  BasePlane(const QVector4D &color = DEFAULT_COLOR);
+  BasePlane(Bounds bounds = Bounds(), double baseHeight = 0.0, const QVector4D &color = DEFAULT_COLOR);
 };
 
 class RoutePath : public ColorPrimitive {
@@ -129,6 +129,7 @@ protected:
   void initModelData();
   QVector<GLuint> verticesRange;
   QVector<std::shared_ptr<model::ModelData>> models;
+  std::shared_ptr<BasePlane> basePlaneWidget;
   //QVector<std::shared_ptr<QOpenGLShaderProgram>> shaders;
   //std::shared_ptr<QOpenGLShaderProgram> constructMultiShader(const QString& vertexShaderPath, const QString& fragmentShaderPath);
 };

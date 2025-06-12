@@ -83,6 +83,7 @@ public:
 
 public slots:
   void createRoute();
+  void createControlPoint();
   void editRoute();
 
 private:

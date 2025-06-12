@@ -51,19 +51,13 @@ wsp::EnvManager::EnvManager() {
   mWeather = WeatherType::Sunny;
   mTemperature = 25.0;
   mPressure = 1013.25;
-  mWeather = WeatherType::Sunny;
-  mTemperature = 25.0;
-  mPressure = 1013.25;
 }
 wsp::EnvManager::~EnvManager() {}
 
 wsp::FlightManager::FlightManager() {
   mFlightSpeed = 10.0;
   mFlightBattery = 100.0;
-  mBaseHeight = 0.0;
-  mFlightSpeed = 10.0;
-  mFlightBattery = 100.0;
-  mBaseHeight = 0.0;
+  mBaseHeight = 100.0;
   mMaxAlititude = maxBaseHeight;
   mManualMode = true;
 }
@@ -80,6 +74,7 @@ wsp::WindowManager::WindowManager()
   if (!pDefaultObject)
     pDefaultObject = new QObject();
   mBounds = Bounds();
+  isEditMode = false;
 }
 
 wsp::WindowManager::~WindowManager() {

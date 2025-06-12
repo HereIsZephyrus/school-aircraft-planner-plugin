@@ -1,5 +1,6 @@
 #include "RoutePlanner.h"
 #include "../core/WorkspaceState.h"
+#include "../opengl/Camera.h"
 #include <QPolygonF>
 #include <QStack>
 #include <QVector3D>
@@ -144,6 +145,7 @@ QVector3D RoutePlanner::generateHomePoint() {
 }
 
 void RoutePlanner::createRoute() {
+  /*
   QVector<QVector3D> controlPointsLocation;
   generateControlPoints(controlPointsLocation);
   std::shared_ptr<gl::ControlPoints> controlPoints =
@@ -169,6 +171,16 @@ void RoutePlanner::createRoute() {
                                          controlPoints, convexHull, routePath,
                                          homePoint));
   mDrawMode = RouteDrawMode::AVAILABLE;
+  */
+  Camera& camera = Camera::getInstance();
+  camera.mPosition -= QVector3D(0, 0, wsp::FlightManager::getInstance().getBaseHeight());
+  wsp::WindowManager::getInstance().setEditing(false);
+}
+
+void RoutePlanner::createControlPoint(){
+  wsp::WindowManager::getInstance().setEditing(true);
+  Camera& camera = Camera::getInstance();
+  camera.mPosition += QVector3D(0, 0, wsp::FlightManager::getInstance().getBaseHeight());
 }
 
 void RoutePlanner::generateScanLinePath(
