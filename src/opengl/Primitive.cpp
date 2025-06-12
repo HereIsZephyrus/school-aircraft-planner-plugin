@@ -25,7 +25,7 @@ Primitive::Primitive(GLenum primitiveType, const QVector<QVector3D>& vertices, G
   this->vbo.create();
   this->modelMatrix.setToIdentity();
   this->shader = nullptr;
-  logMessage("Primitive created", Qgis::MessageLevel::Info);
+  //logMessage("Primitive created", Qgis::MessageLevel::Info);
   this->vao.bind();
   this->vbo.bind();
   this->vbo.setUsagePattern(QOpenGLBuffer::StaticDraw);
@@ -33,7 +33,7 @@ Primitive::Primitive(GLenum primitiveType, const QVector<QVector3D>& vertices, G
                      this->vertexNum * this->stride * sizeof(GLfloat));
   this->vbo.release();
   this->vao.release();
-  logMessage("Primitive data initialized", Qgis::MessageLevel::Info);
+  //logMessage("Primitive data initialized", Qgis::MessageLevel::Info);
 }
 
 Primitive::Primitive(GLenum primitiveType, GLuint stride)
@@ -165,14 +165,14 @@ void ColorPrimitive::initShaderAllocate(){
 BasePlane::BasePlane(Bounds bounds, double baseHeight, const QVector4D &color) : ColorPrimitive(GL_LINES, color) {
   logMessage(QString("BasePlane bounds: %1, %2, %3, %4").arg(bounds.min.x()).arg(bounds.min.y()).arg(bounds.max.x()).arg(bounds.max.y()), Qgis::MessageLevel::Info);
   logMessage(QString("BasePlane baseHeight: %1").arg(baseHeight), Qgis::MessageLevel::Info);
-  logMessage("start constructing shader", Qgis::MessageLevel::Info);
+  //logMessage("start constructing shader", Qgis::MessageLevel::Info);
   constructShader(QStringLiteral(":/schoolcore/shaders/line.vs"), QStringLiteral(":/schoolcore/shaders/line.fs"));
   const GLfloat step = DEFAULT_STEP;
   int xNum = (bounds.max.x() - bounds.min.x()) / step + 1;
   int yNum = (bounds.max.y() - bounds.min.y()) / step + 1;
   this->vertexNum = 2 * (xNum + yNum); // (x + y) * ((size - (-size)) / step + 1) * 2 points(stand for one line)
   this->vertices = new GLfloat[this->vertexNum * 3];
-  logMessage(QString("BasePlane vertices: %1").arg(this->vertexNum), Qgis::MessageLevel::Info);
+  //logMessage(QString("BasePlane vertices: %1").arg(this->vertexNum), Qgis::MessageLevel::Info);
   GLuint index = 0;
   for (GLfloat x = bounds.min.x(); x <= bounds.max.x(); x += step) {
     this->vertices[index++] = x;
@@ -192,51 +192,48 @@ BasePlane::BasePlane(Bounds bounds, double baseHeight, const QVector4D &color) :
   }
   initShaderAllocate();
   logMessage("BasePlane initialized", Qgis::MessageLevel::Info);
-  logMessage(QString("VAO is created: %1, VAO id: %2")
-    .arg(this->vao.isCreated())
-    .arg(this->vao.objectId()));
 }
 
 RoutePath::RoutePath(const QVector<QVector3D>& vertices, const QVector4D& color)
     : ColorPrimitive(GL_LINE_STRIP, vertices, color), routePath(vertices) {
-  logMessage("start constructing shader", Qgis::MessageLevel::Info);
+  //logMessage("start constructing shader", Qgis::MessageLevel::Info);
   constructShader(QStringLiteral(":/schoolcore/shaders/line.vs"), QStringLiteral(":/schoolcore/shaders/line.fs"));
   initShaderAllocate();
-  logMessage("RoutePath initialized", Qgis::MessageLevel::Info);
+  //logMessage("RoutePath initialized", Qgis::MessageLevel::Info);
 }
 
 OrientLine::OrientLine(const QVector<QVector3D>& vertices, const QVector4D& color)
     : ColorPrimitive(GL_LINES, vertices, color) {
-  logMessage("start constructing shader", Qgis::MessageLevel::Info);
+  //logMessage("start constructing shader", Qgis::MessageLevel::Info);
   constructShader(QStringLiteral(":/schoolcore/shaders/line.vs"), QStringLiteral(":/schoolcore/shaders/line.fs"));
   initShaderAllocate();
-  logMessage("OrientLine initialized", Qgis::MessageLevel::Info);
+  //logMessage("OrientLine initialized", Qgis::MessageLevel::Info);
 }
 
 ControlPoints::ControlPoints(const QVector<QVector3D>& vertices, const QVector4D& color)
     : ColorPrimitive(GL_POINTS, vertices, color) {
-  logMessage("start constructing shader", Qgis::MessageLevel::Info);
+  //logMessage("start constructing shader", Qgis::MessageLevel::Info);
   constructShader(QStringLiteral(":/schoolcore/shaders/line.vs"), QStringLiteral(":/schoolcore/shaders/line.fs"));
   initShaderAllocate();
-  logMessage(QString("control Pointsize is %1").arg(vertexNum), Qgis::MessageLevel::Info);
-  logMessage("ControlPoints initialized", Qgis::MessageLevel::Info);
+  //logMessage(QString("control Pointsize is %1").arg(vertexNum), Qgis::MessageLevel::Info);
+  //logMessage("ControlPoints initialized", Qgis::MessageLevel::Info);
 }
 
 SinglePoint::SinglePoint(const QVector3D& vertices, const QVector4D& color)
     : ColorPrimitive(GL_POINTS, QVector<QVector3D>{vertices}, color), point(vertices) {
-  logMessage("start constructing shader", Qgis::MessageLevel::Info);
+  //logMessage("start constructing shader", Qgis::MessageLevel::Info);
   //constructShader(QStringLiteral(":/schoolcore/shaders/point.vs"), QStringLiteral(":/schoolcore/shaders/point.fs"), QStringLiteral(":/schoolcore/shaders/point.gs"));
   constructShader(QStringLiteral(":/schoolcore/shaders/line.vs"), QStringLiteral(":/schoolcore/shaders/line.fs"));
   initShaderAllocate();
-  logMessage("SinglePoint initialized", Qgis::MessageLevel::Info);
+  //logMessage("SinglePoint initialized", Qgis::MessageLevel::Info);
 }
 
   ConvexHull::ConvexHull(const QVector<QVector3D>& vertices, const QVector4D& color)
     : ColorPrimitive(GL_LINE_LOOP, vertices, color) {
-  logMessage("start constructing shader", Qgis::MessageLevel::Info);
+  //logMessage("start constructing shader", Qgis::MessageLevel::Info);
   constructShader(QStringLiteral(":/schoolcore/shaders/line.vs"), QStringLiteral(":/schoolcore/shaders/line.fs"));
   initShaderAllocate();
-  logMessage("ConvexHull initialized", Qgis::MessageLevel::Info);
+  //logMessage("ConvexHull initialized", Qgis::MessageLevel::Info);
 }
 
 void ModelGroup::initModelData(){
@@ -258,7 +255,6 @@ void ModelGroup::initModelData(){
   this->vao.bind();
   this->vbo.bind();
   this->vbo.setUsagePattern(QOpenGLBuffer::StaticDraw);
-  logMessage("stride is " + QString::number(this->stride), Qgis::MessageLevel::Info);
 
   for (const auto& model : models) {
     generateTexture(model->texturePath);
@@ -268,7 +264,6 @@ void ModelGroup::initModelData(){
   }
   logMessage("vertexNum: " + QString::number(this->vertexNum), Qgis::MessageLevel::Info);
   GLuint count = this->vertexNum * this->stride;
-  logMessage("count is " + QString::number(count), Qgis::MessageLevel::Info);
   this->vertices = new GLfloat[count];
   GLuint index = 0;
   for (const auto& model : models) {
@@ -281,7 +276,7 @@ void ModelGroup::initModelData(){
     }
   }
   this->vbo.allocate(this->vertices, count * sizeof(GLfloat));
-  logMessage("start constructing shader", Qgis::MessageLevel::Info);
+  //logMessage("start constructing shader", Qgis::MessageLevel::Info);
   constructShader(QStringLiteral(":/schoolcore/shaders/model.vs"), QStringLiteral(":/schoolcore/shaders/model.fs"));
   this->shader->bind();
   this->shader->enableAttributeArray(0);
@@ -314,7 +309,7 @@ void ModelGroup::initModelData(){
     shaders.append(newShader);
   }
   */
-  logMessage("Model initialized", Qgis::MessageLevel::Info);
+  //logMessage("Model initialized", Qgis::MessageLevel::Info);
   this->vbo.release();
   this->vao.release();
   checkGLError("Model::Model");
@@ -410,7 +405,7 @@ bool Primitive::constructShader(const QString& vertexShaderPath, const QString& 
     return false;
   }
   this->shader = std::make_shared<QOpenGLShaderProgram>();
-  logMessage(QString("Constructing shader from %1 and %2").arg(vertexShaderPath).arg(fragmentShaderPath), Qgis::MessageLevel::Info);
+  //logMessage(QString("Constructing shader from %1 and %2").arg(vertexShaderPath).arg(fragmentShaderPath), Qgis::MessageLevel::Info);
   if (!shader->addShaderFromSourceFile(QOpenGLShader::Vertex,
                                        vertexShaderPath)) {
     logMessage(QString("Shader Error:") + this->shader->log(),
@@ -551,7 +546,6 @@ void Drone::initModelData(){
   this->vertexNum = modelData->vertices.size();
   logMessage("vertexNum: " + QString::number(this->vertexNum), Qgis::MessageLevel::Info);
   GLuint count = this->vertexNum * this->stride;
-  logMessage("count is " + QString::number(count), Qgis::MessageLevel::Info);
   this->vertices = new GLfloat[count];
   GLuint index = 0;
   for (const auto& vertex : modelData->vertices) {
@@ -560,7 +554,7 @@ void Drone::initModelData(){
     this->vertices[index++] = vertex.position.z();
   }
   this->vbo.allocate(this->vertices, count * sizeof(GLfloat));
-  logMessage("start constructing shader", Qgis::MessageLevel::Info);
+  //logMessage("start constructing shader", Qgis::MessageLevel::Info);
   constructShader(QStringLiteral(":/schoolcore/shaders/base.vs"), QStringLiteral(":/schoolcore/shaders/base.fs"));
   this->vbo.release();
   this->vao.release();
