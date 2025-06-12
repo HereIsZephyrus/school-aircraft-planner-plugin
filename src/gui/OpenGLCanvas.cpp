@@ -116,6 +116,7 @@ void OpenGLCanvas::paintGL() {
     mpScene->paintScene(view, projection);
   }
   
+  camera.checkProcess();
   emit refreash3DParms();
   GLenum err;
   while ((err = glGetError()) != GL_NO_ERROR) {
@@ -158,7 +159,8 @@ void OpenGLScene::paintScene(const QMatrix4x4 &view, const QMatrix4x4 &projectio
         modelWidget->draw(view, projection);
     }
     if (wsp::WindowManager::getInstance().isEditing()) {
-      selectLine->draw(view, projection);
+      if (RoutePlanner::getInstance().getDrawMode() != RouteDrawMode::PREVIEWING_ROUTE)
+        selectLine->draw(view, projection);
     }else{
       //glDisable(GL_CULL_FACE);
       glCullFace(GL_FRONT);

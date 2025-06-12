@@ -198,7 +198,7 @@ BasePlane::BasePlane(Bounds bounds, double baseHeight, const QVector4D &color) :
 }
 
 RoutePath::RoutePath(const QVector<QVector3D>& vertices, const QVector4D& color)
-    : ColorPrimitive(GL_LINE_STRIP, vertices, color) {
+    : ColorPrimitive(GL_LINE_STRIP, vertices, color), routePath(vertices) {
   logMessage("start constructing shader", Qgis::MessageLevel::Info);
   constructShader(QStringLiteral(":/schoolcore/shaders/line.vs"), QStringLiteral(":/schoolcore/shaders/line.fs"));
   initShaderAllocate();
@@ -223,14 +223,11 @@ ControlPoints::ControlPoints(const QVector<QVector3D>& vertices, const QVector4D
 }
 
 SinglePoint::SinglePoint(const QVector3D& vertices, const QVector4D& color)
-    : ColorPrimitive(GL_POINTS, QVector<QVector3D>{vertices}, color) {
+    : ColorPrimitive(GL_POINTS, QVector<QVector3D>{vertices}, color), point(vertices) {
   logMessage("start constructing shader", Qgis::MessageLevel::Info);
   //constructShader(QStringLiteral(":/schoolcore/shaders/point.vs"), QStringLiteral(":/schoolcore/shaders/point.fs"), QStringLiteral(":/schoolcore/shaders/point.gs"));
   constructShader(QStringLiteral(":/schoolcore/shaders/line.vs"), QStringLiteral(":/schoolcore/shaders/line.fs"));
   initShaderAllocate();
-  this->shader->bind();
-  this->shader->setUniformValue("radius",10);
-  this->shader->release();
   logMessage("SinglePoint initialized", Qgis::MessageLevel::Info);
 }
 

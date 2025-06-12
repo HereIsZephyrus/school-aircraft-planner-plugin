@@ -65,6 +65,7 @@ public:
     void resetView();
     void behindView();
     void insideView();
+    void checkProcess();
     QQuaternion zeroPitchDirect();
 
 private:

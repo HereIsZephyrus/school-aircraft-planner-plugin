@@ -1,6 +1,7 @@
 #include "WorkspaceState.h"
 #include "../log/QgisDebug.h"
 #include "../opengl/Camera.h"
+#include "../core/RoutePlanner.h"
 #include <QProcessEnvironment>
 #include <QRandomGenerator>
 #include <QTimer>
@@ -167,9 +168,18 @@ void wsp::EnvManager::generateRandomWeather() {
 }
 
 void wsp::AnimationManager::startSimulation() {
+  if (wsp::FlightManager::getInstance().isManualMode()) {
+    logMessage("Cannot start simulation in manual mode", Qgis::MessageLevel::Warning);
+    return;
+  }
   mIsAnimating = true;
   mIsPaused = false;
   mAnimationProgress = 0.0f;
+  currentPathIndex = 0;
+  Camera &camera = Camera::getInstance();
+  RoutePlanner &routePlanner = RoutePlanner::getInstance();
+  mPath = RoutePlanner::getInstance().getRoutePath();
+  camera.setPosition(routePlanner.getHomePoint());
 }
 
 void wsp::AnimationManager::pauseSimulation() { mIsPaused = true; }
@@ -180,8 +190,11 @@ void wsp::AnimationManager::returnToHome() {
   mAnimationProgress = 0.0f;
   mIsAnimating = false;
   mIsPaused = false;
+  currentPathIndex = 0;
+  Camera &camera = Camera::getInstance();
+  RoutePlanner &routePlanner = RoutePlanner::getInstance();
+  camera.setPosition(routePlanner.getHomePoint()); // Reset camera position
 }
-
 
 void wsp::AnimationManager::stopSimulation() {
   mIsAnimating = false;
@@ -193,8 +206,7 @@ wsp::AnimationManager::AnimationManager() : QObject() {
   mIsAnimating = false;
   mIsPaused = false;
   mAnimationProgress = 0.0f;
-  mAnimationSpeed = 1.0f;
-  mAnimationDirection = QVector3D(1.0f, 0.0f, 0.0f);
+  mAnimationSpeed = 0.1f;
 }
 
 void wsp::FlightManager::setManualMode(bool manual) {

@@ -12,7 +12,7 @@
 
 RoutePlanner::RoutePlanner()
     : mPattern(FlightPattern::SCANLINE), mScanSpacing(10.0f),
-      mTurnRadius(5.0f) {}
+      mTurnRadius(5.0f),mRouteIndex(-1) {}
 
 Route::Route(FlightPattern pattern, float turnRadius, float scanSpacing,
              std::shared_ptr<gl::ControlPoints> controlPoints,
@@ -172,9 +172,9 @@ void RoutePlanner::createRoute() {
       std::make_shared<gl::RoutePath>(routePathLocation);
 
   drawingPoint.clear();
-  //mRoutes.append(std::make_shared<Route>(mPattern, mTurnRadius, mScanSpacing, controlPoints, convexHull, nullptr, homePoint));
   mRoutes.append(std::make_shared<Route>(mPattern, mTurnRadius, mScanSpacing, controlPoints, convexHull, routePath, homePoint));
   mDrawMode = RouteDrawMode::PREVIEWING_ROUTE;
+  ++mRouteIndex;
 }
 
 void RoutePlanner::cleanRoutes(){
@@ -204,7 +204,7 @@ void RoutePlanner::generateScanLinePath(
     const QVector<QVector3D> &convexHullLocation,
     QVector<QVector3D> &routePathLocation) {
 
-  float currentHeight = wsp::FlightManager::getInstance().getPosition().z();
+  float currentHeight = wsp::FlightManager::getInstance().getBaseHeight();
   if (convexHullLocation.size() < 3)
     return;
 

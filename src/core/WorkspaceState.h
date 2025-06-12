@@ -197,8 +197,10 @@ public:
     AnimationManager& operator=(const AnimationManager&) = delete;
     void setAnimationSpeed(double speed) {mAnimationSpeed = speed;}
     double getAnimationSpeed() const {return mAnimationSpeed;}
-    void setAnimationDirection(QVector3D direction) {mAnimationDirection = direction;}
-    QVector3D getAnimationDirection() const {return mAnimationDirection;}
+    bool isAnimating() const {return mIsAnimating;}
+    float mAnimationProgress;
+    int currentPathIndex;
+    QVector<QVector3D> mPath;
 
 public slots:
     void startSimulation();
@@ -209,12 +211,9 @@ public slots:
 
 private:
     double mAnimationSpeed;
-    QVector3D mAnimationDirection;
-    float mAnimationProgress;
     bool mIsAnimating;
     bool mIsPaused;
     void updateAnimation();
-    void drawAircraft(const QVector3D &position, const QQuaternion &orientation);
     bool mCameraFollowAircraft;
     QVector3D mViewTranslation;
 };

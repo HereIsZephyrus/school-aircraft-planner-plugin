@@ -92,6 +92,31 @@ void Camera::rotate(const QQuaternion& rotation) {
     updateCameraVectors();
 }
 
+static float length(const QVector3D& vec) {
+    return qSqrt(vec.x() * vec.x() + vec.y() * vec.y() + vec.z() * vec.z());
+}
+
+void Camera::checkProcess(){
+    using namespace wsp;
+    if (FlightManager::getInstance().isManualMode())
+        return;
+    AnimationManager& animationManager = wsp::AnimationManager::getInstance();
+    if (!animationManager.isAnimating())
+        return;
+    int currentIndex = animationManager.currentPathIndex;
+    QVector3D currentStart = animationManager.mPath[2 * currentIndex];
+    QVector3D currentEnd = animationManager.mPath[2 * currentIndex + 1];
+    QVector3D direction = (currentEnd - currentStart).normalized();
+    if (length(currentEnd - mPosition) > length(direction)){
+        ++animationManager.currentPathIndex;
+        if (animationManager.currentPathIndex >= animationManager.mPath.size() / 2)
+            animationManager.currentPathIndex = 0;
+    }
+    mFront = direction;
+    moveForward(animationManager.getAnimationSpeed());
+    updateCameraVectors();
+}
+
 void Camera::handleMouseMove(const QPoint& delta) {
     float xoffset = delta.x() * mMouseSensitivity;
     float yoffset = -delta.y() * mMouseSensitivity;

@@ -73,6 +73,9 @@ class RoutePath : public ColorPrimitive {
 public:
   RoutePath(const QVector<QVector3D> &vertices,
             const QVector4D &color = QVector4D(1.0f, 1.0f, 1.0f, 1.0f));
+  const QVector<QVector3D> &getRoutePath() const { return routePath; }
+private:
+  QVector<QVector3D> routePath;
 };
 
 class OrientLine : public ColorPrimitive {
@@ -86,8 +89,10 @@ class SinglePoint : public ColorPrimitive {
 public:
   SinglePoint(const QVector3D &vertices,
             const QVector4D &color = QVector4D(1.0f, 1.0f, 1.0f, 1.0f));
+  QVector3D getPoint() const { return point; }
 private:
   float pointSize;
+  QVector3D point;
 };
 
 class SelectLine{
