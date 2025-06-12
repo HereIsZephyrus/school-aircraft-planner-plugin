@@ -17,6 +17,7 @@
 #include <qvector3d.h>
 
 namespace gl {
+class SelectLine;
 class Primitive : public QObject{
   Q_OBJECT
 
@@ -74,12 +75,30 @@ public:
             const QVector4D &color = QVector4D(1.0f, 1.0f, 1.0f, 1.0f));
 };
 
+class OrientLine : public ColorPrimitive {
+public:
+  OrientLine(const QVector<QVector3D> &vertices,
+            const QVector4D &color = QVector4D(0.8f, 0.0f, 0.0f, 1.0f));
+};
+
 class SinglePoint : public ColorPrimitive {
+  friend class SelectLine;
 public:
   SinglePoint(const QVector3D &vertices,
             const QVector4D &color = QVector4D(1.0f, 1.0f, 1.0f, 1.0f));
 private:
   float pointSize;
+};
+
+class SelectLine{
+public:
+  SelectLine();
+  void draw(const QMatrix4x4 &view, const QMatrix4x4 &projection);
+  QVector3D submitPoint();
+private:
+  std::shared_ptr<OrientLine> orientLine;
+  std::shared_ptr<SinglePoint> orientPoint;
+  QVector<QVector3D> calcOrientLine(float baseHeight);
 };
 
 class ControlPoints : public ColorPrimitive {

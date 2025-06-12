@@ -205,6 +205,14 @@ RoutePath::RoutePath(const QVector<QVector3D>& vertices, const QVector4D& color)
   logMessage("RoutePath initialized", Qgis::MessageLevel::Info);
 }
 
+OrientLine::OrientLine(const QVector<QVector3D>& vertices, const QVector4D& color)
+    : ColorPrimitive(GL_LINES, vertices, color) {
+  logMessage("start constructing shader", Qgis::MessageLevel::Info);
+  constructShader(QStringLiteral(":/schoolcore/shaders/line.vs"), QStringLiteral(":/schoolcore/shaders/line.fs"));
+  initShaderAllocate();
+  logMessage("OrientLine initialized", Qgis::MessageLevel::Info);
+}
+
 ControlPoints::ControlPoints(const QVector<QVector3D>& vertices, const QVector4D& color)
     : ColorPrimitive(GL_POINTS, vertices, color) {
   logMessage("start constructing shader", Qgis::MessageLevel::Info);
@@ -584,5 +592,43 @@ void Drone::draw(const QMatrix4x4 &view, const QMatrix4x4 &projection){
   ColorPrimitive::draw(view, projection);
   center->setModelMatrix(cameraModelMatrix);
   center->draw(view, projection);
+}
+
+SelectLine::SelectLine() {
+  orientLine = nullptr;
+  orientPoint = nullptr;
+}
+
+void SelectLine::draw(const QMatrix4x4 &view, const QMatrix4x4 &projection) {
+  QVector<QVector3D> vertices = calcOrientLine(wsp::FlightManager::getInstance().getBaseHeight());
+  orientLine = std::make_shared<gl::OrientLine>(vertices);
+  orientPoint = std::make_shared<gl::SinglePoint>(vertices[1], QVector4D(0.0, 1.0, 0.0, 1.0));
+  orientLine->draw(view, projection);
+  orientPoint->draw(view, projection);
+}
+
+QVector<QVector3D> SelectLine::calcOrientLine(float baseHeight){
+    Camera &camera = Camera::getInstance();
+    QVector4D nearPoint{0.0,-1.0,-1.0,1.0}, farPoint{0.0,0.0,1.0,1.0};
+    QMatrix4x4 invProjection = camera.projectionMatrix().inverted();
+    QMatrix4x4 invView = camera.viewMatrix().inverted();
+    QVector4D clipNear = invProjection * nearPoint;
+    QVector4D clipFar = invProjection * farPoint;
+    clipNear /= clipNear.w();
+    clipFar /= clipFar.w();
+    QVector4D worldNear = invView * clipNear;
+    QVector4D worldFar = invView * clipFar;
+    QVector3D origin(worldNear.x(), worldNear.y(), worldNear.z());
+    QVector3D farPos(worldFar.x(), worldFar.y(), worldFar.z());
+    logMessage(QString("distance %1").arg((baseHeight - camera.mPosition.z()) / camera.mFront.z()), Qgis::MessageLevel::Info);
+    QVector3D direction = origin + camera.mFront * (baseHeight - camera.mPosition.z()) / camera.mFront.z();//(farPos - origin).normalized();
+  return QVector<QVector3D>{origin, direction};
+}
+
+QVector3D SelectLine::submitPoint(){
+  QVector3D point(orientPoint->vertices[0],
+                  orientPoint->vertices[1],
+                  orientPoint->vertices[2]);
+  return point;
 }
 }

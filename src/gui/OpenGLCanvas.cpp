@@ -127,6 +127,7 @@ OpenGLScene::OpenGLScene(QOpenGLContext* context) {
     this->context = context;
     context->makeCurrent(context->surface());
     droneWidget = std::make_shared<gl::Drone>(":/schoolcore/models/drone.obj");
+    selectLine = std::make_shared<gl::SelectLine>();
     logMessage("OpenGLScene initialized", Qgis::MessageLevel::Success);
 }
 
@@ -154,7 +155,9 @@ void OpenGLScene::paintScene(const QMatrix4x4 &view, const QMatrix4x4 &projectio
     if (modelWidget) {
         modelWidget->draw(view, projection);
     }
-    if (!wsp::WindowManager::getInstance().isEditing()) {
+    if (wsp::WindowManager::getInstance().isEditing()) {
+      selectLine->draw(view, projection);
+    }else{
       //glDisable(GL_CULL_FACE);
       glCullFace(GL_FRONT);
       if (droneWidget) {

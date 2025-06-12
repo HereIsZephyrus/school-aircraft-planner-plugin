@@ -68,6 +68,7 @@ public:
 protected:
     std::shared_ptr<gl::ModelGroup> modelWidget;
     std::shared_ptr<gl::Drone> droneWidget;
+    std::shared_ptr<gl::SelectLine> selectLine;
     QVector<std::shared_ptr<Route>> routes;
     QOpenGLContext* context;
 };
