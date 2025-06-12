@@ -218,6 +218,7 @@ ControlPoints::ControlPoints(const QVector<QVector3D>& vertices, const QVector4D
   logMessage("start constructing shader", Qgis::MessageLevel::Info);
   constructShader(QStringLiteral(":/schoolcore/shaders/line.vs"), QStringLiteral(":/schoolcore/shaders/line.fs"));
   initShaderAllocate();
+  logMessage(QString("control Pointsize is %1").arg(vertexNum), Qgis::MessageLevel::Info);
   logMessage("ControlPoints initialized", Qgis::MessageLevel::Info);
 }
 
@@ -620,7 +621,7 @@ QVector<QVector3D> SelectLine::calcOrientLine(float baseHeight){
     QVector4D worldFar = invView * clipFar;
     QVector3D origin(worldNear.x(), worldNear.y(), worldNear.z());
     QVector3D farPos(worldFar.x(), worldFar.y(), worldFar.z());
-    logMessage(QString("distance %1").arg((baseHeight - camera.mPosition.z()) / camera.mFront.z()), Qgis::MessageLevel::Info);
+    //logMessage(QString("distance %1").arg((baseHeight - camera.mPosition.z()) / camera.mFront.z()), Qgis::MessageLevel::Info);
     QVector3D direction = origin + camera.mFront * (baseHeight - camera.mPosition.z()) / camera.mFront.z();//(farPos - origin).normalized();
   return QVector<QVector3D>{origin, direction};
 }

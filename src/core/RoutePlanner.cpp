@@ -145,37 +145,41 @@ QVector3D RoutePlanner::generateHomePoint() {
   return QVector3D(0, 0, 0);
 }
 
+void RoutePlanner::setContext(QOpenGLContext* context){
+  this->context = context;
+}
+
 void RoutePlanner::createRoute() {
-  /*
-  QVector<QVector3D> controlPointsLocation;
-  generateControlPoints(controlPointsLocation);
+  context->makeCurrent(context->surface());
   std::shared_ptr<gl::ControlPoints> controlPoints =
-      std::make_shared<gl::ControlPoints>(controlPointsLocation);
+      std::make_shared<gl::ControlPoints>(drawingPoint);
 
   QVector3D homePointLocation;
   homePointLocation = generateHomePoint();
   std::shared_ptr<gl::SinglePoint> homePoint =
-      std::make_shared<gl::SinglePoint>(QVector<QVector3D>{homePointLocation});
+      std::make_shared<gl::SinglePoint>(drawingPoint.first(),
+                                        QVector4D(1.0f, 0.0f, 0.0f, 1.0f));
 
   QVector<QVector3D> convexHullLocation;
-  generateConvexHull(controlPointsLocation, convexHullLocation);
+  generateConvexHull(drawingPoint, convexHullLocation);
   std::shared_ptr<gl::ConvexHull> convexHull =
       std::make_shared<gl::ConvexHull>(convexHullLocation);
 
   QVector<QVector3D> routePathLocation;
-  generateRoutePath(controlPointsLocation, homePointLocation,
+  generateRoutePath(drawingPoint, homePointLocation,
                     convexHullLocation, mPattern, routePathLocation);
-
   std::shared_ptr<gl::RoutePath> routePath =
       std::make_shared<gl::RoutePath>(routePathLocation);
-  mRoutes.append(std::make_shared<Route>(mPattern, mTurnRadius, mScanSpacing,
-                                         controlPoints, convexHull, routePath,
-                                         homePoint));
-  mDrawMode = RouteDrawMode::AVAILABLE;
-  */
-  Camera& camera = Camera::getInstance();
-  camera.mPosition -= QVector3D(0, 0, wsp::FlightManager::getInstance().getBaseHeight());
-  wsp::WindowManager::getInstance().setEditing(false);
+
+  drawingPoint.clear();
+  //mRoutes.append(std::make_shared<Route>(mPattern, mTurnRadius, mScanSpacing, controlPoints, convexHull, nullptr, homePoint));
+  mRoutes.append(std::make_shared<Route>(mPattern, mTurnRadius, mScanSpacing, controlPoints, convexHull, routePath, homePoint));
+  mDrawMode = RouteDrawMode::PREVIEWING_ROUTE;
+}
+
+void RoutePlanner::cleanRoutes(){
+  mRoutes.clear();
+  drawingPoint.clear();
 }
 
 void RoutePlanner::createControlPoint(){
@@ -186,10 +190,11 @@ void RoutePlanner::createControlPoint(){
 }
 
 void RoutePlanner::addControlPoint(QVector3D point) {
+  mDrawMode = RouteDrawMode::ADDDING_CONTROL_POINTS;
   logMessage(QString("add control point %1, %2, %3")
                .arg(point.x())
                .arg(point.y())
-               .arg(point.z()),
+               .arg(wsp::FlightManager::getInstance().getBaseHeight()),
            Qgis::MessageLevel::Info);
   drawingPoint.append(point);
 }
@@ -366,4 +371,25 @@ void RoutePlanner::editRoute() {
 
 std::shared_ptr<gl::ControlPoints> RoutePlanner::constructDrawingPoints(){
   return std::make_shared<gl::ControlPoints>(drawingPoint, QVector4D(1.0f, 0.0f, 0.0f, 1.0f));
+}
+
+void RoutePlanner::drawRoutes(const QMatrix4x4 &view, const QMatrix4x4 &projection){
+  if (mDrawMode == RouteDrawMode::ADDDING_CONTROL_POINTS) {
+    auto controlPoints = constructDrawingPoints();
+    controlPoints->draw(view, projection);
+    return;
+  }
+  for (const auto &route : mRoutes)
+    route->draw(view, projection);
+}
+
+void Route::draw(const QMatrix4x4 &view, const QMatrix4x4 &projection){
+  if (homePoint)
+    homePoint->draw(view, projection);
+  if (controlPoints)
+    controlPoints->draw(view, projection);
+  if (convexHull)
+    convexHull->draw(view, projection);
+  if (path)
+    path->draw(view, projection);
 }

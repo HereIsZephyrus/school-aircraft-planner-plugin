@@ -27,6 +27,7 @@ enum class FlightPattern : unsigned char {
 
 enum class RouteDrawMode : unsigned char {
   AVAILABLE,
+  ADDDING_CONTROL_POINTS,
   CREATING_CONTROL_POINTS,
   CREATING_CONVEX_HULL,
   CREATING_ROUTE_PATH,
@@ -35,6 +36,7 @@ enum class RouteDrawMode : unsigned char {
   EDITING_CONTROL_POINTS,
   EDITING_CONVEX_HULL,
   EDITING_HOME_POINT,
+  PREVIEWING_ROUTE,
 };
 
 class Route {
@@ -45,6 +47,8 @@ public:
                  std::shared_ptr<gl::RoutePath> path,
                  std::shared_ptr<gl::SinglePoint> homePoint);
   ~Route() = default;
+
+  void draw(const QMatrix4x4 &view, const QMatrix4x4 &projection);
 
 private:
   FlightPattern mPattern;
@@ -82,6 +86,9 @@ public:
   void setDrawMode(RouteDrawMode mode) { mDrawMode = mode; }
 
   std::shared_ptr<gl::ControlPoints> constructDrawingPoints();
+  void drawRoutes(const QMatrix4x4 &view, const QMatrix4x4 &projection);
+  void cleanRoutes();
+  void setContext(QOpenGLContext* context);
 
 public slots:
   void createRoute();
@@ -94,6 +101,7 @@ private:
   QVector<QVector3D> drawingPoint;
   FlightPattern mPattern;
   RouteDrawMode mDrawMode;
+  QOpenGLContext* context;
   float mScanSpacing; // scan line spacing
   float mTurnRadius;  // turn radius
   QVector3D getControlPoint();

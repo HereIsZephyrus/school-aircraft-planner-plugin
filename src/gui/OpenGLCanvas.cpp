@@ -86,6 +86,7 @@ void OpenGLCanvas::initializeGL() {
   }
 
   mpScene = std::make_unique<OpenGLScene>(context());
+  RoutePlanner::getInstance().setContext(context());
   logMessage("OpenGL context initialized", Qgis::MessageLevel::Success);
 }
 
@@ -133,8 +134,9 @@ OpenGLScene::OpenGLScene(QOpenGLContext* context) {
 
 OpenGLScene::~OpenGLScene() {
   logMessage("ready to destroy OpenGLScene", Qgis::MessageLevel::Info);
-    cleanupResources();
-    routes.clear();
+  cleanupResources();
+  routes.clear();
+  RoutePlanner::getInstance().cleanRoutes();
 }
 
 void OpenGLScene::cleanupResources() {
@@ -157,11 +159,6 @@ void OpenGLScene::paintScene(const QMatrix4x4 &view, const QMatrix4x4 &projectio
     }
     if (wsp::WindowManager::getInstance().isEditing()) {
       selectLine->draw(view, projection);
-      std::shared_ptr<gl::ControlPoints> drawingPoints = RoutePlanner::getInstance().constructDrawingPoints();
-      if (drawingPoints)
-        drawingPoints->draw(view, projection);
-      else
-        logMessage("Failed to construct drawing points", Qgis::MessageLevel::Critical);
     }else{
       //glDisable(GL_CULL_FACE);
       glCullFace(GL_FRONT);
@@ -169,6 +166,7 @@ void OpenGLScene::paintScene(const QMatrix4x4 &view, const QMatrix4x4 &projectio
           droneWidget->draw(view, projection);
       }
     }
+    RoutePlanner::getInstance().drawRoutes(view, projection);
 }
 
 void OpenGLScene::loadModel(const QString &objFilePath) {
@@ -211,9 +209,15 @@ void OpenGLCanvas::keyPressEvent(QKeyEvent *event) {
     wsp::WindowManager& windowManager = wsp::WindowManager::getInstance();
     windowManager.keyPressEvent(event);
     if (windowManager.isEditing()) {
-      if (windowManager.isKeyPressed(Qt::Key_Space) || windowManager.isKeyPressed(Qt::Key_Enter)) {
+      if (windowManager.isKeyPressed(Qt::Key_Space)) {
         QVector3D point = mpScene->getPoint();
         emit submitPoint(point);
+      }
+      if (windowManager.isKeyPressed(Qt::Key_K)){
+        Camera& camera = Camera::getInstance();
+        camera.mPosition -= QVector3D(0, 0, wsp::FlightManager::getInstance().getBaseHeight());
+        wsp::WindowManager::getInstance().setEditing(false);
+        RoutePlanner::getInstance().setDrawMode(RouteDrawMode::AVAILABLE);
       }
     }
     update();
