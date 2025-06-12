@@ -76,7 +76,7 @@ public:
 
 class SinglePoint : public ColorPrimitive {
 public:
-  SinglePoint(const QVector<QVector3D> &vertices,
+  SinglePoint(const QVector3D &vertices,
             const QVector4D &color = QVector4D(1.0f, 1.0f, 1.0f, 1.0f));
 private:
   float pointSize;

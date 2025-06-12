@@ -77,6 +77,7 @@ void OpenGLCanvas::initializeGL() {
   glEnable(GL_DEPTH_TEST);
   glEnable(GL_BLEND);
   glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+  glPointSize(20.0f);
 
   // Initialize shared context manager with our surface
   if (!SharedContextManager::getInstance().initialize(context())) {

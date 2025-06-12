@@ -145,10 +145,13 @@ void ColorPrimitive::draw(const QMatrix4x4 &view, const QMatrix4x4 &projection){
 }
 
 void ColorPrimitive::initShaderAllocate(){
-  vao.create();
-  vbo.create();
+  if (!this->vao.isCreated())
+    this->vao.create();
+  if (!this->vbo.isCreated())
+    this->vbo.create();
   this->vao.bind();
   this->vbo.bind();
+  this->vbo.setUsagePattern(QOpenGLBuffer::StaticDraw);
   this->shader->bind();
   this->shader->enableAttributeArray(0);
   this->shader->setAttributeBuffer(0, GL_FLOAT, 0, 3, this->stride * sizeof(GLfloat));
@@ -210,8 +213,8 @@ ControlPoints::ControlPoints(const QVector<QVector3D>& vertices, const QVector4D
   logMessage("ControlPoints initialized", Qgis::MessageLevel::Info);
 }
 
-SinglePoint::SinglePoint(const QVector<QVector3D>& vertices, const QVector4D& color)
-    : ColorPrimitive(GL_TRIANGLE_STRIP, vertices, color) {
+SinglePoint::SinglePoint(const QVector3D& vertices, const QVector4D& color)
+    : ColorPrimitive(GL_POINTS, QVector<QVector3D>{vertices}, color) {
   logMessage("start constructing shader", Qgis::MessageLevel::Info);
   //constructShader(QStringLiteral(":/schoolcore/shaders/point.vs"), QStringLiteral(":/schoolcore/shaders/point.fs"), QStringLiteral(":/schoolcore/shaders/point.gs"));
   constructShader(QStringLiteral(":/schoolcore/shaders/line.vs"), QStringLiteral(":/schoolcore/shaders/line.fs"));
@@ -511,21 +514,7 @@ void ModelGroup::calcBounds(){
 Drone::Drone(const QString &objFilePath) : ColorPrimitive(GL_TRIANGLES) {
   modelData = std::make_shared<model::ModelData>(objFilePath);
   initModelData();
-  QVector<QVector3D> centerVertices;
-  float bound = 0.4f;
-  // tempoerary
-  centerVertices.append(QVector3D(-bound, -bound,  bound));
-  centerVertices.append(QVector3D( bound, -bound,  bound));
-  centerVertices.append(QVector3D(-bound,  bound,  bound));
-  centerVertices.append(QVector3D( bound,  bound,  bound));
-  centerVertices.append(QVector3D( bound, -bound, -bound));
-  centerVertices.append(QVector3D(-bound, -bound, -bound));
-  centerVertices.append(QVector3D( bound,  bound, -bound));
-  centerVertices.append(QVector3D(-bound,  bound,  bound));
-  centerVertices.append(QVector3D(-bound, -bound, -bound));
-  centerVertices.append(QVector3D(-bound, -bound,  bound));
-  centerVertices.append(QVector3D( bound, -bound, -bound));
-  center = std::make_shared<SinglePoint>(centerVertices,QVector4D(1.0,0.0,0.0,1.0));
+  center = std::make_shared<SinglePoint>(QVector3D(0, 0, 0),QVector4D(1.0,0.0,0.0,1.0));
   logMessage("Drone initialized", Qgis::MessageLevel::Info);
 }
 
