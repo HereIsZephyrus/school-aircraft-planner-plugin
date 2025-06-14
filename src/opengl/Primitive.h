@@ -145,6 +145,7 @@ public:
 protected:
   Bounds mBounds;
   void calcBounds();
+  void initGeoTransForm();
   QString objFileFolderPath;
   QVector<QString> objFilePaths;
   QString retriveObjFilePath(const QString &subDirPath);

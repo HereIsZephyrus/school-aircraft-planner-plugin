@@ -43,7 +43,7 @@ signals:
   void simulationReturnHome();
   void simulationStop();
   void createRoute();
-  void refreshFlightParams();
+  void setFlightParams();
   void refreshEnvironmentalParams();
   void showUserManual();
 };

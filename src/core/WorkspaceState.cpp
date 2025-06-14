@@ -56,7 +56,7 @@ wsp::EnvManager::EnvManager() {
 wsp::EnvManager::~EnvManager() {}
 
 wsp::FlightManager::FlightManager() {
-  mFlightSpeed = 10.0;
+  mFlightSpeed = 5.0;
   mFlightBattery = 100.0;
   mBaseHeight = 100.0;
   mMaxAlititude = maxBaseHeight;
@@ -67,15 +67,15 @@ wsp::FlightManager::~FlightManager() { mFlightPath.clear(); }
 wsp::WindowManager::WindowManager()
     : QObject(nullptr), mCurrentCanvas(CanvasType::ThreeD),
       is3DMapInited(false), is2DMapInited(false) {
-  // 初始化更新定时器
   mUpdateTimer = new QTimer(this);
   connect(mUpdateTimer, &QTimer::timeout, this,
           &WindowManager::updateCameraMovement);
-  mUpdateTimer->start(16); // 约60fps的更新频率
+  mUpdateTimer->start(16);
   if (!pDefaultObject)
     pDefaultObject = new QObject();
   mBounds = Bounds();
   isEditMode = false;
+  geoTransform.setToIdentity();
 }
 
 wsp::WindowManager::~WindowManager() {
@@ -99,7 +99,7 @@ bool wsp::WindowManager::isKeyPressed(int key) const {
 }
 
 void wsp::WindowManager::update3DCameraMovement() {
-  float step = 0.5f;
+  float step = FlightManager::getInstance().getFlightSpeed() / 10;
   Camera &camera = Camera::getInstance();
   
   if (isKeyPressed(Qt::Key_W))
@@ -131,8 +131,7 @@ void wsp::WindowManager::updateCameraMovement() {
   }
 }
 
-// add new slot function at the end of the file
-QString wsp::FlightManager::queryFlightParameters() {
+QString wsp::FlightManager::displayFlightParams() {
   QString params = QString("Current Flight Parameters:\n"
                            "Speed: %1 m/s\n"
                            "Altitude: %2 m\n"
@@ -146,6 +145,14 @@ QString wsp::FlightManager::queryFlightParameters() {
   return params;
 }
 
+QVector3D wsp::WindowManager::getGeoTransform(QVector3D modelPosition){
+  QVector4D geoPosition = geoTransform * QVector4D(modelPosition,1.0);
+  return QVector3D(geoPosition.x(), geoPosition.y(), geoPosition.z());
+}
+QVector3D wsp::WindowManager::getModelTransform(QVector3D geoPosition){
+  QVector4D modelPosition = geoTransform.inverted() * QVector4D(geoPosition,1.0);
+  return QVector3D(modelPosition.x(), modelPosition.y(), modelPosition.z());
+}
 void wsp::EnvManager::generateRandomWeather() {
   logMessage("generate random weather data", Qgis::MessageLevel::Info);
   WeatherType weather =
@@ -214,6 +221,44 @@ void wsp::FlightManager::setManualMode(bool manual) {
     logMessage("Flight Manager is now in automatic mode", Qgis::MessageLevel::Info);
     Camera::getInstance().insideView();
   }
+}
+
+QMatrix4x4 wsp::calculateCoordTransform(const QVector3D& s1, const QVector3D& s2, const QVector3D& s3,
+                              const QVector3D& t1, const QVector3D& t2, const QVector3D& t3) {
+    QVector3D deltaS12 = s2 - s1;
+    QVector3D deltaS13 = s3 - s1;
+    
+    QVector3D deltaT12 = t2 - t1;
+    QVector3D deltaT13 = t3 - t1;
+    
+    QVector3D u = deltaS12.normalized();
+    QVector3D v = QVector3D::crossProduct(u, deltaS13).normalized();
+    QVector3D w = QVector3D::crossProduct(u, v);
+    
+    QVector3D u_prime = deltaT12.normalized();
+    QVector3D v_prime = QVector3D::crossProduct(u_prime, deltaT13).normalized();
+    QVector3D w_prime = QVector3D::crossProduct(u_prime, v_prime);
+    
+    QMatrix4x4 sourceBasis(u.x(), v.x(), w.x(), 0,
+                          u.y(), v.y(), w.y(), 0,
+                          u.z(), v.z(), w.z(), 0,
+                          0,    0,    0,    1);
+    
+    QMatrix4x4 targetBasis(u_prime.x(), v_prime.x(), w_prime.x(), 0,
+                           u_prime.y(), v_prime.y(), w_prime.y(), 0,
+                           u_prime.z(), v_prime.z(), w_prime.z(), 0,
+                           0,           0,           0,           1);
+    
+    QMatrix4x4 rotation = targetBasis * sourceBasis.inverted();
+    
+    QVector3D translation = t1 - rotation * s1;
+    
+    QMatrix4x4 transform;
+    transform.setToIdentity();
+    transform *= rotation;
+    transform.translate(translation);
+    
+    return transform;
 }
 
 void Bounds::merge(const Bounds& bounds){

@@ -72,7 +72,7 @@ QMenu *MenuBar::createSettingMenu(QWidget *parent) {
       tr("Environmental parameters")); // environmental parameters
 
   connect(flightParamsAction, &QAction::triggered, this,
-          &MenuBar::refreshFlightParams);
+          &MenuBar::setFlightParams);
   connect(environmentalParamsAction, &QAction::triggered, this,
           &MenuBar::refreshEnvironmentalParams);
   logMessage("create setting menu", Qgis::MessageLevel::Success);

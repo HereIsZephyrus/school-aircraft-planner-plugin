@@ -207,7 +207,7 @@ connect(mpLeftDockWidget->getFlightSimGroup(), &FlightSimGroup::simulationStart,
 ```
 - **飞行参数查询分组与飞行管理器的通讯**：飞行参数查询分组的查询和设置飞行参数操作通过信号与槽机制传递给飞行管理器，实现飞行参数的查询和设置。例如，点击“查询飞行参数”按钮会触发 `queryFlightParams` 信号，飞行管理器接收到该信号后查询飞行参数。
 ```cpp
-connect(mpLeftDockWidget->getFlightQueryGroup(), &FlightQueryGroup::queryFlightParams, &FlightManager::getInstance(), &FlightManager::queryFlightParameters);
+connect(mpLeftDockWidget->getFlightQueryGroup(), &FlightQueryGroup::queryFlightParams, &FlightManager::getInstance(), &FlightManager::setFlightParams);
 ```
 
 ### 3. 右侧停靠窗口与其他组件的通讯
@@ -331,9 +331,9 @@ double getMaxAltitude() const;
 void setManualMode(bool manual);
 bool isManualMode() const;
 ```
-    - **查询飞行参数**：
+    - **设定飞行参数**：
 ```cpp
-QString queryFlightParameters();
+QString setFlightParams();
 ```
 
 ### 5. `AnimationManager`

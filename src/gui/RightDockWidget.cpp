@@ -270,7 +270,7 @@ void ToolTreeWidget::onTreeItemClicked(QTreeWidgetItem *item, int column) {
   } else if (mpSimulationToolbox->isStop(item)) {
     emit simulationStop();
   } else if (mpParameterToolbox->isFlightParams(item)) {
-    emit queryFlightParams();
+    emit setFlightParams();
   } else if (mpParameterToolbox->isEnvironmentParams(item)) {
     emit queryEnvParams();
   }

@@ -97,9 +97,6 @@ void MainWindow::createSlots() {
   connect(mpLeftDockWidget->getFlightSimGroup(),
           &FlightSimGroup::simulationStop, &AnimationManager::getInstance(),
           &AnimationManager::stopSimulation);
-  connect(mpLeftDockWidget->getFlightQueryGroup(),
-          &FlightQueryGroup::queryFlightParams, &FlightManager::getInstance(),
-          &FlightManager::queryFlightParameters);
   connect(mpLeftDockWidget->getEnvQueryGroup(), &EnvQueryGroup::queryEnvParams,
           &EnvManager::getInstance(), &EnvManager::generateRandomWeather);
   connect(mpRightDockWidget->getToolTreeWidget(), &ToolTreeWidget::createRoute,
@@ -122,8 +119,8 @@ void MainWindow::createSlots() {
           &ToolTreeWidget::simulationStop, &AnimationManager::getInstance(),
           &AnimationManager::stopSimulation);
   connect(mpRightDockWidget->getToolTreeWidget(),
-          &ToolTreeWidget::queryFlightParams, &FlightManager::getInstance(),
-          &FlightManager::queryFlightParameters);
+          &ToolTreeWidget::setFlightParams, mpLeftDockWidget->getFlightQueryGroup(),
+          &FlightQueryGroup::setFlightParams);
   connect(mpRightDockWidget->getToolTreeWidget(),
           &ToolTreeWidget::queryEnvParams, &EnvManager::getInstance(),
           &EnvManager::generateRandomWeather);
@@ -148,8 +145,8 @@ void MainWindow::createSlots() {
           &AnimationManager::stopSimulation);
   connect(mpMenuBar, &MenuBar::createRoute, &RoutePlanner::getInstance(),
           &RoutePlanner::createControlPoint);
-  connect(mpMenuBar, &MenuBar::refreshFlightParams,
-          &FlightManager::getInstance(), &FlightManager::queryFlightParameters);
+  connect(mpMenuBar, &MenuBar::setFlightParams,
+          mpLeftDockWidget->getFlightQueryGroup(), &FlightQueryGroup::setFlightParams);
   connect(mpMenuBar, &MenuBar::refreshEnvironmentalParams,
           &EnvManager::getInstance(), &EnvManager::generateRandomWeather);
   connect(mpCanvas->getOpenGLWidget(), &OpenGLCanvas::submitEdit,

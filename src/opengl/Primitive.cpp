@@ -134,7 +134,6 @@ void ColorPrimitive::draw(const QMatrix4x4 &view, const QMatrix4x4 &projection){
   }
   this->shader->bind();
   this->shader->setUniformValue("vColor", this->color);
-  //this->shader->setUniformValue("model", this->modelMatrix);
   this->shader->setUniformValue("view", view);
   this->shader->setUniformValue("projection", projection);
   this->vao.bind();
@@ -327,7 +326,7 @@ void ModelGroup::draw(const QMatrix4x4 &view, const QMatrix4x4 &projection) {
     this->vao.bind();
     this->shader->bind();
     checkGLError("Model::draw - after shader bind");
-    //this->shader->setUniformValue("model", this->modelMatrix);
+    this->shader->setUniformValue("model", this->modelMatrix);
     this->shader->setUniformValue("view", view);
     this->shader->setUniformValue("projection", projection);
     GLuint startIndex = 0;
@@ -462,6 +461,28 @@ ModelGroup::~ModelGroup(){
   logMessage("ModelGroup destroyed", Qgis::MessageLevel::Success);
 }
 
+void ModelGroup::initGeoTransForm(){
+  QVector3D s1 = QVector3D(128.1701,162.4710,31.0);
+  //QVector3D t1 = QVector3D(114.6138,30.46113,20.158);
+  QVector3D t1 = QVector3D(559143.5,3371393,20.158);
+  QVector3D s2 = QVector3D(225.3517,344.8144,29.4);
+  //QVector3D t2 = QVector3D(114.6169,30.46277,19.059);
+  QVector3D t2 = QVector3D(559241.5,3371576,19.059);
+  QVector3D s3 = QVector3D(-150.8277,-192.4701,34.1);
+  //QVector3D t3 = QVector3D(114.6129,30.4579,22.833);
+  QVector3D t3 = QVector3D(558868.1,3371034,22.833);
+  QMatrix4x4 geoTransform = wsp::calculateCoordTransform(s1,s2,s3,t1,t2,t3);
+  /*
+  The Matrix is
+  [     0.99997759     0.00206700     0.00638720565,970.56250000]
+  [    -0.00202748     0.99997884    -0.006199093,370,026.25000000]
+  [    -0.00639988     0.00618600     0.9999604217,265.79296875]
+  [     0.00000000     0.00000000     0.00000000     1.00000000]
+  all most 1:1 and has correct orientation
+  */
+  wsp::WindowManager::getInstance().setGeoTransform(geoTransform);
+}
+
 ModelGroup::ModelGroup(const QString &objFileFolderPath):Primitive(GL_TRIANGLES, 5),objFileFolderPath(objFileFolderPath){
   QDir dir(objFileFolderPath);
   QStringList subDirs = dir.entryList(QDir::Dirs | QDir::NoDotAndDotDot);
@@ -476,6 +497,7 @@ ModelGroup::ModelGroup(const QString &objFileFolderPath):Primitive(GL_TRIANGLES,
     models.append(std::make_shared<model::ModelData>(objFilePath));
   }
   initModelData();
+  initGeoTransForm();
   this->calcBounds();
   this->basePlaneWidget = std::make_shared<BasePlane>(mBounds, wsp::FlightManager::getInstance().getBaseHeight());
 }
@@ -571,7 +593,7 @@ void Drone::draw(const QMatrix4x4 &view, const QMatrix4x4 &projection){
     dronePosition = camera.mPosition + camera.mFront * camera.mDis2Camera;
   else
     dronePosition = camera.mPosition;
-  flightManager.setPorision(dronePosition);
+  flightManager.setPorision(wsp::WindowManager::getInstance().getGeoTransform(dronePosition));
   cameraModelMatrix.translate(dronePosition);
   cameraModelMatrix.scale(0.1, 0.1, 0.1);
   cameraModelMatrix.rotate(camera.zeroPitchDirect());

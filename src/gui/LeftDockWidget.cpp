@@ -1,6 +1,7 @@
 #include "LeftDockWidget.h"
 #include "../core/WorkspaceState.h"
 #include "../log/QgisDebug.h"
+#include "../opengl/Camera.h"
 #include <QComboBox>
 #include <QDialog>
 #include <QDialogButtonBox>
@@ -204,7 +205,7 @@ void FlightQueryGroup::createDialog() {
   using namespace wsp;
   FlightManager &flightManager = FlightManager::getInstance();
   mpFlightParamsDisplay =
-      new QLabel(flightManager.queryFlightParameters(), this);
+      new QLabel(flightManager.displayFlightParams(), this);
   mpFlightParamsDisplay->setWordWrap(true);
   mpFlightParamsDisplay->setFrameStyle(QFrame::Box);
 
@@ -215,22 +216,31 @@ void FlightQueryGroup::createDialog() {
 
   mpFlightParamsForm = new QFormLayout(mpFlightParamsDialog);
 
-  mpSpeedSpin = new QDoubleSpinBox(mpFlightParamsDialog);
-  mpSpeedSpin->setRange(FlightManager::minFlightSpeed,
-                        FlightManager::maxFlightSpeed);
-  mpSpeedSpin->setValue(flightManager.getFlightSpeed());
-  mpFlightParamsForm->addRow(tr("Flight Speed (m/s):"), mpSpeedSpin);
+  mpLatSpin = new QDoubleSpinBox(mpFlightParamsDialog);
+  mpLatSpin->setRange(0, 100000000);
+  mpLatSpin->setDecimals(5);
+  mpFlightParamsForm->addRow(tr("Latitude:"), mpLatSpin);
+
+  mpLonSpin = new QDoubleSpinBox(mpFlightParamsDialog);
+  mpLonSpin->setRange(0, 100000000);
+  mpLonSpin->setDecimals(5);
+  mpFlightParamsForm->addRow(tr("Longtitude:"), mpLonSpin);
 
   mpAltitudeSpin = new QDoubleSpinBox(mpFlightParamsDialog);
   mpAltitudeSpin->setRange(FlightManager::minFlightAltitude,
                            FlightManager::maxFlightAltitude);
-  mpAltitudeSpin->setValue(flightManager.getMaxAltitude());
+  mpAltitudeSpin->setDecimals(5);
   mpFlightParamsForm->addRow(tr("Max Altitude (m):"), mpAltitudeSpin);
+
+  mpSpeedSpin = new QDoubleSpinBox(mpFlightParamsDialog);
+  mpSpeedSpin->setRange(FlightManager::minFlightSpeed,
+                        FlightManager::maxFlightSpeed);
+  mpFlightParamsForm->addRow(tr("Flight Speed (m/s):"), mpSpeedSpin);
 
   mpBatterySpin = new QDoubleSpinBox(mpFlightParamsDialog);
   mpBatterySpin->setRange(FlightManager::minFlightBattery,
                           FlightManager::maxFlightBattery);
-  mpBatterySpin->setValue(flightManager.getFlightBattery());
+
   mpFlightParamsForm->addRow(tr("Battery Capacity (%):"), mpBatterySpin);
 
   mpFlightParamsButtonBox =
@@ -238,20 +248,42 @@ void FlightQueryGroup::createDialog() {
                            Qt::Horizontal, mpFlightParamsDialog);
   mpFlightParamsForm->addRow(mpFlightParamsButtonBox);
 
+  mpLatSpin->setValue(flightManager.getPosition().x());
+  mpLonSpin->setValue(flightManager.getPosition().y());
+  mpAltitudeSpin->setValue(flightManager.getMaxAltitude());
+  mpSpeedSpin->setValue(flightManager.getFlightSpeed());
+  mpBatterySpin->setValue(flightManager.getFlightBattery());
+
   logMessage("show flight parameters dialog", Qgis::MessageLevel::Success);
 }
 
 void FlightQueryGroup::refreshFlightParams() {
   using namespace wsp;
   FlightManager &flightManager = FlightManager::getInstance();
+  mpFlightParamsDisplay->setText(flightManager.displayFlightParams());
+}
+void FlightQueryGroup::setFlightParams(){
+  wsp::FlightManager& flightManager = wsp::FlightManager::getInstance();
+  mpLatSpin->setValue(flightManager.getPosition().x());
+  mpLonSpin->setValue(flightManager.getPosition().y());
+  mpAltitudeSpin->setValue(flightManager.getMaxAltitude());
+  mpSpeedSpin->setValue(flightManager.getFlightSpeed());
+  mpBatterySpin->setValue(flightManager.getFlightBattery());
+
+  mpFlightParamsDialog->exec();
   flightManager.setFlightSpeed(mpSpeedSpin->value());
   flightManager.setFlightBattery(mpBatterySpin->value());
-  mpFlightParamsDisplay->setText(flightManager.queryFlightParameters());
+  QVector3D newModelPosition = wsp::WindowManager::getInstance().getModelTransform(QVector3D(mpLatSpin->value(), mpLonSpin->value(), flightManager.getPosition().z()));
+  Camera& camera  = Camera::getInstance();
+  if (flightManager.isManualMode())
+    camera.setPosition(newModelPosition - camera.mFront * camera.mDis2Camera);
+  else
+    camera.setPosition(newModelPosition);
 }
 
 void FlightQueryGroup::createSlots() {
-  connect(mpBtnQueryParams, &QPushButton::clicked, this,
-          &FlightQueryGroup::queryFlightParams);
+  connect(mpBtnSetParams, &QPushButton::clicked, this,
+          &FlightQueryGroup::setFlightParams);
   connect(mpFlightParamsButtonBox, &QDialogButtonBox::accepted,
           mpFlightParamsDialog, &QDialog::accept);
   connect(mpFlightParamsButtonBox, &QDialogButtonBox::rejected,
@@ -261,8 +293,8 @@ void FlightQueryGroup::createSlots() {
 }
 
 void FlightQueryGroup::createButtons() {
-  mpBtnQueryParams = new QPushButton("Query Parameters", this);
-  mpBtnQueryParams->setObjectName("pBtnQueryParams");
+  mpBtnSetParams = new QPushButton("Set Parameters", this);
+  mpBtnSetParams->setObjectName("pBtnSetParams");
 }
 
 FlightQueryGroup::FlightQueryGroup(QWidget *parent)
@@ -271,7 +303,7 @@ FlightQueryGroup::FlightQueryGroup(QWidget *parent)
   createDialog();
   createButtons();
   mpGroupLayout->addWidget(mpFlightParamsDisplay);
-  mpGroupLayout->addWidget(mpBtnQueryParams);
+  mpGroupLayout->addWidget(mpBtnSetParams);
 
   createSlots();
 

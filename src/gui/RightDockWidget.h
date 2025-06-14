@@ -131,7 +131,7 @@ signals:
   void simulationResume();
   void simulationReturnHome();
   void simulationStop();
-  void queryFlightParams();
+  void setFlightParams();
   void queryEnvParams();
 };
 

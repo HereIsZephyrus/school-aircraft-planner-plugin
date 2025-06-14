@@ -55,12 +55,16 @@ public:
     void updateCameraMovement();
     bool isEditing() const {return isEditMode;}
     void setEditing(bool editing) {isEditMode = editing;}
+    QVector3D getGeoTransform(QVector3D modelPosition);
+    QVector3D getModelTransform(QVector3D geoPosition);
+    void setGeoTransform(const QMatrix4x4& newMatrix) {geoTransform = newMatrix;};
 
 private:
     CanvasType mCurrentCanvas;
     static QObject *pDefaultObject;
     bool is3DMapInited,is2DMapInited;
     Bounds mBounds;
+    QMatrix4x4 geoTransform;
     QMap<int, bool> mKeyStates;
     QTimer* mUpdateTimer;
     bool isEditMode;
@@ -171,7 +175,7 @@ public:
     static constexpr int maxBaseHeight = 100;
 
 public slots:
-    QString queryFlightParameters();
+    QString displayFlightParams();
 private:
     double mFlightSpeed,mFlightBattery;
     double mBaseHeight, mMaxAlititude;
@@ -216,6 +220,8 @@ private:
     bool mCameraFollowAircraft;
     QVector3D mViewTranslation;
 };
-}
 
+QMatrix4x4 calculateCoordTransform(const QVector3D& s1, const QVector3D& s2, const QVector3D& s3,
+                                const QVector3D& t1, const QVector3D& t2, const QVector3D& t3);
+}
 #endif

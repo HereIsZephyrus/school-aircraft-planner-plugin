@@ -145,20 +145,18 @@ private:
   void createSlots() override;
   void createButtons() override;
   void createDialog();
-  QPushButton *mpBtnQueryParams;
+  QPushButton *mpBtnSetParams;
   QLabel *mpFlightParamsDisplay;
   QDialog *mpFlightParamsDialog;
   QFormLayout *mpFlightParamsForm;
   QDoubleSpinBox *mpSpeedSpin;
-  QDoubleSpinBox *mpAltitudeSpin;
   QDoubleSpinBox *mpBatterySpin;
+  QDoubleSpinBox *mpLatSpin, *mpLonSpin, *mpAltitudeSpin;
   QDialogButtonBox *mpFlightParamsButtonBox;
 
 public slots:
   void refreshFlightParams();
-
-signals:
-  void queryFlightParams();
+  void setFlightParams();
 };
 
 class EnvQueryGroup : public FunctionGroup {
