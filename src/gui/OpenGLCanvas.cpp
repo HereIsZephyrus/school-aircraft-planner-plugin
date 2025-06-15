@@ -185,6 +185,18 @@ void OpenGLScene::loadModel(const QString &objFilePath) {
 
     Camera::getInstance().setPosition(modelWidget->getBounds().center);
 } 
+
+void OpenGLScene::loadRisk(const QString &shpFilePath){
+   logMessage("OpenGLScene::loadRosl", Qgis::MessageLevel::Info);
+    if (!QOpenGLContext::currentContext()) {
+        logMessage("OpenGL context is not current", Qgis::MessageLevel::Critical);
+        return;
+    }
+    modelWidget = std::make_shared<gl::ModelGroup>(shpFilePath);
+
+    Camera::getInstance().setPosition(modelWidget->getBounds().center);
+}
+
 void OpenGLCanvas::mousePressEvent(QMouseEvent *event) {
     mLastMousePos = event->pos();
     if (wsp::WindowManager::getInstance().isEditing()){
@@ -234,5 +246,12 @@ void OpenGLCanvas::loadModel(const QString &objFilePath) {
     logMessage("OpenGLCanvas::loadModel", Qgis::MessageLevel::Info);
     makeCurrent();
     mpScene->loadModel(objFilePath);
+    doneCurrent();
+}
+
+void OpenGLCanvas::loadRisk(const QString &shpFilePath) {
+    logMessage("OpenGLCanvas::loadRisk", Qgis::MessageLevel::Info);
+    makeCurrent();
+    mpScene->loadRisk(shpFilePath);
     doneCurrent();
 }

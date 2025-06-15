@@ -25,10 +25,12 @@ private:
   QMenu *mpHelpMenu;
 
 private slots:
-  void onProjectMenuTriggered();
+  void onLoadModel();
+  void onLoadRisk();
 
 signals:
-  void projectMenuTriggered(const QString &filePath);
+  void loadModelTriggered(const QString &filePath);
+  void loadRiskTriggered(const QString &filePath);
   void viewMenuTriggered();
   void simulationMenuTriggered();
   void routeMenuTriggered();

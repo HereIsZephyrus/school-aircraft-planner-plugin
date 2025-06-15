@@ -3,20 +3,30 @@
 #include "../log/QgisDebug.h"
 #include <QFileDialog>
 
-void MenuBar::onProjectMenuTriggered() {
-  QString filePath = QFileDialog::getExistingDirectory(this, tr("Open OBJ File"), "",
+void MenuBar::onLoadModel() {
+  QString filePath = QFileDialog::getExistingDirectory(this, tr("Open OBJ Folder"), "",
                                                   QFileDialog::ShowDirsOnly);
   if (!filePath.isEmpty()) {
     logMessage("project menu triggered", Qgis::MessageLevel::Info);
-    emit projectMenuTriggered(filePath);
+    emit loadModelTriggered(filePath);
+  }
+}
+
+void MenuBar::onLoadRisk() {
+  QString filePath = QFileDialog::getExistingDirectory(this, tr("Open Risk File"), "",
+                                                  QFileDialog::ShowDirsOnly);
+  if (!filePath.isEmpty()) {
+    logMessage("project menu triggered", Qgis::MessageLevel::Info);
+    emit loadRiskTriggered(filePath);
   }
 }
 
 QMenu *MenuBar::createProjectMenu(QWidget *parent) {
   QMenu *projectMenu = new QMenu(tr("Project"), parent);
-  QAction *loadAction = projectMenu->addAction(tr("load 3D file"));
-  connect(loadAction, &QAction::triggered, this,
-          &MenuBar::onProjectMenuTriggered);
+  QAction *loadModel = projectMenu->addAction(tr("load 3D file"));
+  QAction *loadRisk = projectMenu->addAction(tr("load risk file"));
+  connect(loadModel, &QAction::triggered, this, &MenuBar::onLoadModel);
+  connect(loadRisk, &QAction::triggered, this, &MenuBar::onLoadRisk);
   logMessage("create project menu", Qgis::MessageLevel::Success);
 
   return projectMenu;
