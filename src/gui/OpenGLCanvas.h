@@ -56,6 +56,7 @@ signals:
     void refreash3DParms();
     void submitEdit();
     void submitPoint(QVector3D point);
+    void setLayerContext(QOpenGLContext* context);
 };
 
 class OpenGLScene {

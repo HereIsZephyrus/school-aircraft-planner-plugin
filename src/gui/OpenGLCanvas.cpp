@@ -86,7 +86,7 @@ void OpenGLCanvas::initializeGL() {
   }
 
   mpScene = std::make_unique<OpenGLScene>(context());
-  RoutePlanner::getInstance().setContext(context());
+  emit setLayerContext(context());
   logMessage("OpenGL context initialized", Qgis::MessageLevel::Success);
 }
 

@@ -64,6 +64,8 @@ RightDockWidget::RightDockWidget(QWidget *parent) : QDockWidget(parent) {
   mpMainLayout->addWidget(mpFileTreeWidget);
   mpToolTreeWidget = new ToolTreeWidget(mpMainContainer);
   mpMainLayout->addWidget(mpToolTreeWidget);
+  mpLayerTreeWidget = new LayerTreeWidget(mpMainContainer);
+  mpMainLayout->addWidget(mpLayerTreeWidget);
   mJoystickWidget = new JoyDockWidget(mpMainContainer);
   mpMainLayout->addWidget(mJoystickWidget);
 
@@ -330,4 +332,38 @@ void JoyDockWidget::switchToAutoMode() {
     mpAutoBtn->setEnabled(false);
     wsp::FlightManager::getInstance().setManualMode(false);
     logMessage("Switched to auto mode", Qgis::MessageLevel::Info);
+}
+
+LayerNode::LayerNode(const QString &name, std::shared_ptr<gl::Primitive> primitive, QTreeWidget *parent):
+  QTreeWidgetItem(parent) ,mName(name), mPrimitive(primitive){};
+LayerNode::~LayerNode(){
+  mPrimitive = nullptr;
+}
+
+LayerTreeWidget::LayerTreeWidget(QWidget *parent) : QgsLayerTreeView(parent) {
+  setSelectionMode(QAbstractItemView::SingleSelection);
+  setObjectName("layerTreeWidget");
+  mLayerTree = QgsProject::instance()->layerTreeRoot();
+  mLayerTreeModel = new QgsLayerTreeModel(mLayerTree,parent);
+  mLayerTreeModel->setFlag(QgsLayerTreeModel::ShowLegend);
+  mLayerTreeModel->setFlag(QgsLayerTreeModel::AllowNodeReorder);
+  mLayerTreeModel->setFlag(QgsLayerTreeModel::AllowNodeRename);
+  mLayerTreeModel->setFlag(QgsLayerTreeModel::AllowNodeChangeVisibility);
+  this->setModel(mLayerTreeModel);
+}
+
+LayerTreeWidget::~LayerTreeWidget(){
+  mLayerTree = nullptr;
+  mLayerTreeModel = nullptr;
+}
+
+void LayerTreeWidget::setContext(QOpenGLContext* context){
+  this->context = context;
+}
+void LayerTreeWidget::drawElements(const QMatrix4x4 &view, const QMatrix4x4 &projection){
+  this->context->makeCurrent(this->context->surface());
+  for (auto node_it = nodes.rbegin(); node_it != nodes.rend(); ++node_it) {
+    if ((*node_it)->isVisible())
+      (*node_it)->getPrimitive()->draw(view, projection);
+  }
 }

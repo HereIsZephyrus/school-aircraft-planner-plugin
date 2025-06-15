@@ -12,7 +12,16 @@
 #include <QTreeWidgetItem>
 #include <QVBoxLayout>
 #include <QWidget>
-#include <qwidget.h>
+#include <QMimeData>
+#include <QDrag>
+#include <QDropEvent>
+#include <QStandardItemModel>
+#include <qgsvectorlayer.h>
+#include <qgslayertreeview.h>
+#include <qgslayertreemodel.h>
+#include <qgslayertreelayer.h>
+#include <qgslayertreegroup.h>
+#include "../opengl/Primitive.h"
 // #include <JoyDockWidget.h>
 // #include <qgamepad.h>
 
@@ -22,16 +31,47 @@ class ToolTreeWidget;
 class RoutePlanningToolbox;
 class SimulationToolbox;
 class ParameterToolbox;
+class LayerNode : public QTreeWidgetItem{
+public:
+  LayerNode(const QString &name, std::shared_ptr<gl::Primitive> primitive, QTreeWidget *parent = nullptr);
+  ~LayerNode();
 
+  QString name() const { return mName; }
+  void setName(const QString &name) { mName = name; }
+  bool isVisible() const { return mVisible; }
+  void setVisible(bool visible) { mVisible = visible; }
+  std::shared_ptr<gl::Primitive> getPrimitive() { return mPrimitive; }
+  void setPrimitive(std::shared_ptr<gl::Primitive> primitive) { mPrimitive = primitive; }
+
+private:
+  QString mName;
+  bool mVisible;
+  std::shared_ptr<gl::Primitive> mPrimitive;
+};
+
+class LayerTreeWidget : public QgsLayerTreeView {
+public:
+  explicit LayerTreeWidget(QWidget *parent = nullptr);
+  ~LayerTreeWidget();
+  void setContext(QOpenGLContext* context);
+  void drawElements(const QMatrix4x4 &view, const QMatrix4x4 &projection);
+
+private:
+  QOpenGLContext* context;
+  QVector<std::shared_ptr<LayerNode>> nodes;
+  QgsLayerTree *mLayerTree;
+  QgsLayerTreeModel *mLayerTreeModel;
+};
 class RightDockWidget : public QDockWidget {
   Q_OBJECT
 
 public:
   RightDockWidget(QWidget *parent = nullptr);
   ~RightDockWidget();
-  ToolTreeWidget* getToolTreeWidget() const { return mpToolTreeWidget; }
-  FileTreeWidget* getFileTreeWidget() const { return mpFileTreeWidget; }
-  JoyDockWidget* getJoystickWidget() const { return mJoystickWidget; }
+  ToolTreeWidget *getToolTreeWidget() const { return mpToolTreeWidget; }
+  FileTreeWidget *getFileTreeWidget() const { return mpFileTreeWidget; }
+  JoyDockWidget *getJoystickWidget() const { return mJoystickWidget; }
+  void setContext(QOpenGLContext* context) {mpLayerTreeWidget->setContext(context);}
 
 private:
   QWidget *mpMainContainer;
@@ -39,6 +79,7 @@ private:
   JoyDockWidget *mJoystickWidget;
   FileTreeWidget *mpFileTreeWidget;
   ToolTreeWidget *mpToolTreeWidget;
+  LayerTreeWidget *mpLayerTreeWidget;
   QScrollArea *mpScrollArea;
   QWidget *mpDockContent;
   void createScrollArea(QWidget *parent);
@@ -135,7 +176,7 @@ signals:
   void queryEnvParams();
 };
 
-class RoutePlanningToolbox : public QTreeWidgetItem {
+class RoutePlanningToolbox : public QTreeWidgetItem{
 public:
   RoutePlanningToolbox(QTreeWidget *parent = nullptr);
   ~RoutePlanningToolbox() = default;
@@ -151,7 +192,7 @@ private:
   QTreeWidgetItem *mpEditRoute;
 };
 
-class SimulationToolbox : public QTreeWidgetItem {
+class SimulationToolbox : public QTreeWidgetItem{
 public:
   SimulationToolbox(QTreeWidget *parent = nullptr);
   ~SimulationToolbox() = default;
