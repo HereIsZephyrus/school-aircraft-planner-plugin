@@ -334,8 +334,12 @@ void JoyDockWidget::switchToAutoMode() {
     logMessage("Switched to auto mode", Qgis::MessageLevel::Info);
 }
 
-LayerNode::LayerNode(const QString &name, std::shared_ptr<gl::Primitive> primitive, QTreeWidget *parent):
-  QTreeWidgetItem(parent) ,mName(name), mPrimitive(primitive){};
+LayerNode::LayerNode(const QString &name, const QString &filePath):
+  QgsVectorLayer(filePath, name, "ogr") ,mName(name){
+    QgsProject::instance()->addMapLayer(this);
+    QVector<QVector3D> vertices;
+    //readVertices(vertices);
+};
 LayerNode::~LayerNode(){
   mPrimitive = nullptr;
 }

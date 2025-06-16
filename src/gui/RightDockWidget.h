@@ -31,9 +31,9 @@ class ToolTreeWidget;
 class RoutePlanningToolbox;
 class SimulationToolbox;
 class ParameterToolbox;
-class LayerNode : public QTreeWidgetItem{
+class LayerNode : public QgsVectorLayer{
 public:
-  LayerNode(const QString &name, std::shared_ptr<gl::Primitive> primitive, QTreeWidget *parent = nullptr);
+  LayerNode(const QString &name, const QString &filePath);
   ~LayerNode();
 
   QString name() const { return mName; }
