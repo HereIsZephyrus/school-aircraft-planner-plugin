@@ -2,6 +2,8 @@
 #include "../core/WorkspaceState.h"
 #include "../log/QgisDebug.h"
 #include "OpenGLCanvas.h"
+#include <QStandardPaths>
+#include "qgsmaptoolpan.h"
 
 Canvas::Canvas(QWidget *parent) : QStackedWidget(parent) {
   init2DWidget();
@@ -20,8 +22,14 @@ void Canvas::switchTo3D() {
 // switch to 2D
 void Canvas::switchTo2D() {
   wsp::WindowManager::getInstance().setCurrentCanvas(wsp::CanvasType::TwoD);
-  setCurrentWidget(mpImageLabel); // switch to 2D map view
+  // setCurrentWidget(mpImageLabel); // switch to 2D map view
+  setCurrentWidget(mpMapCanvas);
   logMessage("switch to 2D map view", Qgis::MessageLevel::Success);
+}
+
+void Canvas::refreshQgsMapCanvas() {
+    mpMapCanvas->setLayers(QgsProject::instance()->layerTreeRoot()->checkedLayers());
+    mpMapCanvas->refresh();
 }
 
 void Canvas::viewReset() {
@@ -50,6 +58,28 @@ void Canvas::init2DWidget() {
                               QSizePolicy::Ignored); // set size policy
   addWidget(mpImageLabel);
   logMessage("create QLabel to display local map image",Qgis::MessageLevel::Success);
+
+  //  Created by INMIDA
+  mpMapCanvas = new QgsMapCanvas(this);
+  mpMapCanvas->enableAntiAliasing(true);
+  connect(&LayerTreeWidget::getInstant(),&LayerTreeWidget::refreshQgsMapCanvas,this,&Canvas::refreshQgsMapCanvas);
+  // default pantool
+  QgsMapToolPan *panTool = new QgsMapToolPan(mpMapCanvas);
+  mpMapCanvas->setMapTool(panTool);
+  mpMapCanvas->setCanvasColor(QColor(25,25,25));
+  LayerTreeWidget::getInstant().setMapCanvasBridge(new QgsLayerTreeMapCanvasBridge(QgsProject::instance()->layerTreeRoot(),mpMapCanvas));
+  // load init data
+  QString appDir = QCoreApplication::applicationDirPath();
+  QString realPath = appDir + "/resources/map/project.qgs";
+
+  if (QgsProject::instance()->read(realPath)) {
+      QgsProject::instance()->setFileName(realPath);
+      logMessage("Project loaded from: " + realPath, Qgis::MessageLevel::Success);
+      emit refreshQgsMapCanvas();
+  } else {
+      logMessage("Failed to load project from: " + realPath, Qgis::MessageLevel::Critical);
+  }
+  addWidget(mpMapCanvas);
 }
 
 Canvas::~Canvas() {

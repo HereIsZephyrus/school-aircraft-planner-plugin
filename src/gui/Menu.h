@@ -27,6 +27,9 @@ private:
 private slots:
   void onLoadModel();
   void onLoadRisk();
+  void onLoadShp();
+  void onLoadRaster();
+  void onLoadProject();
 
 signals:
   void loadModelTriggered(const QString &filePath);

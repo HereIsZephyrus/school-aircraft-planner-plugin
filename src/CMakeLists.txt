@@ -51,6 +51,8 @@ set(GUI_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/gui/OpenGLCanvas.h
     ${CMAKE_CURRENT_SOURCE_DIR}/gui/StyleManager.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/gui/StyleManager.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/gui/LayerTreeWidget.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/gui/LayerTreeWidget.h
 )
 
 set(LOG_SOURCES
@@ -161,4 +163,18 @@ else()
     if(QT_VERSION_MAJOR EQUAL 6)
         qt_finalize_executable(3Dschool)
     endif()
+
+    file(GLOB_RECURSE RESOURCE_MAP_FILES "${CMAKE_SOURCE_DIR}/resources/map/*")
+
+    foreach(resourceFile ${RESOURCE_MAP_FILES})
+        # 获取相对路径
+        file(RELATIVE_PATH relPath "${CMAKE_SOURCE_DIR}/resources/map" "${resourceFile}")
+        # 构建目标路径
+        set(destFile "${CMAKE_CURRENT_BINARY_DIR}/resources/map/${relPath}")
+        get_filename_component(destDir "${destFile}" DIRECTORY)
+        file(MAKE_DIRECTORY "${destDir}")
+        configure_file("${resourceFile}" "${destFile}" COPYONLY)
+    endforeach()
+
+    message(STATUS "✅ Copied resource/map to: ${CMAKE_CURRENT_BINARY_DIR}/resources/map/")
 endif()
