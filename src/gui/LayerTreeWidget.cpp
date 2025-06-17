@@ -1,12 +1,15 @@
 #include "LayerTreeWidget.h"
 #include "../log/QgisDebug.h"
 
-LayerNode::LayerNode(const QString &name, const QString &filePath):
-    QgsVectorLayer(filePath, name, "ogr") ,mName(name){
-    QgsProject::instance()->addMapLayer(this);
+LayerNode::LayerNode(std::shared_ptr<QgsLayerTreeLayer> layerNode) : mVectorLayer(layerNode){
+    
     QVector<QVector3D> vertices;
-    //readVertices(vertices);
 };
+
+void LayerNode::draw(const QMatrix4x4 &view, const QMatrix4x4 &projection){
+    if (mVectorLayer->isVisible())
+        mPrimitive->draw(view,projection);
+}
 LayerNode::~LayerNode(){
     mPrimitive = nullptr;
 }
@@ -75,8 +78,12 @@ LayerTreeWidget::LayerTreeWidget(QWidget *parent) : QgsLayerTreeView(parent) {
 }
 
 LayerTreeWidget::~LayerTreeWidget(){
-    mLayerTree = nullptr;
-    mLayerTreeModel = nullptr;
+    if (mLayerTree)
+        mLayerTree = nullptr;
+    if (mLayerTreeModel){
+        //delete mLayerTreeModel;
+        mLayerTreeModel = nullptr;
+    }
 }
 
 void LayerTreeWidget::setContext(QOpenGLContext* context){
@@ -110,23 +117,37 @@ bool LayerTreeWidget::addRasterLayer(const QString& filePath){
 void LayerTreeWidget::drawElements(const QMatrix4x4 &view, const QMatrix4x4 &projection){
     this->context->makeCurrent(this->context->surface());
     for (auto node_it = nodes.rbegin(); node_it != nodes.rend(); ++node_it) {
-        if ((*node_it)->isVisible())
-            (*node_it)->getPrimitive()->draw(view, projection);
+        
     }
 }
 
+void LayerTreeWidget::appendLayerNode(QgsLayerTreeNode * node){
+    QgsLayerTreeLayer *layerNode = static_cast<QgsLayerTreeLayer*>(node);
+    QgsMapLayer *mapLayer = layerNode->layer();
+    if (mapLayer->type() == Qgis::LayerType::Vector)
+        nodes.push_back(std::make_shared<LayerNode>(std::shared_ptr<QgsLayerTreeLayer>(layerNode)));
+}
+
+void LayerTreeWidget::traverseLayerTree(QgsLayerTreeNode *layerTree, const std::function<void(QgsLayerTreeNode *)> &func){
+    if (!layerTree) return;
+    if (layerTree->nodeType() == QgsLayerTree::NodeLayer)
+        func(layerTree);
+    else if (layerTree->nodeType() == QgsLayerTree::NodeGroup) {    
+        QgsLayerTreeGroup *group = static_cast<QgsLayerTreeGroup*>(layerTree);
+        const auto children = group->children();
+        for (QgsLayerTreeNode *child : children) {
+            traverseLayerTree(child, func);
+        }
+    }
+}
 void LayerTreeWidget::init3Dresources(){
     if (this->context == nullptr) {
         logMessage("context is null", Qgis::MessageLevel::Critical);
         return;
     }
-    QList<QgsMapLayer*> allLayers = QgsProject::instance()->mapLayers().values();
-
     nodes.clear();
-    for (QgsMapLayer* layer : allLayers) {
-        if (layer->type() != Qgis::LayerType::Vector) 
-            continue;
-        QgsVectorLayer* vectorLayer = qobject_cast<QgsVectorLayer*>(layer);
-        
-    }
+    std::function<void(QgsLayerTreeNode *)> func = [&widget = *this](QgsLayerTreeNode * node) {
+        widget.appendLayerNode(node);
+    };
+    traverseLayerTree(mLayerTree, func);
 }

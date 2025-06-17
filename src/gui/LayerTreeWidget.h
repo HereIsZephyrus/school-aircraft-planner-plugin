@@ -11,22 +11,17 @@
 #include <qgslayertreemapcanvasbridge.h>
 #include "../opengl/Primitive.h"
 
-class LayerNode : public QgsVectorLayer{
+class LayerNode{
 public:
-    LayerNode(const QString &name, const QString &filePath);
+    LayerNode(std::shared_ptr<QgsLayerTreeLayer> vectorLayer);
     ~LayerNode();
 
-    QString name() const { return mName; }
-    void setName(const QString &name) { mName = name; }
-    bool isVisible() const { return mVisible; }
-    void setVisible(bool visible) { mVisible = visible; }
-    std::shared_ptr<gl::Primitive> getPrimitive() { return mPrimitive; }
-    void setPrimitive(std::shared_ptr<gl::Primitive> primitive) { mPrimitive = primitive; }
+    //std::shared_ptr<gl::Primitive> getPrimitive() { return mPrimitive; }
+    void draw(const QMatrix4x4 &view, const QMatrix4x4 &projection);
 
 private:
-    QString mName;
-    bool mVisible;
     std::shared_ptr<gl::Primitive> mPrimitive;
+    std::shared_ptr<QgsLayerTreeLayer> mVectorLayer;
 };
 
 class LayerTreeWidget : public QgsLayerTreeView {
@@ -60,5 +55,7 @@ private:
     QgsLayerTree *mLayerTree;
     QgsLayerTreeModel *mLayerTreeModel;
     QgsLayerTreeMapCanvasBridge* mpLayerTreeCanvasBridge;
+    void appendLayerNode(QgsLayerTreeNode * node);
+    void traverseLayerTree(QgsLayerTreeNode *layerTree, const std::function<void(QgsLayerTreeNode *)> &func);
 };
 #endif // LAYERTREEWIDGET_H
