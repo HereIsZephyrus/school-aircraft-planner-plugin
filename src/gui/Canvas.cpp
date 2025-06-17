@@ -46,12 +46,12 @@ void Canvas::init2DWidget() {
   //  Created by INMIDA
   mpMapCanvas = new QgsMapCanvas(this);
   mpMapCanvas->enableAntiAliasing(true);
-  connect(&LayerTreeWidget::getInstance(),&LayerTreeWidget::refreshQgsMapCanvas,this,&Canvas::refreshQgsMapCanvas);
+  connect(LayerTreeWidget::getInstance(),&LayerTreeWidget::refreshQgsMapCanvas,this,&Canvas::refreshQgsMapCanvas);
   // default pantool
   QgsMapToolPan *panTool = new QgsMapToolPan(mpMapCanvas);
   mpMapCanvas->setMapTool(panTool);
   mpMapCanvas->setCanvasColor(QColor(25,25,25));
-  LayerTreeWidget::getInstance().setMapCanvasBridge(new QgsLayerTreeMapCanvasBridge(QgsProject::instance()->layerTreeRoot(),mpMapCanvas));
+  LayerTreeWidget::getInstance()->setMapCanvasBridge(new QgsLayerTreeMapCanvasBridge(QgsProject::instance()->layerTreeRoot(),mpMapCanvas));
   // load init data
   QString appDir = QCoreApplication::applicationDirPath();
   QString realPath = appDir + "/resources/map/project.qgs";

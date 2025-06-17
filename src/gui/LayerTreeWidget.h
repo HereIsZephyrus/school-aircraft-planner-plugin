@@ -32,9 +32,9 @@ class LayerTreeWidget : public QgsLayerTreeView {
     Q_OBJECT
 public:
     explicit LayerTreeWidget(QWidget *parent = nullptr);
-    static LayerTreeWidget& getInstance() {
+    static LayerTreeWidget* getInstance() {
         static LayerTreeWidget instance;
-        return instance;
+        return &instance;
     }
     ~LayerTreeWidget();
 
