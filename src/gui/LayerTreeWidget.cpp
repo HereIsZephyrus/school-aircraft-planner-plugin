@@ -11,15 +11,17 @@
 #include <qgsmultilinestring.h>
 #include <qgspolygon.h>
 #include <qgsmultipolygon.h>
+#include <qgssinglesymbolrenderer.h>
+#include <qgsmarkersymbol.h>
+#include <qgslinesymbol.h>
+#include <qgsfillsymbol.h>
 
-LayerNode::LayerNode(std::shared_ptr<QgsLayerTreeLayer> layerNode) : mVectorLayer(layerNode){
-    
-    QVector<QVector3D> vertices;
-
+GLenum LayerNode::createVertices(QVector<QVector3D>& vertices){
     QgsVectorLayer* layer = dynamic_cast<QgsVectorLayer*>(mVectorLayer->layer());
     QgsCoordinateReferenceSystem layerCrs = layer->crs();
     wsp::WindowManager& windowManager = wsp::WindowManager::getInstance();
     QgsCoordinateTransform transform(layerCrs, windowManager.getTargetCrs(), QgsProject::instance());
+    GLenum type;
     
     QgsFeature feature;
     QgsFeatureIterator iterator = layer->getFeatures();
@@ -34,6 +36,7 @@ LayerNode::LayerNode(std::shared_ptr<QgsLayerTreeLayer> layerNode) : mVectorLaye
             QgsPointXY transPoint = transform.transform(geometry.asPoint());
             QVector3D rawPoint = QVector3D(transPoint.x(), transPoint.y(), baseZ);
             vertices.append(windowManager.getModelTransform(rawPoint));
+            type = GL_POINTS;
         } 
         else if (QgsWkbTypes::flatType(wkbType) == Qgis::WkbType::MultiPoint) {
             QgsMultiPointXY multiPoint = geometry.asMultiPoint();
@@ -42,6 +45,7 @@ LayerNode::LayerNode(std::shared_ptr<QgsLayerTreeLayer> layerNode) : mVectorLaye
                 QVector3D rawPoint = QVector3D(transPoint.x(), transPoint.y(), baseZ);
                 vertices.append(windowManager.getModelTransform(rawPoint));
             }
+            type = GL_POINTS;
         }
         else if (QgsWkbTypes::flatType(wkbType) == Qgis::WkbType::LineString) {
             QgsPolylineXY line = geometry.asPolyline();
@@ -50,6 +54,7 @@ LayerNode::LayerNode(std::shared_ptr<QgsLayerTreeLayer> layerNode) : mVectorLaye
                 QVector3D rawPoint = QVector3D(transPoint.x(), transPoint.y(), baseZ);
                 vertices.append(windowManager.getModelTransform(rawPoint));
             }
+            type = GL_LINE_STRIP;
         } 
         else if (QgsWkbTypes::flatType(wkbType) == Qgis::WkbType::MultiLineString) {
             QgsMultiPolylineXY multiLine = geometry.asMultiPolyline();
@@ -61,6 +66,7 @@ LayerNode::LayerNode(std::shared_ptr<QgsLayerTreeLayer> layerNode) : mVectorLaye
                     vertices.append(windowManager.getModelTransform(rawPoint));
                 }
             }
+            type = GL_LINE_STRIP;
         }
         else if (QgsWkbTypes::flatType(wkbType) == Qgis::WkbType::Polygon) {
             QgsPolygonXY polygon = geometry.asPolygon();
@@ -72,6 +78,7 @@ LayerNode::LayerNode(std::shared_ptr<QgsLayerTreeLayer> layerNode) : mVectorLaye
                     vertices.append(windowManager.getModelTransform(rawPoint));
                 }
             }
+            type = GL_TRIANGLE_FAN;
         } 
         else if (QgsWkbTypes::flatType(wkbType) == Qgis::WkbType::MultiPolygon) {
             QgsMultiPolygonXY multiPolygon = geometry.asMultiPolygon();
@@ -86,8 +93,39 @@ LayerNode::LayerNode(std::shared_ptr<QgsLayerTreeLayer> layerNode) : mVectorLaye
                     }
                 }
             }
+            type = GL_TRIANGLE_FAN;
         }
     }
+    return type;
+}
+QColor LayerNode::createSymbol(){
+    QgsVectorLayer* layer = dynamic_cast<QgsVectorLayer*>(mVectorLayer->layer());
+    QgsFeatureRenderer *renderer = layer->renderer();
+    if (renderer->type() == "singleSymbol") {
+        QgsSingleSymbolRenderer *singleRenderer = static_cast<QgsSingleSymbolRenderer*>(renderer);
+        QgsSymbol *symbol = singleRenderer->symbol();
+        
+        if (layer->geometryType() == Qgis::GeometryType::Point) {
+            QgsMarkerSymbol *markerSymbol = static_cast<QgsMarkerSymbol*>(symbol);
+            return markerSymbol->color();
+        }
+        else if (layer->geometryType() == Qgis::GeometryType::Line) {
+            QgsLineSymbol *lineSymbol = static_cast<QgsLineSymbol*>(symbol);
+            return lineSymbol->color();
+        }
+        else if (layer->geometryType() == Qgis::GeometryType::Polygon) {
+            QgsFillSymbol *fillSymbol = static_cast<QgsFillSymbol*>(symbol);
+            return fillSymbol->color();
+        }
+    }
+    return QColor(Qt::white);
+}
+
+LayerNode::LayerNode(std::shared_ptr<QgsLayerTreeLayer> layerNode) : mVectorLayer(layerNode){
+    QVector<QVector3D> vertices;
+    GLenum primitiveType = createVertices(vertices);
+    QColor color = createSymbol();
+    mPrimitive = std::make_shared<gl::VectorPrimitive>(primitiveType, vertices, QVector4D(color.red() / 65535,color.green() / 65535,color.blue() / 65535,color.alpha() / 65535 * 2));
 };
 
 void LayerNode::draw(const QMatrix4x4 &view, const QMatrix4x4 &projection){
@@ -199,10 +237,11 @@ bool LayerTreeWidget::addRasterLayer(const QString& filePath){
 }
 
 void LayerTreeWidget::drawElements(const QMatrix4x4 &view, const QMatrix4x4 &projection){
+    if (nodes.empty())
+        return;
     this->context->makeCurrent(this->context->surface());
-    for (auto node_it = nodes.rbegin(); node_it != nodes.rend(); ++node_it) {
-        
-    }
+    for (auto node_it = nodes.rbegin(); node_it != nodes.rend(); ++node_it)
+        (*node_it)->draw(view, projection);
 }
 
 void LayerTreeWidget::appendLayerNode(QgsLayerTreeNode * node){
@@ -228,6 +267,7 @@ void LayerTreeWidget::init3Dresources(){
         logMessage("context is null", Qgis::MessageLevel::Critical);
         return;
     }
+    this->context->makeCurrent(this->context->surface());
     nodes.clear();
     std::function<void(QgsLayerTreeNode *)> func = [&widget = *this](QgsLayerTreeNode * node) {
         widget.appendLayerNode(node);

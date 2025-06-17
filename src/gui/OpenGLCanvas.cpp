@@ -169,6 +169,7 @@ void OpenGLScene::paintScene(const QMatrix4x4 &view, const QMatrix4x4 &projectio
           droneWidget->draw(view, projection);
       }
     }
+    LayerTreeWidget::getInstance()->drawElements(view, projection);
     RoutePlanner::getInstance().drawRoutes(view, projection);
 }
 

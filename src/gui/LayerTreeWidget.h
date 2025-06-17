@@ -15,13 +15,13 @@ class LayerNode{
 public:
     LayerNode(std::shared_ptr<QgsLayerTreeLayer> vectorLayer);
     ~LayerNode();
-
-    //std::shared_ptr<gl::Primitive> getPrimitive() { return mPrimitive; }
     void draw(const QMatrix4x4 &view, const QMatrix4x4 &projection);
 
 private:
-    std::shared_ptr<gl::Primitive> mPrimitive;
+    std::shared_ptr<gl::VectorPrimitive> mPrimitive;
     std::shared_ptr<QgsLayerTreeLayer> mVectorLayer;
+    GLenum createVertices(QVector<QVector3D>& vertices);
+    QColor createSymbol();
 };
 
 class LayerTreeWidget : public QgsLayerTreeView {

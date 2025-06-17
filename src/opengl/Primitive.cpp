@@ -124,7 +124,7 @@ void Primitive::setModelMatrix(const QMatrix4x4 &matrix) {
 ColorPrimitive::ColorPrimitive(GLenum primitiveType, const QVector4D& color)
     : Primitive(primitiveType, 3), color(color){}
 
-ColorPrimitive::ColorPrimitive(GLenum primitiveType, const QVector<QVector3D>& vertices, const QVector4D& color)
+ColorPrimitive::ColorPrimitive(GLenum primitiveType, const QVector<QVector3D>& vertices, QVector4D color)
     : Primitive(primitiveType, vertices, 3), color(color){}
 
 void ColorPrimitive::draw(const QMatrix4x4 &view, const QMatrix4x4 &projection){
@@ -464,14 +464,17 @@ ModelGroup::~ModelGroup(){
 void ModelGroup::initGeoTransForm(){
   QVector3D s1 = QVector3D(128.1701,162.4710,31.0);
   //QVector3D t1 = QVector3D(114.6138,30.46113,20.158);
-  QVector3D t1 = QVector3D(559143.5,3371393,20.158);
+  QVector3D t1 = QVector3D(559143.5,3371393,21.0);
   QVector3D s2 = QVector3D(225.3517,344.8144,29.4);
   //QVector3D t2 = QVector3D(114.6169,30.46277,19.059);
-  QVector3D t2 = QVector3D(559241.5,3371576,19.059);
+  QVector3D t2 = QVector3D(559241.5,3371576,19.4);
   QVector3D s3 = QVector3D(-150.8277,-192.4701,34.1);
   //QVector3D t3 = QVector3D(114.6129,30.4579,22.833);
-  QVector3D t3 = QVector3D(558868.1,3371034,22.833);
-  QMatrix4x4 geoTransform = wsp::calculateCoordTransform(s1,s2,s3,t1,t2,t3);
+  QVector3D t3 = QVector3D(558868.1,3371034,24.1);
+  //QMatrix4x4 geoTransform = wsp::calculateCoordTransform(s1,s2,s3,t1,t2,t3);
+  QMatrix4x4 geoTransform;
+  geoTransform.setToIdentity();
+  geoTransform.translate(QVector3D(559015.5,3371230.5,-10));
   /*
   The Matrix is
   [     0.99997759     0.00206700     0.00638720565,970.56250000]
@@ -484,6 +487,7 @@ void ModelGroup::initGeoTransForm(){
 }
 
 ModelGroup::ModelGroup(const QString &objFileFolderPath):Primitive(GL_TRIANGLES, 5),objFileFolderPath(objFileFolderPath){
+  initGeoTransForm();
   QDir dir(objFileFolderPath);
   QStringList subDirs = dir.entryList(QDir::Dirs | QDir::NoDotAndDotDot);
   for (const QString& subDir : subDirs) {
@@ -497,7 +501,6 @@ ModelGroup::ModelGroup(const QString &objFileFolderPath):Primitive(GL_TRIANGLES,
     models.append(std::make_shared<model::ModelData>(objFilePath));
   }
   initModelData();
-  initGeoTransForm();
   this->calcBounds();
   this->basePlaneWidget = std::make_shared<BasePlane>(mBounds, wsp::FlightManager::getInstance().getBaseHeight());
 }
@@ -645,4 +648,10 @@ QVector3D SelectLine::submitPoint(){
                   orientPoint->vertices[2]);
   return point;
 }
+
+VectorPrimitive::VectorPrimitive(GLenum primitiveType, const QVector<QVector3D> &vertices, QVector4D color)
+ : ColorPrimitive(primitiveType, vertices, color){
+  constructShader(QStringLiteral(":/schoolcore/shaders/line.vs"), QStringLiteral(":/schoolcore/shaders/line.fs"));
+  initShaderAllocate();
+};
 }

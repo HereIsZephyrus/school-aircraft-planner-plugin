@@ -49,8 +49,7 @@ class ColorPrimitive : public Primitive {
   static constexpr QVector4D DEFAULT_COLOR = QVector4D(1.0f, 1.0f, 1.0f, 1.0f);
 
 public:
-  ColorPrimitive(GLenum primitiveType, const QVector<QVector3D> &vertices,
-                 const QVector4D &color = DEFAULT_COLOR);
+  ColorPrimitive(GLenum primitiveType, const QVector<QVector3D> &vertices, QVector4D color = DEFAULT_COLOR);
   ColorPrimitive(GLenum primitiveType, const QVector4D &color = DEFAULT_COLOR);
   void setColor(const QVector4D &color) { this->color = color; }
   QVector4D getColor() const { return this->color; }
@@ -67,6 +66,13 @@ class BasePlane : public ColorPrimitive {
 
 public:
   BasePlane(Bounds bounds = Bounds(), double baseHeight = 0.0, const QVector4D &color = DEFAULT_COLOR);
+};
+
+class VectorPrimitive : public ColorPrimitive{
+
+public:
+  VectorPrimitive(GLenum primitiveType, const QVector<QVector3D> &vertices, QVector4D color);
+  ~VectorPrimitive() = default;
 };
 
 class RoutePath : public ColorPrimitive {
