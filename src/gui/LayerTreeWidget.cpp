@@ -252,17 +252,22 @@ void LayerTreeWidget::appendLayerNode(QgsLayerTreeNode * node){
         nodes.push_back(std::make_shared<LayerNode>(std::shared_ptr<QgsLayerTreeLayer>(layerNode)));
 }
 
-void LayerTreeWidget::traverseLayerTree(QgsLayerTreeNode *layerTree, const std::function<void(QgsLayerTreeNode *)> &func){
+void LayerTreeWidget::traverseLayerTree(QgsLayerTreeNode *layerTree, const std::function<void(QgsLayerTreeNode *)> &func, bool checkGroup){
     if (!layerTree) return;
     if (layerTree->nodeType() == QgsLayerTree::NodeLayer)
         func(layerTree);
-    else if (layerTree->nodeType() == QgsLayerTree::NodeGroup) {    
+    else if (checkGroup && layerTree->nodeType() == QgsLayerTree::NodeGroup) {    
         QgsLayerTreeGroup *group = static_cast<QgsLayerTreeGroup*>(layerTree);
         const auto children = group->children();
         for (QgsLayerTreeNode *child : children)
-            traverseLayerTree(child, func);
+            traverseLayerTree(child, func, false);
     }
 }
+
+void LayerTreeWidget::destroy3Dresources(){
+    nodes.clear();
+}
+
 void LayerTreeWidget::init3Dresources(){
     if (this->context == nullptr) {
         logMessage("context is null", Qgis::MessageLevel::Critical);
@@ -273,5 +278,5 @@ void LayerTreeWidget::init3Dresources(){
     std::function<void(QgsLayerTreeNode *)> func = [&widget = *this](QgsLayerTreeNode * node) {
         widget.appendLayerNode(node);
     };
-    traverseLayerTree(mLayerTree, func);
+    traverseLayerTree(mLayerTree, func, true);
 }

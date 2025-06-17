@@ -56,7 +56,7 @@ OpenGLCanvas::~OpenGLCanvas() {
     updateTimer->stop();
     updateTimer = nullptr;
   }
-  
+  LayerTreeWidget::getInstance()->destroy3Dresources();
   if (mpScene) {
     mpScene->cleanupResources();
     mpScene = nullptr;
@@ -187,7 +187,10 @@ void OpenGLScene::loadModel(const QString &objFilePath) {
 
     Camera::getInstance().setPosition(modelWidget->getBounds().center);
     LayerTreeWidget::getInstance()->init3Dresources();
-} 
+    wsp::FlightManager& flightManager = wsp::FlightManager::getInstance();
+    flightManager.setPorision(wsp::WindowManager::getInstance().getGeoTransform(modelWidget->getBounds().center));
+    flightManager.constructLayer();
+}
 
 void OpenGLScene::loadRisk(const QString &shpFilePath){
    logMessage("OpenGLScene::loadRosl", Qgis::MessageLevel::Info);

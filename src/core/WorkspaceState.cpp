@@ -147,6 +147,16 @@ QString wsp::FlightManager::displayFlightParams() {
   return params;
 }
 
+void wsp::FlightManager::constructLayer(){
+  QString uri = QString("Point?crs=%1").arg(WindowManager::getInstance().getTargetCrs().authid());
+  mFlightLayer = std::make_shared<QgsVectorLayer>(QgsVectorLayer(uri, "Flight", "memory"));
+  QgsVectorDataProvider *provider = mFlightLayer->dataProvider();
+  mFlightLayer->startEditing();
+  QgsFeature feature;
+  feature.setGeometry(QgsGeometry::fromPointXY(QgsPointXY(mAircraftPosition.x(), mAircraftPosition.y())));
+  provider->addFeature(feature);
+}
+
 QVector3D wsp::WindowManager::getGeoTransform(QVector3D modelPosition){
   QVector4D geoPosition = geoTransform * QVector4D(modelPosition,1.0);
   return QVector3D(geoPosition.x(), geoPosition.y(), geoPosition.z());

@@ -46,6 +46,7 @@ public:
     void setMapCanvasBridge(QgsLayerTreeMapCanvasBridge* bridge) { this->mpLayerTreeCanvasBridge = bridge; }
     void drawElements(const QMatrix4x4 &view, const QMatrix4x4 &projection);
     void init3Dresources();
+    void destroy3Dresources();
 signals:
     void refreshQgsMapCanvas();
 
@@ -56,6 +57,6 @@ private:
     QgsLayerTreeModel *mLayerTreeModel;
     QgsLayerTreeMapCanvasBridge* mpLayerTreeCanvasBridge;
     void appendLayerNode(QgsLayerTreeNode * node);
-    void traverseLayerTree(QgsLayerTreeNode *layerTree, const std::function<void(QgsLayerTreeNode *)> &func);
+    void traverseLayerTree(QgsLayerTreeNode *layerTree, const std::function<void(QgsLayerTreeNode *)> &func, bool checkGroup = true);
 };
 #endif // LAYERTREEWIDGET_H

@@ -12,6 +12,10 @@
 #include <qvector3d.h>
 #include <stdexcept>
 #include <qgscoordinatetransform.h>
+#include <qgslayertree.h>
+#include <qgslayertreeview.h>
+#include <qgsmaplayer.h>
+#include <qgsvectorlayer.h>
 
 //use a singleton to manage the workspace state
 typedef std::pair<QString, QString> ObjTexturePair; // the first is the obj path, the second is the texture path
@@ -169,6 +173,7 @@ public:
     double getMaxAltitude() const {return mMaxAlititude;}
     void setManualMode(bool manual);
     bool isManualMode() const {return mManualMode;}
+    void constructLayer();
     //void generateFlightRoute(float height);
     static constexpr int minFlightSpeed = 1;
     static constexpr int maxFlightSpeed = 50;
@@ -189,6 +194,7 @@ private:
     QQuaternion mAircraftOrientation;
     QVector<QVector3D> mFlightPath;
     QVector3D mHomePosition;
+    std::shared_ptr<QgsVectorLayer> mFlightLayer;
 };
 
 class AnimationManager : public QObject {
