@@ -1,9 +1,93 @@
 #include "LayerTreeWidget.h"
 #include "../log/QgisDebug.h"
+#include "../core/WorkspaceState.h"
+#include <qgscoordinatetransform.h>
+#include <qgsvectorlayer.h>
+#include <qgsfeature.h>
+#include <qgsgeometry.h>
+#include <qgspoint.h>
+#include <qgsmultipoint.h>
+#include <qgslinestring.h>
+#include <qgsmultilinestring.h>
+#include <qgspolygon.h>
+#include <qgsmultipolygon.h>
 
 LayerNode::LayerNode(std::shared_ptr<QgsLayerTreeLayer> layerNode) : mVectorLayer(layerNode){
     
     QVector<QVector3D> vertices;
+
+    QgsVectorLayer* layer = dynamic_cast<QgsVectorLayer*>(mVectorLayer->layer());
+    QgsCoordinateReferenceSystem layerCrs = layer->crs();
+    wsp::WindowManager& windowManager = wsp::WindowManager::getInstance();
+    QgsCoordinateTransform transform(layerCrs, windowManager.getTargetCrs(), QgsProject::instance());
+    
+    QgsFeature feature;
+    QgsFeatureIterator iterator = layer->getFeatures();
+    float baseZ = windowManager.getBaseDrawHeight();
+    while (iterator.nextFeature(feature)) {
+        QgsGeometry geometry = feature.geometry();
+        if (geometry.isNull()) continue;
+        
+        Qgis::WkbType wkbType = geometry.wkbType();
+        
+        if (QgsWkbTypes::flatType(wkbType) == Qgis::WkbType::Point) {
+            QgsPointXY transPoint = transform.transform(geometry.asPoint());
+            QVector3D rawPoint = QVector3D(transPoint.x(), transPoint.y(), baseZ);
+            vertices.append(windowManager.getModelTransform(rawPoint));
+        } 
+        else if (QgsWkbTypes::flatType(wkbType) == Qgis::WkbType::MultiPoint) {
+            QgsMultiPointXY multiPoint = geometry.asMultiPoint();
+            for (int i = 0; i < multiPoint.size(); ++i) {
+                QgsPointXY transPoint = transform.transform(multiPoint[i]);
+                QVector3D rawPoint = QVector3D(transPoint.x(), transPoint.y(), baseZ);
+                vertices.append(windowManager.getModelTransform(rawPoint));
+            }
+        }
+        else if (QgsWkbTypes::flatType(wkbType) == Qgis::WkbType::LineString) {
+            QgsPolylineXY line = geometry.asPolyline();
+            for (int i = 0; i < line.size(); ++i) {
+                QgsPointXY transPoint = transform.transform(line[i]);
+                QVector3D rawPoint = QVector3D(transPoint.x(), transPoint.y(), baseZ);
+                vertices.append(windowManager.getModelTransform(rawPoint));
+            }
+        } 
+        else if (QgsWkbTypes::flatType(wkbType) == Qgis::WkbType::MultiLineString) {
+            QgsMultiPolylineXY multiLine = geometry.asMultiPolyline();
+            for (int partIdx = 0; partIdx < multiLine.size(); ++partIdx) {
+                QgsPolylineXY line = multiLine[partIdx];
+                for (int i = 0; i < line.size(); ++i) {
+                    QgsPointXY transPoint = transform.transform(line[i]);
+                    QVector3D rawPoint = QVector3D(transPoint.x(), transPoint.y(), baseZ);
+                    vertices.append(windowManager.getModelTransform(rawPoint));
+                }
+            }
+        }
+        else if (QgsWkbTypes::flatType(wkbType) == Qgis::WkbType::Polygon) {
+            QgsPolygonXY polygon = geometry.asPolygon();
+            for (int ringIdx = 0; ringIdx < polygon.size(); ++ringIdx) {
+                QgsPolylineXY ring = polygon[ringIdx];
+                for (int i = 0; i < ring.size(); ++i) {
+                    QgsPointXY transPoint = transform.transform(ring[i]);
+                    QVector3D rawPoint = QVector3D(transPoint.x(), transPoint.y(), baseZ);
+                    vertices.append(windowManager.getModelTransform(rawPoint));
+                }
+            }
+        } 
+        else if (QgsWkbTypes::flatType(wkbType) == Qgis::WkbType::MultiPolygon) {
+            QgsMultiPolygonXY multiPolygon = geometry.asMultiPolygon();
+            for (int partIdx = 0; partIdx < multiPolygon.size(); ++partIdx) {
+                QgsPolygonXY polygon = multiPolygon[partIdx];
+                for (int ringIdx = 0; ringIdx < polygon.size(); ++ringIdx) {
+                    QgsPolylineXY ring = polygon[ringIdx];
+                    for (int i = 0; i < ring.size(); ++i) {
+                        QgsPointXY transPoint = transform.transform(ring[i]);
+                        QVector3D rawPoint = QVector3D(transPoint.x(), transPoint.y(), baseZ);
+                        vertices.append(windowManager.getModelTransform(rawPoint));
+                    }
+                }
+            }
+        }
+    }
 };
 
 void LayerNode::draw(const QMatrix4x4 &view, const QMatrix4x4 &projection){
@@ -135,9 +219,8 @@ void LayerTreeWidget::traverseLayerTree(QgsLayerTreeNode *layerTree, const std::
     else if (layerTree->nodeType() == QgsLayerTree::NodeGroup) {    
         QgsLayerTreeGroup *group = static_cast<QgsLayerTreeGroup*>(layerTree);
         const auto children = group->children();
-        for (QgsLayerTreeNode *child : children) {
+        for (QgsLayerTreeNode *child : children)
             traverseLayerTree(child, func);
-        }
     }
 }
 void LayerTreeWidget::init3Dresources(){

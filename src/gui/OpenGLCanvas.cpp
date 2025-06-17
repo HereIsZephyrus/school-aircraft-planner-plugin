@@ -88,8 +88,6 @@ void OpenGLCanvas::initializeGL() {
 
   mpScene = std::make_unique<OpenGLScene>(context());
   emit setLayerContext(context());
-
-  LayerTreeWidget::getInstance()->init3Dresources();
   logMessage("OpenGL context initialized", Qgis::MessageLevel::Success);
 }
 
@@ -187,6 +185,7 @@ void OpenGLScene::loadModel(const QString &objFilePath) {
     modelWidget = std::make_shared<gl::ModelGroup>(objFilePath);
 
     Camera::getInstance().setPosition(modelWidget->getBounds().center);
+    LayerTreeWidget::getInstance()->init3Dresources();
 } 
 
 void OpenGLScene::loadRisk(const QString &shpFilePath){
@@ -195,9 +194,6 @@ void OpenGLScene::loadRisk(const QString &shpFilePath){
         logMessage("OpenGL context is not current", Qgis::MessageLevel::Critical);
         return;
     }
-    modelWidget = std::make_shared<gl::ModelGroup>(shpFilePath);
-
-    Camera::getInstance().setPosition(modelWidget->getBounds().center);
 }
 
 void OpenGLCanvas::mousePressEvent(QMouseEvent *event) {

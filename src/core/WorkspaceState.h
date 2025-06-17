@@ -11,6 +11,7 @@
 #include <float.h>
 #include <qvector3d.h>
 #include <stdexcept>
+#include <qgscoordinatetransform.h>
 
 //use a singleton to manage the workspace state
 typedef std::pair<QString, QString> ObjTexturePair; // the first is the obj path, the second is the texture path
@@ -58,11 +59,15 @@ public:
     QVector3D getGeoTransform(QVector3D modelPosition);
     QVector3D getModelTransform(QVector3D geoPosition);
     void setGeoTransform(const QMatrix4x4& newMatrix) {geoTransform = newMatrix;};
+    QgsCoordinateReferenceSystem getTargetCrs() const {return targetCrs;}
+    float getBaseDrawHeight() const {return baseDrawHeight;}
 
 private:
     CanvasType mCurrentCanvas;
+    QgsCoordinateReferenceSystem targetCrs;
     static QObject *pDefaultObject;
     bool is3DMapInited,is2DMapInited;
+    float baseDrawHeight;
     Bounds mBounds;
     QMatrix4x4 geoTransform;
     QMap<int, bool> mKeyStates;

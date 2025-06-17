@@ -76,6 +76,8 @@ wsp::WindowManager::WindowManager()
   mBounds = Bounds();
   isEditMode = false;
   geoTransform.setToIdentity();
+  targetCrs = QgsCoordinateReferenceSystem("EPSG:4547");
+  baseDrawHeight = 30.0f;
 }
 
 wsp::WindowManager::~WindowManager() {
