@@ -42,7 +42,6 @@ public:
   ToolTreeWidget *getToolTreeWidget() const { return mpToolTreeWidget; }
   FileTreeWidget *getFileTreeWidget() const { return mpFileTreeWidget; }
   JoyDockWidget *getJoystickWidget() const { return mJoystickWidget; }
-  void setContext(QOpenGLContext* context) {mpLayerTreeWidget->setContext(context);}
 
 private:
   QWidget *mpMainContainer;

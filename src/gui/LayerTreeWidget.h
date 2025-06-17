@@ -32,7 +32,7 @@ class LayerTreeWidget : public QgsLayerTreeView {
     Q_OBJECT
 public:
     explicit LayerTreeWidget(QWidget *parent = nullptr);
-    static LayerTreeWidget& getInstant() {
+    static LayerTreeWidget& getInstance() {
         static LayerTreeWidget instance;
         return instance;
     }
@@ -41,8 +41,8 @@ public:
     LayerTreeWidget(const LayerTreeWidget&) = delete;
     LayerTreeWidget& operator = (const LayerTreeWidget&) = delete;
 
-    boolean addVectorLayer(const QString& filePath);
-    boolean addRasterLayer(const QString& filePath);
+    bool addVectorLayer(const QString& filePath);
+    bool addRasterLayer(const QString& filePath);
 
     void setContext(QOpenGLContext* context);
     void setMapCanvasBridge(QgsLayerTreeMapCanvasBridge* bridge) { this->mpLayerTreeCanvasBridge = bridge; }

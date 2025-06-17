@@ -1,6 +1,5 @@
 <RCC>
     <qresource prefix="/schoolcore">
-        <file>map/capture.png</file>
         <file>style/my.qss</file>
         <file>models/drone.obj</file>
         <file>map/project.qgs</file>

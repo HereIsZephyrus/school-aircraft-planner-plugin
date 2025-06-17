@@ -156,7 +156,7 @@ void MainWindow::createSlots() {
   connect(mpCanvas->getOpenGLWidget(), &OpenGLCanvas::submitPoint,
           &RoutePlanner::getInstance(), &RoutePlanner::addControlPoint);
   connect(mpCanvas->getOpenGLWidget(), &OpenGLCanvas::setLayerContext,
-          mpRightDockWidget, &RightDockWidget::setContext);
+          &LayerTreeWidget::getInstance(), &LayerTreeWidget::setContext);
   connect(mpCanvas->getOpenGLWidget(), &OpenGLCanvas::setLayerContext,
           &RoutePlanner::getInstance(), &RoutePlanner::setContext);
   //connect(mpRightDockWidget->getJoystickWidget(), &JoyDockWidget::joystickConnected, mpCanvas->getOpenGLWidget(),&OpenGLCanvas::onJoystickConnected);

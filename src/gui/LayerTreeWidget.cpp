@@ -83,7 +83,7 @@ void LayerTreeWidget::setContext(QOpenGLContext* context){
     this->context = context;
 }
 
-boolean LayerTreeWidget::addVectorLayer(const QString& filePath){
+bool LayerTreeWidget::addVectorLayer(const QString& filePath){
     if (filePath.isEmpty()) {
         return false;
     }
@@ -95,7 +95,7 @@ boolean LayerTreeWidget::addVectorLayer(const QString& filePath){
     return true;
 }
 
-boolean LayerTreeWidget::addRasterLayer(const QString& filePath){
+bool LayerTreeWidget::addRasterLayer(const QString& filePath){
     if (filePath.isEmpty()) {
         return false;
     }
