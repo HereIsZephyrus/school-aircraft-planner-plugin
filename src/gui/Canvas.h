@@ -36,7 +36,6 @@ private:
 
   void init3DWidget();
   void init2DWidget();
-  // void setTianDiTuMap(double lat, double lon, int zoom);
 
 signals:
   void refreashParms();

@@ -115,4 +115,9 @@ void LayerTreeWidget::drawElements(const QMatrix4x4 &view, const QMatrix4x4 &pro
     }
 }
 
-
+void LayerTreeWidget::init3Dresources(){
+    if (this->context == nullptr) {
+        logMessage("context is null", Qgis::MessageLevel::Critical);
+        return;
+    }
+}

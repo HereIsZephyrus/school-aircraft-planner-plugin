@@ -47,6 +47,7 @@ public:
     void setContext(QOpenGLContext* context);
     void setMapCanvasBridge(QgsLayerTreeMapCanvasBridge* bridge) { this->mpLayerTreeCanvasBridge = bridge; }
     void drawElements(const QMatrix4x4 &view, const QMatrix4x4 &projection);
+    void init3Dresources();
 signals:
     void refreshQgsMapCanvas();
 

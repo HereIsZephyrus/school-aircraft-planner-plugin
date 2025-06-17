@@ -60,7 +60,7 @@ ViewGroup::ViewGroup(QWidget *parent)
   mpBtnReset->setObjectName("resetButton");
   mpBtnSwitchTo3D = new QPushButton(tr("3D View"), this);
   mpBtnSwitchTo3D->setObjectName("switchTo3DButton");
-  mpBtnSwitchTo2D = new QPushButton(tr("2D Map"), this);
+  mpBtnSwitchTo2D = new QPushButton(tr("2D View"), this);
   mpBtnSwitchTo2D->setObjectName("switchTo2DButton");
   mpGroupLayout->addWidget(mpBtnReset);
   mpGroupLayout->addWidget(mpBtnSwitchTo3D);

@@ -2,6 +2,7 @@
 #include "../core/RoutePlanner.h"
 #include "../core/SharedContextManager.h"
 #include "../log/QgisDebug.h"
+#include "LayerTreeWidget.h"
 #include <QApplication>
 #include <QDebug>
 #include <QFile>
@@ -87,6 +88,8 @@ void OpenGLCanvas::initializeGL() {
 
   mpScene = std::make_unique<OpenGLScene>(context());
   emit setLayerContext(context());
+
+  LayerTreeWidget::getInstance()->init3Dresources();
   logMessage("OpenGL context initialized", Qgis::MessageLevel::Success);
 }
 
