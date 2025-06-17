@@ -37,3 +37,7 @@
 
 # Windows
 *.user
+
+# qgis
+/resources/map/project.qgs~
+/resources/map/project_attachments.zip

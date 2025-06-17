@@ -25,6 +25,7 @@ QMenu *MenuBar::createProjectMenu(QWidget *parent) {
   QMenu *projectMenu = new QMenu(tr("Project"), parent);
   QAction *loadModel = projectMenu->addAction(tr("load 3D file"));
   QAction *loadRisk = projectMenu->addAction(tr("load risk file"));
+
   connect(loadModel, &QAction::triggered, this, &MenuBar::onLoadModel);
   connect(loadRisk, &QAction::triggered, this, &MenuBar::onLoadRisk);
   logMessage("create project menu", Qgis::MessageLevel::Success);
