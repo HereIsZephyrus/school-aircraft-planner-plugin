@@ -5,6 +5,7 @@
 
 RightDockWidget::~RightDockWidget() {
   logMessage("RightDockWidget destroyed", Qgis::MessageLevel::Success);
+  LayerTreeWidget::getInstance()->setParent(nullptr);
 }
 
 void FileTreeWidget::createSlots() {
@@ -64,8 +65,7 @@ RightDockWidget::RightDockWidget(QWidget *parent) : QDockWidget(parent) {
   mpMainLayout->addWidget(mpFileTreeWidget);
   mpToolTreeWidget = new ToolTreeWidget(mpMainContainer);
   mpMainLayout->addWidget(mpToolTreeWidget);
-  mpLayerTreeWidget = LayerTreeWidget::getInstance();
-  mpMainLayout->addWidget(mpLayerTreeWidget);
+  mpMainLayout->addWidget(LayerTreeWidget::getInstance());
   mJoystickWidget = new JoyDockWidget(mpMainContainer);
   mpMainLayout->addWidget(mJoystickWidget);
 

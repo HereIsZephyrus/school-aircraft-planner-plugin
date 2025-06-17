@@ -49,7 +49,6 @@ private:
   JoyDockWidget *mJoystickWidget;
   FileTreeWidget *mpFileTreeWidget;
   ToolTreeWidget *mpToolTreeWidget;
-  LayerTreeWidget *mpLayerTreeWidget;
   QScrollArea *mpScrollArea;
   QWidget *mpDockContent;
   void createScrollArea(QWidget *parent);

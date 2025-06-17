@@ -125,7 +125,8 @@ LayerNode::LayerNode(std::shared_ptr<QgsLayerTreeLayer> layerNode) : mVectorLaye
     QVector<QVector3D> vertices;
     GLenum primitiveType = createVertices(vertices);
     QColor color = createSymbol();
-    mPrimitive = std::make_shared<gl::VectorPrimitive>(primitiveType, vertices, QVector4D(color.red() / 65535,color.green() / 65535,color.blue() / 65535,color.alpha() / 65535 * 2));
+    float redColor = static_cast<float>(color.red()) / 255, greenColor = static_cast<float>(color.green()) / 255, blueColor = static_cast<float>(color.blue()) / 255, alphaColor = static_cast<float>(color.alpha()) / 255;
+    mPrimitive = std::make_shared<gl::VectorPrimitive>(primitiveType, vertices, QVector4D(redColor, greenColor, blueColor, alphaColor / 2));
 };
 
 void LayerNode::draw(const QMatrix4x4 &view, const QMatrix4x4 &projection){
