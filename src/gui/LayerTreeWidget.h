@@ -4,6 +4,7 @@
 #include <qopenglcontext.h>
 #include <qgslayertree.h>
 #include <qgslayertreeview.h>
+#include <qgsmaplayer.h>
 #include <qgsvectorlayer.h>
 #include <qgsrasterlayer.h>
 #include <qgslayertreemodel.h>
@@ -30,8 +31,10 @@ private:
 
 class LayerTreeWidget : public QgsLayerTreeView {
     Q_OBJECT
-public:
+
+private:
     explicit LayerTreeWidget(QWidget *parent = nullptr);
+public:
     static LayerTreeWidget* getInstance() {
         static LayerTreeWidget instance;
         return &instance;

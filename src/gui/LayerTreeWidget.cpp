@@ -120,4 +120,13 @@ void LayerTreeWidget::init3Dresources(){
         logMessage("context is null", Qgis::MessageLevel::Critical);
         return;
     }
+    QList<QgsMapLayer*> allLayers = QgsProject::instance()->mapLayers().values();
+
+    nodes.clear();
+    for (QgsMapLayer* layer : allLayers) {
+        if (layer->type() != Qgis::LayerType::Vector) 
+            continue;
+        QgsVectorLayer* vectorLayer = qobject_cast<QgsVectorLayer*>(layer);
+        
+    }
 }
