@@ -21,41 +21,13 @@ void MenuBar::onLoadRisk() {
   }
 }
 
-void MenuBar::onLoadShp(){
-    QString layerPath = QFileDialog::getOpenFileName(this, tr("Open Shapefile"), "", tr("Shapefiles (*.shp)"));
-    if (!layerPath.isEmpty()) {
-        LayerTreeWidget::getInstant().addVectorLayer(layerPath);
-    }
-}
-
-void MenuBar::onLoadRaster(){
-    QString layerPath = QFileDialog::getOpenFileName(this, tr("Open Raster"), "", tr("Raster files (*.tif *.tiff *.img)"));
-    if (!layerPath.isEmpty()) {
-        LayerTreeWidget::getInstant().addRasterLayer(layerPath);
-    }
-}
-
-void MenuBar::onLoadProject() {
-    QString layerPath = QFileDialog::getOpenFileName(this, tr("Open QGIS project"), "", tr("QGIS Project(*.qgz)"));
-    if (!layerPath.isEmpty()) {
-        LayerTreeWidget::getInstant().loadProject(layerPath);
-    }
-}
-
 QMenu *MenuBar::createProjectMenu(QWidget *parent) {
   QMenu *projectMenu = new QMenu(tr("Project"), parent);
   QAction *loadModel = projectMenu->addAction(tr("load 3D file"));
   QAction *loadRisk = projectMenu->addAction(tr("load risk file"));
 
-  QAction* loadShpLayer = projectMenu->addAction("load Shapefile");
-  QAction* loadRasterLayer = projectMenu->addAction("load Raster file");
-  QAction* loadProject = projectMenu->addAction("load Qgis project");
-
   connect(loadModel, &QAction::triggered, this, &MenuBar::onLoadModel);
   connect(loadRisk, &QAction::triggered, this, &MenuBar::onLoadRisk);
-  connect(loadShpLayer, &QAction::triggered, this, &MenuBar::onLoadShp);
-  connect(loadRasterLayer, &QAction::triggered, this, &MenuBar::onLoadRaster);
-  connect(loadProject, &QAction::triggered, this, &MenuBar::onLoadProject);
   logMessage("create project menu", Qgis::MessageLevel::Success);
 
   return projectMenu;

@@ -43,7 +43,6 @@ public:
 
     boolean addVectorLayer(const QString& filePath);
     boolean addRasterLayer(const QString& filePath);
-    boolean loadProject(const QString& filePath);
 
     void setContext(QOpenGLContext* context);
     void setMapCanvasBridge(QgsLayerTreeMapCanvasBridge* bridge) { this->mpLayerTreeCanvasBridge = bridge; }

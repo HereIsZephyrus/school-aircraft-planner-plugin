@@ -18,7 +18,6 @@ public:
   Canvas(QWidget *parent = nullptr);
   ~Canvas();
   OpenGLCanvas *getOpenGLWidget() const { return mpOpenGLWidget; }
-  QLabel *getImageLabel() const { return mpImageLabel; }
   QgsMapCanvas* getMapCanvas() const { return mpMapCanvas; }
 
 public slots:
@@ -28,7 +27,6 @@ public slots:
   void refreshQgsMapCanvas();
 
 private:
-  QLabel *mpImageLabel;
   OpenGLCanvas *mpOpenGLWidget;
   QgsMapCanvas* mpMapCanvas;
 

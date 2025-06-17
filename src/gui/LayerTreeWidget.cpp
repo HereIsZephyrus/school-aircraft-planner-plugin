@@ -107,38 +107,6 @@ boolean LayerTreeWidget::addRasterLayer(const QString& filePath){
     return true;
 }
 
-boolean LayerTreeWidget::loadProject(const QString& filePath){
-    if (filePath.isEmpty()) {
-        return false;
-    }
-    // 读取工程文件并检查返回值
-    bool projectLoaded = QgsProject::instance()->read(filePath);
-
-    if (projectLoaded) {
-        QList<QgsMapLayer *> allLayers = QgsProject::instance()->mapLayers().values();
-        logMessage("Total layers in project:"+QString::number(allLayers.size()),Qgis::MessageLevel::Success);
-        // 检查每个图层的状态
-        for (QgsMapLayer *layer : allLayers) {
-            QString flg = layer->isValid() ? "yes" : "no" ;
-            logMessage("Layer:"+layer->name());
-            logMessage("Valid:"+flg);
-            logMessage("source:"+layer->source());
-            if (layer->type() == Qgis::LayerType::Vector) {
-                QgsVectorLayer *vectorLayer = qobject_cast<QgsVectorLayer*>(layer);
-                if (vectorLayer) {
-                    logMessage("Feature count:"+ QString::number(vectorLayer->featureCount()),Qgis::MessageLevel::Success);
-                }
-            }
-        }
-        emit refreshQgsMapCanvas();
-        return true;
-    } else {
-        QString errorMsg = QgsProject::instance()->error();
-        logMessage("08he3" + errorMsg, Qgis::MessageLevel::Critical);
-        return false;
-    }
-}
-
 void LayerTreeWidget::drawElements(const QMatrix4x4 &view, const QMatrix4x4 &projection){
     this->context->makeCurrent(this->context->surface());
     for (auto node_it = nodes.rbegin(); node_it != nodes.rend(); ++node_it) {

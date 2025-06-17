@@ -43,22 +43,6 @@ void Canvas::init3DWidget() {
   logMessage("create 3D view widget", Qgis::MessageLevel::Success);
 }
 void Canvas::init2DWidget() {
-  // create QLabel to display local image
-  mpImageLabel = new QLabel(this);
-  QPixmap mapImage(
-      ":/schoolcore/map/capture.png"); // use resource path to load image
-  if (mapImage.isNull()) {
-    logMessage("failed to load local map image", Qgis::MessageLevel::Critical);
-    return;
-  }
-  mpImageLabel->setPixmap(mapImage);
-  mpImageLabel->setScaledContents(
-      true); // let image adapt to label size, keep ratio
-  mpImageLabel->setSizePolicy(QSizePolicy::Ignored,
-                              QSizePolicy::Ignored); // set size policy
-  addWidget(mpImageLabel);
-  logMessage("create QLabel to display local map image",Qgis::MessageLevel::Success);
-
   //  Created by INMIDA
   mpMapCanvas = new QgsMapCanvas(this);
   mpMapCanvas->enableAntiAliasing(true);
@@ -71,7 +55,6 @@ void Canvas::init2DWidget() {
   // load init data
   QString appDir = QCoreApplication::applicationDirPath();
   QString realPath = appDir + "/resources/map/project.qgs";
-
   if (QgsProject::instance()->read(realPath)) {
       QgsProject::instance()->setFileName(realPath);
       logMessage("Project loaded from: " + realPath, Qgis::MessageLevel::Success);
@@ -83,7 +66,7 @@ void Canvas::init2DWidget() {
 }
 
 Canvas::~Canvas() {
-    delete mpImageLabel;
     delete mpOpenGLWidget;
+    delete mpMapCanvas;
     logMessage("Canvas destroyed", Qgis::MessageLevel::Success);
 }
