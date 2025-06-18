@@ -4,7 +4,11 @@
 /app
 /.cache
 /.vscode
+/python/detection_results/
+/python/.idea/
 *.d
+*.mp4
+*.wmv
 
 # Compiled Object files
 *.slo
