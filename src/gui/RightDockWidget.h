@@ -16,6 +16,7 @@
 #include <QDrag>
 #include <QDropEvent>
 #include <QStandardItemModel>
+#include <QSplitter>
 #include <qgsvectorlayer.h>
 #include <qgslayertreeview.h>
 #include <qgslayertreemodel.h>
@@ -48,6 +49,9 @@ public:
 private:
   QWidget *mpMainContainer;
   QVBoxLayout *mpMainLayout;
+  QSplitter *mpMainSplitter;
+  QWidget *mpTopWidget;
+  QVBoxLayout *mpTopLayout;
   JoyDockWidget *mJoystickWidget;
   FileTreeWidget *mpFileTreeWidget;
   ToolTreeWidget *mpToolTreeWidget;

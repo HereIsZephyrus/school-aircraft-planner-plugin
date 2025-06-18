@@ -62,15 +62,49 @@ RightDockWidget::RightDockWidget(QWidget *parent) : QDockWidget(parent) {
   mpMainLayout = new QVBoxLayout(mpMainContainer);
   mpMainLayout->setContentsMargins(0, 0, 0, 0);
   mpMainLayout->setSpacing(0);
-  mpFileTreeWidget = new FileTreeWidget(mpMainContainer);
-  mpMainLayout->addWidget(mpFileTreeWidget);
-  mpToolTreeWidget = new ToolTreeWidget(mpMainContainer);
-  mpMainLayout->addWidget(mpToolTreeWidget);
-  mpMainLayout->addWidget(LayerTreeWidget::getInstance());
-  mpVideoDisplayWidget = new VideoDisplayWidget(mpMainContainer);
-  mpMainLayout->addWidget(mpVideoDisplayWidget);
-  mJoystickWidget = new JoyDockWidget(mpMainContainer);
-  mpMainLayout->addWidget(mJoystickWidget);
+
+  // 创建主分割器，垂直方向
+  mpMainSplitter = new QSplitter(Qt::Vertical, mpMainContainer);
+  mpMainLayout->addWidget(mpMainSplitter);
+
+  // 创建上部分容器，包含文件树、工具栏、图层树
+  mpTopWidget = new QWidget(mpMainSplitter);
+  mpTopLayout = new QVBoxLayout(mpTopWidget);
+  mpTopLayout->setContentsMargins(0, 0, 0, 0);
+  mpTopLayout->setSpacing(0);
+
+  mpFileTreeWidget = new FileTreeWidget(mpTopWidget);
+  mpTopLayout->addWidget(mpFileTreeWidget);
+  mpToolTreeWidget = new ToolTreeWidget(mpTopWidget);
+  mpTopLayout->addWidget(mpToolTreeWidget);
+  mpTopLayout->addWidget(LayerTreeWidget::getInstance());
+
+  // 视频显示组件单独放在分割器中
+  mpVideoDisplayWidget = new VideoDisplayWidget(mpMainSplitter);
+  
+  // 操纵杆组件放在下方
+  mJoystickWidget = new JoyDockWidget(mpMainSplitter);
+
+  // 添加到分割器
+  mpMainSplitter->addWidget(mpTopWidget);
+  mpMainSplitter->addWidget(mpVideoDisplayWidget);
+  mpMainSplitter->addWidget(mJoystickWidget);
+
+  // 设置分割器的初始比例：上部区域:视频区域:操纵杆区域 = 3:2:1
+  mpMainSplitter->setStretchFactor(0, 3);
+  mpMainSplitter->setStretchFactor(1, 2);
+  mpMainSplitter->setStretchFactor(2, 1);
+
+  // 设置分割器样式，让分割线更明显
+  mpMainSplitter->setStyleSheet(
+    "QSplitter::handle {"
+    "    background-color: #666666;"
+    "    height: 3px;"
+    "}"
+    "QSplitter::handle:hover {"
+    "    background-color: #888888;"
+    "}"
+  );
 
   logMessage("right dock widget created", Qgis::MessageLevel::Success);
 }

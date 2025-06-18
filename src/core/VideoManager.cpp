@@ -25,24 +25,24 @@ VideoManager::VideoManager(QObject *parent)
     , mFrameCount(0)
     , mDetectionCount(0)
 {
-    qDebug() << "=== VideoManager constructor started ===";
+   
     logMessage("VideoManager constructor started", Qgis::MessageLevel::Info);
 {
-    // 设置Python脚本路径
+   
     QString appDir = QApplication::applicationDirPath();
     mPythonScriptPath = QDir(appDir).filePath("../python/yolo_detection.py");
     
-    // 检测Python可执行文件
+
     mPythonExecutable = "python";
     
-    // 创建视频定时器
+
     mpVideoTimer = new QTimer(this);
     mpVideoTimer->setInterval(VIDEO_TIMER_INTERVAL);
     connect(mpVideoTimer, &QTimer::timeout, this, &VideoManager::onVideoTimer);
     
-    // 创建媒体播放器和视频控件
+
     mpMediaPlayer = new QMediaPlayer(this);
-    mpVideoWidget = new QVideoWidget();
+    mpVideoWidget = new QVideoWidget(); 
     mpMediaPlayer->setVideoOutput(mpVideoWidget);
     
     connect(mpMediaPlayer, &QMediaPlayer::mediaStatusChanged,
@@ -50,7 +50,7 @@ VideoManager::VideoManager(QObject *parent)
     connect(mpMediaPlayer, &QMediaPlayer::positionChanged,
             this, &VideoManager::onPositionChanged);
     
-    // 添加错误处理
+
     connect(mpMediaPlayer, QOverload<QMediaPlayer::Error>::of(&QMediaPlayer::error),
             this, [this](QMediaPlayer::Error error) {
         QString errorString;
@@ -91,21 +91,29 @@ VideoManager::~VideoManager() {
     if (mpVideoTimer) {
         mpVideoTimer->stop();
         delete mpVideoTimer;
+        mpVideoTimer = nullptr;
     }
     
     if (mpMediaPlayer) {
         mpMediaPlayer->stop();
         delete mpMediaPlayer;
+        mpMediaPlayer = nullptr;
+    }
+    
+
+    if (mpVideoWidget) {
+        delete mpVideoWidget;
+        mpVideoWidget = nullptr;
     }
     
     logMessage("VideoManager destroyed", Qgis::MessageLevel::Success);
 };
 
 bool VideoManager::initialize() {
-    // 初始化TCP服务器
+  
     startTcpServer();
     
-    // 加载模拟视频帧
+  
     loadVideoFrames();
     
     logMessage("VideoManager initialized", Qgis::MessageLevel::Success);
@@ -113,11 +121,10 @@ bool VideoManager::initialize() {
 };
 
 void VideoManager::setVideoSource(VideoSourceType type, const QString &source) {
-    qDebug() << "=== setVideoSource called ===";
-    qDebug() << "Type:" << static_cast<int>(type) << "Source:" << source;
+   
     
     if (mIsStreaming) {
-        qDebug() << "Cannot change video source while streaming";
+      
         logMessage("Cannot change video source while streaming", Qgis::MessageLevel::Warning);
         return;
     }
@@ -125,38 +132,33 @@ void VideoManager::setVideoSource(VideoSourceType type, const QString &source) {
     mVideoSourceType = type;
     mVideoSource = source;
     
-    qDebug() << "Setting video source type to:" << static_cast<int>(type);
+   
     
     switch (type) {
         case VideoSourceType::SIMULATION:
-            qDebug() << "Setting up simulation video";
+          
             setupSimulationVideo();
             break;
         case VideoSourceType::CAMERA:
-            qDebug() << "Setting up camera video";
+           
             setupCameraVideo();
             break;
         case VideoSourceType::FILE:
-            qDebug() << "Setting up file video";
+           
             setupFileVideo();
             break;
     }
     
-    qDebug() << "=== setVideoSource completed ===";
+   
     logMessage(QString("Video source set to: %1").arg(static_cast<int>(type)), 
                Qgis::MessageLevel::Info);
 };
 
 void VideoManager::setVideoDisplayWidget(VideoDisplayWidget *widget) {
-    qDebug() << "=== setVideoDisplayWidget called ===";
-    qDebug() << "Widget pointer:" << widget;
-    
+   
     mpVideoDisplayWidget = widget;
     
-    if (mpVideoDisplayWidget) {
-        qDebug() << "VideoDisplayWidget is valid, connecting signals...";
-        
-        // 连接信号槽（不再需要videoFrameReady，因为视频直接显示在QVideoWidget中）
+    if (mpVideoDisplayWidget) {        
         connect(this, &VideoManager::detectionResultsReady, 
                 mpVideoDisplayWidget, &VideoDisplayWidget::updateDetectionResults);
         connect(this, &VideoManager::videoStatusChanged, 
@@ -170,17 +172,17 @@ void VideoManager::setVideoDisplayWidget(VideoDisplayWidget *widget) {
             }
         });
         
-        // 设置真正的视频控件到显示区域
+       
         if (mpVideoWidget) {
-            qDebug() << "Setting video widget to display widget...";
+           
             mpVideoDisplayWidget->setVideoWidget(mpVideoWidget);
         } else {
-            qDebug() << "WARNING: mpVideoWidget is null!";
+            
         }
         
         logMessage("Video display widget connected", Qgis::MessageLevel::Success);
     } else {
-        qDebug() << "ERROR: VideoDisplayWidget is null!";
+      
         logMessage("ERROR: VideoDisplayWidget is null!", Qgis::MessageLevel::Critical);
     }
 };
@@ -195,23 +197,20 @@ void VideoManager::startVideoStream() {
     mFrameCount = 0;
     mStartTime = QDateTime::currentDateTime();
     
-    // 根据视频源类型执行不同的启动逻辑
+    
     if (mVideoSourceType == VideoSourceType::FILE && mpMediaPlayer) {
-        // 对于视频文件，启动媒体播放器
-        qDebug() << "About to start video playback...";
-        qDebug() << "Media player state before play:" << mpMediaPlayer->state();
-        qDebug() << "Media status before play:" << mpMediaPlayer->mediaStatus();
+        
+      
         
         mpMediaPlayer->play();
         
-        qDebug() << "Media player state after play:" << mpMediaPlayer->state();
-        qDebug() << "Media status after play:" << mpMediaPlayer->mediaStatus();
+    
         logMessage("Starting video file playback", Qgis::MessageLevel::Info);
     }
     
     mpVideoTimer->start();
     
-    // 同时启动AI识别
+   
     startAIDetection();
     
     emit videoStatusChanged(true);
@@ -226,13 +225,13 @@ void VideoManager::stopVideoStream() {
     mIsStreaming = false;
     mpVideoTimer->stop();
     
-    // 根据视频源类型执行不同的停止逻辑
+   
     if (mVideoSourceType == VideoSourceType::FILE && mpMediaPlayer) {
         mpMediaPlayer->stop();
         logMessage("Stopping video file playback", Qgis::MessageLevel::Info);
     }
     
-    // 停止AI识别
+  
     stopAIDetection();
     
     emit videoStatusChanged(false);
@@ -251,19 +250,19 @@ void VideoManager::startAIDetection() {
         return;
     }
     
-    // 创建AI进程
+
     mpAIProcess = new QProcess(this);
     connect(mpAIProcess, QOverload<int, QProcess::ExitStatus>::of(&QProcess::finished),
             this, &VideoManager::onAIProcessFinished);
     connect(mpAIProcess, &QProcess::errorOccurred,
             this, &VideoManager::onAIProcessError);
     
-    // 设置Python脚本参数
+ 
     QStringList arguments;
     arguments << mPythonScriptPath;
     arguments << "--port" << QString::number(mTcpPort);
     
-    // 根据视频源类型设置不同的参数
+ 
     switch (mVideoSourceType) {
         case VideoSourceType::SIMULATION:
             arguments << "--source" << "simulation";
@@ -277,7 +276,7 @@ void VideoManager::startAIDetection() {
             break;
     }
     
-    // 启动Python脚本
+
     mpAIProcess->start(mPythonExecutable, arguments);
     
     if (mpAIProcess->waitForStarted(3000)) {
@@ -298,7 +297,7 @@ void VideoManager::stopAIDetection() {
     
     mIsAIRunning = false;
     
-    // 终止Python进程
+
     mpAIProcess->terminate();
     if (!mpAIProcess->waitForFinished(3000)) {
         mpAIProcess->kill();
@@ -313,35 +312,34 @@ void VideoManager::stopAIDetection() {
 }
 
 void VideoManager::onVideoTimer() {
-    // 这个定时器现在只用于AI检测的心跳
-    // 真正的视频播放由QMediaPlayer和QVideoWidget处理
+
     if (!mIsStreaming) {
         return;
     }
     
     mFrameCount++;
     
-    // 发送帧数据给Python识别系统
+
     if (mIsAIRunning && mpTcpSocket && mpTcpSocket->state() == QTcpSocket::ConnectedState) {
-        // Python端会独立读取视频文件进行识别
+
     }
 }
 
 
 
 void VideoManager::loadVideoFrames() {
-    // 不再需要预加载模拟帧
+  
     logMessage("Video system initialized", Qgis::MessageLevel::Info);
 }
 
 void VideoManager::setupSimulationVideo() {
-    // 模拟视频设置
+   
     mVideoSource = "simulation";
     logMessage("Simulation video setup completed", Qgis::MessageLevel::Info);
 }
 
 void VideoManager::setupCameraVideo() {
-    // 摄像头设置
+    
     mVideoSource = "camera";
     logMessage("Camera video setup completed", Qgis::MessageLevel::Info);
 }
@@ -349,7 +347,7 @@ void VideoManager::setupCameraVideo() {
 void VideoManager::setupFileVideo() {
     qDebug() << "=== setupFileVideo called ===";
     
-    // 文件视频设置 - mVideoSource应该已经由MainWindow设置好了
+   
     if (mVideoSource.isEmpty()) {
         qDebug() << "WARNING: Video source is empty, this should not happen!";
         return;
@@ -378,7 +376,7 @@ void VideoManager::setupFileVideo() {
     logMessage(QString("Video file info - Size: %1 bytes, Suffix: %2")
                .arg(fileInfo.size()).arg(fileInfo.suffix()), Qgis::MessageLevel::Info);
     
-    // 设置媒体文件
+    
     QUrl videoUrl = QUrl::fromLocalFile(mVideoSource);
     qDebug() << "Video URL:" << videoUrl.toString();
     logMessage("Video URL: " + videoUrl.toString(), Qgis::MessageLevel::Info);
@@ -392,30 +390,25 @@ void VideoManager::setupFileVideo() {
     qDebug() << "Setting media...";
     mpMediaPlayer->setMedia(videoUrl);
     
-    // 添加调试信息
+   
     qDebug() << "Media player state:" << mpMediaPlayer->state();
     qDebug() << "Media player media status:" << mpMediaPlayer->mediaStatus();
     qDebug() << "Video available:" << mpMediaPlayer->isVideoAvailable();
     qDebug() << "Audio available:" << mpMediaPlayer->isAudioAvailable();
     
-        // 设置音量为0（静音）
+      
     mpMediaPlayer->setVolume(0);
     
-    // 添加延迟检查，看看媒体是否成功加载
+ 
     QTimer::singleShot(3000, this, [this]() {
-        qDebug() << "=== 3秒后检查媒体状态 ===";
-        qDebug() << "Media player state:" << mpMediaPlayer->state();
-        qDebug() << "Media player status:" << mpMediaPlayer->mediaStatus();
-        qDebug() << "Video available:" << mpMediaPlayer->isVideoAvailable();
-        qDebug() << "Audio available:" << mpMediaPlayer->isAudioAvailable();
-        qDebug() << "Duration:" << mpMediaPlayer->duration() << "ms";
-        qDebug() << "Error:" << mpMediaPlayer->error();
+        
+      
         if (mpMediaPlayer->error() != QMediaPlayer::NoError) {
             qDebug() << "Error string:" << mpMediaPlayer->errorString();
         }
     });
 
-    qDebug() << "=== setupFileVideo completed ===";
+   
     logMessage("File video setup completed: " + mVideoSource, Qgis::MessageLevel::Info);
 }
 
@@ -439,6 +432,7 @@ void VideoManager::startTcpServer() {
 void VideoManager::stopTcpServer() {
     if (mpTcpSocket) {
         mpTcpSocket->disconnectFromHost();
+        mpTcpSocket->deleteLater(); 
         mpTcpSocket = nullptr;
     }
     
@@ -448,12 +442,15 @@ void VideoManager::stopTcpServer() {
         mpTcpServer = nullptr;
     }
     
+   
+    mSocketBuffer.clear();
+    
     logMessage("TCP server stopped", Qgis::MessageLevel::Info);
 }
 
 void VideoManager::onNewConnection() {
     if (mpTcpSocket) {
-        // 已有连接，拒绝新连接
+
         QTcpSocket *newSocket = mpTcpServer->nextPendingConnection();
         newSocket->disconnectFromHost();
         return;
@@ -475,7 +472,7 @@ void VideoManager::onSocketReadyRead() {
     
     mSocketBuffer.append(mpTcpSocket->readAll());
     
-    // 处理完整的JSON消息
+
     while (true) {
         int endIndex = mSocketBuffer.indexOf('\n');
         if (endIndex == -1) {
@@ -522,7 +519,7 @@ void VideoManager::processDetectionData(const QJsonObject &data) {
         result.height = detObj["height"].toInt();
         result.timestamp = QDateTime::currentDateTime().toString("hh:mm:ss");
         
-        // 根据类别设置检测类型
+
         if (result.name == "person") {
             result.type = DetectionType::PERSON;
         } else if (result.name == "manhole") {
@@ -535,23 +532,23 @@ void VideoManager::processDetectionData(const QJsonObject &data) {
             result.type = DetectionType::UNKNOWN;
         }
         
-        // 评估风险等级
+
         result.isRisk = detObj["risk"].toBool();
         result.riskLevel = detObj["risk_level"].toString();
         
         results.append(result);
     }
     
-    // 检查是否包含检测框图像
+
     if (data.contains("frame_image")) {
         QString frameBase64 = data["frame_image"].toString();
         if (!frameBase64.isEmpty()) {
-            // 解码base64图像
+
             QByteArray imageData = QByteArray::fromBase64(frameBase64.toUtf8());
             QPixmap framePixmap;
             if (framePixmap.loadFromData(imageData, "JPEG")) {
                 qDebug() << "=== 接收到检测框图像 ===" << framePixmap.size();
-                // 发送带检测框的图像到显示控件
+
                 if (mpVideoDisplayWidget) {
                     mpVideoDisplayWidget->updateVideoFrame(framePixmap);
                 }
@@ -625,7 +622,7 @@ void VideoManager::onMediaStatusChanged(QMediaPlayer::MediaStatus status) {
         case QMediaPlayer::LoadedMedia:
             statusString = "Loaded";
             logMessage("add succ", Qgis::MessageLevel::Success);
-            // 输出视频信息
+
             if (mpMediaPlayer->isVideoAvailable()) {
                 logMessage("usfule", Qgis::MessageLevel::Success);
             } else {
@@ -651,7 +648,7 @@ void VideoManager::onMediaStatusChanged(QMediaPlayer::MediaStatus status) {
         case QMediaPlayer::EndOfMedia:
             statusString = "End of Media";
             logMessage("restart...", Qgis::MessageLevel::Info);
-            // 循环播放
+
             if (mIsStreaming && mpMediaPlayer) {
                 mpMediaPlayer->setPosition(0);
                 mpMediaPlayer->play();
@@ -667,9 +664,8 @@ void VideoManager::onMediaStatusChanged(QMediaPlayer::MediaStatus status) {
 }
 
 void VideoManager::onPositionChanged(qint64 position) {
-    // 视频播放位置变化时的处理
-    // 这里可以更新当前帧信息或进度
-    if (mIsStreaming && mFrameCount % 30 == 0) { // 每秒更新一次日志
+
+    if (mIsStreaming && mFrameCount % 30 == 0) { 
         qint64 duration = mpMediaPlayer->duration();
         if (duration > 0) {
             int progress = (position * 100) / duration;

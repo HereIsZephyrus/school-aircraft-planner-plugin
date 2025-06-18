@@ -15,6 +15,12 @@
 #include <QFrame>
 #include <QPainter>
 #include <QVideoWidget>
+#include <QDialog>
+#include <QKeyEvent>
+#include <QMouseEvent>
+#include <QEvent>
+#include <QSizePolicy>
+#include <QDesktopWidget>
 #include <memory>
 
 // 检测目标类型
@@ -31,36 +37,77 @@ struct DetectionResult {
     DetectionType type;
     QString name;
     float confidence;
-    int x, y, width, height;  // 边界框坐标
-    bool isRisk;              // 是否为风险目标
-    QString riskLevel;        // 风险等级: "低", "中", "高"
-    QString timestamp;        // 检测时间戳
+    int x, y, width, height; 
+    bool isRisk;             
+    QString riskLevel;       
+    QString timestamp;      
 };
 
-// 视频显示控件
+
+class FullScreenVideoViewer : public QDialog {
+    Q_OBJECT
+
+public:
+    FullScreenVideoViewer(QWidget *parent = nullptr);
+    ~FullScreenVideoViewer() = default;
+    
+
+    void setVideoContent(const QPixmap &pixmap);
+    void setVideoWidget(QWidget *videoWidget);
+    
+
+    void moveToBottomRight();
+    
+protected:
+    void keyPressEvent(QKeyEvent *event) override;
+    void mouseDoubleClickEvent(QMouseEvent *event) override;
+    
+private:
+    void setupUI();
+    
+    QVBoxLayout *mpLayout;
+    QLabel *mpVideoLabel;
+    QWidget *mpCurrentVideoWidget;
+};
+
+
+class ClickableVideoLabel : public QLabel {
+    Q_OBJECT
+
+public:
+    ClickableVideoLabel(QWidget *parent = nullptr);
+
+signals:
+    void doubleClicked();
+
+protected:
+    void mouseDoubleClickEvent(QMouseEvent *event) override;
+};
+
+
 class VideoDisplayWidget : public QWidget {
     Q_OBJECT
 
 public:
     VideoDisplayWidget(QWidget *parent = nullptr);
-    ~VideoDisplayWidget() = default;
+    ~VideoDisplayWidget();
 
-    // 更新视频帧
     void updateVideoFrame(const QPixmap &frame);
     
-    // 更新检测结果
     void updateDetectionResults(const QList<DetectionResult> &results);
     
-    // 设置视频状态
     void setVideoStatus(bool isPlaying);
     
-    // 设置视频控件
     void setVideoWidget(QWidget *videoWidget);
+    
+protected:
+    bool eventFilter(QObject *obj, QEvent *event) override;
     
 private slots:
     void onClearResults();
     void onSaveResults();
     void updateVideoInfo();
+    void onVideoLabelDoubleClicked();
 
 signals:
     void videoControlClicked(bool start);
@@ -79,12 +126,11 @@ private:
     void addDetectionToResults(const DetectionResult &result);
     void updateRiskStatistics();
     
-    // UI组件
     QVBoxLayout *mpMainLayout;
     
     // 视频显示区域
     QGroupBox *mpVideoGroup;
-    QLabel *mpVideoLabel;
+    ClickableVideoLabel *mpVideoLabel;
     QLabel *mpVideoStatusLabel;
     QProgressBar *mpVideoProgressBar;
     
@@ -109,18 +155,20 @@ private:
     QLabel *mpRiskCountLabel;
     QTextEdit *mpRiskDetails;
     
-    // 统计数据
     int mPersonCount;
     int mVehicleCount;
     int mRiskCount;
     int mTotalDetections;
     
-    // 视频信息
     bool mIsVideoPlaying;
     QString mVideoResolution;
     int mCurrentFPS;
     
     QTimer *mpUpdateTimer;
+    
+
+    FullScreenVideoViewer *mpFullScreenViewer;
+    QWidget *mpCurrentVideoWidget;
 };
 
 // 识别结果项控件
@@ -142,7 +190,5 @@ private:
     QLabel *mpRiskLabel;
     QLabel *mpTimeLabel;
 };
-
-
 
 #endif // VIDEODISPLAYWIDGET_H 

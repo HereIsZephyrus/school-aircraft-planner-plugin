@@ -20,12 +20,12 @@
 
 // 视频来源类型
 enum class VideoSourceType {
-    SIMULATION,    // 模拟视频
-    CAMERA,        // 摄像头
-    FILE          // 视频文件
+    SIMULATION,    
+    CAMERA,      
+    FILE       
 };
 
-// 视频管理器 - 单例模式
+
 class VideoManager : public QObject {
     Q_OBJECT
 
@@ -42,27 +42,27 @@ public:
     VideoManager(const VideoManager&) = delete;
     VideoManager& operator=(const VideoManager&) = delete;
 
-    // 初始化视频系统
+
     bool initialize();
     
-    // 设置视频源
+
     void setVideoSource(VideoSourceType type, const QString &source = "");
     
-    // 开始/停止视频流
+
     void startVideoStream();
     void stopVideoStream();
     
-    // 获取视频状态
+
     bool isVideoStreaming() const { return mIsStreaming; }
     
-    // 设置视频显示控件
+
     void setVideoDisplayWidget(VideoDisplayWidget *widget);
     
-    // 启动/停止AI识别
+
     void startAIDetection();
     void stopAIDetection();
     
-    // 获取AI识别状态
+
     bool isAIDetectionRunning() const { return mIsAIRunning; }
 
 private slots:

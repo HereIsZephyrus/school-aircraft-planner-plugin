@@ -70,7 +70,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent) {
   projectDir.cdUp(); 
   projectDir.cdUp(); 
   
-  QString videoPath = projectDir.filePath("resources/video/VID_20250617094821.wmv");
+  QString videoPath = projectDir.filePath("resources/video/VID_20250617094821_analyzed2.wmv");
   qDebug() << "MainWindow videoPath:" << videoPath;
   VideoManager::getInstance().setVideoSource(VideoSourceType::FILE, videoPath);
   

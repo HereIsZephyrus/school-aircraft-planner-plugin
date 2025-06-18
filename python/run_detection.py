@@ -1,203 +1,102 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-无人机视频AI识别系统启动脚本
-简化启动流程和配置管理
+无人机视频AI检测 - PyCharm运行脚本
+简化版本，直接运行即可
 """
 
-import os
 import sys
-import subprocess
-import argparse
-import json
+import os
 from pathlib import Path
 
-def check_dependencies():
-    """检查依赖是否安装"""
-    required_packages = [
-        'cv2',
-        'numpy', 
-        'ultralytics'
-    ]
-    
-    missing_packages = []
-    
-    for package in required_packages:
-        try:
-            __import__(package)
-        except ImportError:
-            missing_packages.append(package)
-    
-    if missing_packages:
-        print(f"缺少依赖包: {', '.join(missing_packages)}")
-        print("请运行: pip install -r requirements.txt")
-        return False
-    
-    return True
+# 添加当前目录到路径
+sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
-def setup_environment():
-    """设置运行环境"""
-    script_dir = Path(__file__).parent
-    
-    # 确保日志目录存在
-    log_dir = script_dir / "logs"
-    log_dir.mkdir(exist_ok=True)
-    
-    # 确保模型目录存在
-    model_dir = script_dir / "models"
-    model_dir.mkdir(exist_ok=True)
-    
-    return script_dir
+from yolo_detection import DroneVideoDetector
+import logging
 
-def load_config():
-    """加载配置文件"""
-    script_dir = Path(__file__).parent
-    config_file = script_dir / "config.json"
-    
-    default_config = {
-        "host": "localhost",
-        "port": 8888,
-        "model_path": "",
-        "video_source": "simulation",
-        "log_level": "INFO",
-        "detection_settings": {
-            "confidence_threshold": 0.5,
-            "nms_threshold": 0.4,
-            "max_detections": 100
-        },
-        "risk_settings": {
-            "person_max_count": 5,
-            "risk_areas": [],
-            "auto_alert": True
-        }
-    }
-    
-    if config_file.exists():
-        try:
-            with open(config_file, 'r', encoding='utf-8') as f:
-                config = json.load(f)
-            # 合并默认配置
-            for key, value in default_config.items():
-                if key not in config:
-                    config[key] = value
-            return config
-        except Exception as e:
-            print(f"配置文件加载失败: {e}")
-            print("使用默认配置")
-    
-    # 保存默认配置
-    with open(config_file, 'w', encoding='utf-8') as f:
-        json.dump(default_config, f, indent=2, ensure_ascii=False)
-    
-    return default_config
-
-def run_detection(config, args):
-    """运行检测脚本"""
-    script_dir = Path(__file__).parent
-    detection_script = script_dir / "yolo_detection.py"
-    
-    if not detection_script.exists():
-        print(f"检测脚本不存在: {detection_script}")
-        return False
-    
-    # 构建命令行参数
-    cmd = [sys.executable, str(detection_script)]
-    
-    # 从配置文件添加参数
-    cmd.extend(["--host", config["host"]])
-    cmd.extend(["--port", str(config["port"])])
-    cmd.extend(["--source", config["video_source"]])
-    
-    if config["model_path"]:
-        cmd.extend(["--model", config["model_path"]])
-    
-    # 从命令行参数覆盖配置
-    if args.host:
-        cmd[-4] = args.host
-    if args.port:
-        cmd[-2] = str(args.port)
-    if args.model:
-        cmd.extend(["--model", args.model])
-    if args.verbose:
-        cmd.append("--verbose")
-    
-    print(f"启动检测脚本: {' '.join(cmd)}")
-    
-    try:
-        # 运行检测脚本
-        process = subprocess.run(cmd, check=True)
-        return process.returncode == 0
-    except subprocess.CalledProcessError as e:
-        print(f"检测脚本运行失败: {e}")
-        return False
-    except KeyboardInterrupt:
-        print("\n检测脚本被用户中断")
-        return True
+# 配置日志
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(message)s'
+)
+logger = logging.getLogger(__name__)
 
 def main():
-    """主函数"""
-    parser = argparse.ArgumentParser(
-        description='无人机视频AI识别系统启动器',
-        formatter_class=argparse.RawDescriptionHelpFormatter,
-        epilog="""
-使用示例:
-  python run_detection.py                    # 使用默认配置启动
-  python run_detection.py --host 192.168.1.100  # 指定主机地址
-  python run_detection.py --port 9999       # 指定端口
-  python run_detection.py --model yolo11s.pt # 指定模型文件
-  python run_detection.py --verbose         # 详细日志输出
-        """
-    )
+    """主函数 - 直接在这里设置您的视频路径"""
     
-    parser.add_argument('--host', type=str, help='Qt应用程序主机地址')
-    parser.add_argument('--port', type=int, help='TCP通信端口') 
-    parser.add_argument('--model', type=str, help='YOLO模型文件路径')
-    parser.add_argument('--verbose', action='store_true', help='详细日志输出')
-    parser.add_argument('--check-deps', action='store_true', help='仅检查依赖')
-    parser.add_argument('--setup', action='store_true', help='仅设置环境')
+    # ================== 配置区域 ==================
+    # 视频路径设置
+    VIDEO_PATH = r"F:\git\school-aircraft-planner-plugin\resources\video\VID_20250617094821.wmv"
+    OUTPUT_PATH = r"F:\git\school-aircraft-planner-plugin\resources\video\VID_20250617094821_analyzed.mp4"
     
-    args = parser.parse_args()
+    # 水域区域设置 (如果视频中有水域，设置坐标)
+    # 格式: [(x, y, width, height), ...]
+    WATER_AREAS = []  # 暂时不设置，如需要请修改为: [(300, 200, 400, 300)]
     
-    print("=" * 60)
-    print("无人机视频AI识别系统启动器")
-    print("=" * 60)
+    # 运行设置
+    SHOW_REALTIME = True   # 是否显示实时检测窗口
+    SAVE_VIDEO = True      # 是否保存检测结果视频
+    # =============================================
     
-    # 检查依赖
-    print("1. 检查依赖...")
-    if not check_dependencies():
-        return 1
-    print("   ✓ 依赖检查通过")
+    print("🚁 无人机视频AI检测系统")
+    print("=" * 50)
+    print(f"📹 输入视频: {Path(VIDEO_PATH).name}")
+    print(f"💾 输出视频: {'保存' if SAVE_VIDEO else '不保存'}")
+    print(f"👁️  实时显示: {'开启' if SHOW_REALTIME else '关闭'}")
+    print(f"🌊 水域区域: {len(WATER_AREAS)}个")
+    print()
+    print("⚠️  风险规则:")
+    print("   • 人数 > 30 = 高风险(红色)")
+    print("   • 距水域 < 2米 = 高风险(红色)")
+    print("   • 井盖/车辆 = 仅统计")
+    print("   • 按ESC或Q键退出")
+    print("=" * 50)
     
-    if args.check_deps:
-        print("依赖检查完成")
-        return 0
+    # 检查文件
+    if not Path(VIDEO_PATH).exists():
+        print(f"❌ 错误: 视频文件不存在")
+        print(f"   路径: {VIDEO_PATH}")
+        return
     
-    # 设置环境
-    print("2. 设置环境...")
-    script_dir = setup_environment()
-    print(f"   ✓ 工作目录: {script_dir}")
+    # 创建检测器
+    try:
+        print("🔧 初始化AI检测器...")
+        detector = DroneVideoDetector()
+        print("✅ 检测器初始化成功")
+    except Exception as e:
+        print(f"❌ 检测器初始化失败: {e}")
+        return
     
-    if args.setup:
-        print("环境设置完成")
-        return 0
+    # 开始处理
+    try:
+        print("🚀 开始视频处理...")
+        
+        if SHOW_REALTIME:
+            # 实时显示模式
+            output_path = OUTPUT_PATH if SAVE_VIDEO else None
+            success = detector.process_video_with_realtime_display(
+                VIDEO_PATH, output_path, WATER_AREAS
+            )
+        else:
+            # 后台处理模式
+            success = detector.process_video_to_output(
+                VIDEO_PATH, OUTPUT_PATH, WATER_AREAS
+            )
+        
+        if success:
+            print("\n✅ 处理完成!")
+            if SAVE_VIDEO:
+                print(f"📁 输出文件: {Path(OUTPUT_PATH).name}")
+        else:
+            print("\n❌ 处理失败")
+            
+    except KeyboardInterrupt:
+        print("\n⏹️  用户中断")
+    except Exception as e:
+        print(f"\n❌ 运行错误: {e}")
     
-    # 加载配置
-    print("3. 加载配置...")
-    config = load_config()
-    print(f"   ✓ 主机: {config['host']}")
-    print(f"   ✓ 端口: {config['port']}")
-    print(f"   ✓ 视频源: {config['video_source']}")
-    
-    # 运行检测
-    print("4. 启动检测系统...")
-    success = run_detection(config, args)
-    
-    if success:
-        print("\n✓ 检测系统运行完成")
-        return 0
-    else:
-        print("\n✗ 检测系统运行失败")
-        return 1
+    print("🔚 程序结束")
 
 if __name__ == '__main__':
-    sys.exit(main()) 
+    main() 

@@ -7,6 +7,105 @@
 #include <QSplitter>
 #include <QApplication>
 
+
+FullScreenVideoViewer::FullScreenVideoViewer(QWidget *parent) 
+    : QDialog(parent), mpCurrentVideoWidget(nullptr) {
+    setupUI();
+    
+ 
+    setWindowFlags(Qt::Dialog | Qt::WindowCloseButtonHint);
+    setModal(true);
+    setStyleSheet("background-color: black;");
+    
+   
+    resize(640, 480);
+    
+  
+    moveToBottomRight();
+}
+
+void FullScreenVideoViewer::setupUI() {
+    mpLayout = new QVBoxLayout(this);
+    mpLayout->setContentsMargins(5, 5, 5, 5);
+    mpLayout->setSpacing(0);
+    
+    mpVideoLabel = new QLabel(this);
+    mpVideoLabel->setAlignment(Qt::AlignCenter);
+    mpVideoLabel->setScaledContents(true);
+    mpVideoLabel->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
+    mpVideoLabel->setStyleSheet("background-color: black; color: white;");
+    mpVideoLabel->setText("ESC to exit");
+    
+    mpLayout->addWidget(mpVideoLabel);
+}
+
+void FullScreenVideoViewer::setVideoContent(const QPixmap &pixmap) {
+    if (!pixmap.isNull()) {
+        mpVideoLabel->setPixmap(pixmap);
+        mpVideoLabel->setScaledContents(true);
+        mpVideoLabel->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
+    }
+}
+
+void FullScreenVideoViewer::setVideoWidget(QWidget *videoWidget) {
+    if (mpCurrentVideoWidget) {
+        mpLayout->removeWidget(mpCurrentVideoWidget);
+    }
+    
+    mpCurrentVideoWidget = videoWidget;
+    if (videoWidget) {
+        mpLayout->removeWidget(mpVideoLabel);
+        mpVideoLabel->hide();
+        
+
+      
+        videoWidget->setMinimumSize(320, 240);
+        videoWidget->setMaximumSize(620, 460);
+        videoWidget->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
+        
+        mpLayout->addWidget(videoWidget);
+        videoWidget->show();
+    }
+}
+
+void FullScreenVideoViewer::keyPressEvent(QKeyEvent *event) {
+    if (event->key() == Qt::Key_Escape) {
+        accept(); 
+    } else {
+        QDialog::keyPressEvent(event);
+    }
+}
+
+void FullScreenVideoViewer::mouseDoubleClickEvent(QMouseEvent *event) {
+    Q_UNUSED(event)
+    accept(); 
+}
+
+void FullScreenVideoViewer::moveToBottomRight() {
+ 
+    QRect screenGeometry = QApplication::desktop()->screenGeometry();
+    
+  
+    int margin = 20;
+    int x = screenGeometry.width() - width() - margin;
+    int y = screenGeometry.height() - height() - margin;
+    
+ 
+    move(x, y);
+}
+
+
+ClickableVideoLabel::ClickableVideoLabel(QWidget *parent) : QLabel(parent) {
+    setCursor(Qt::PointingHandCursor);
+    setToolTip("double click to enlarge the video");
+}
+
+void ClickableVideoLabel::mouseDoubleClickEvent(QMouseEvent *event) {
+    Q_UNUSED(event)
+    emit doubleClicked();
+}
+
+
 VideoDisplayWidget::VideoDisplayWidget(QWidget *parent) 
     : QWidget(parent)
     , mPersonCount(0)
@@ -16,15 +115,41 @@ VideoDisplayWidget::VideoDisplayWidget(QWidget *parent)
     , mIsVideoPlaying(false)
     , mVideoResolution("1920x1080")
     , mCurrentFPS(30)
+    , mpFullScreenViewer(nullptr)
+    , mpCurrentVideoWidget(nullptr)
 {
     setupUI();
     
-    // 创建定时器用于更新视频信息
+ 
+    mpFullScreenViewer = new FullScreenVideoViewer(this);
+    
     mpUpdateTimer = new QTimer(this);
     connect(mpUpdateTimer, &QTimer::timeout, this, &VideoDisplayWidget::updateVideoInfo);
-    mpUpdateTimer->start(1000); // 每秒更新一次
+    mpUpdateTimer->start(1000); 
     
     logMessage("VideoDisplayWidget created", Qgis::MessageLevel::Success);
+}
+
+VideoDisplayWidget::~VideoDisplayWidget() {
+  
+    if (mpUpdateTimer) {
+        mpUpdateTimer->stop();
+    }
+    
+   
+    if (mpFullScreenViewer) {
+        mpFullScreenViewer->close();
+       
+    }
+    
+   
+    if (mpResultsList) {
+        mpResultsList->clear();
+    }
+   
+    mpCurrentVideoWidget = nullptr;
+    
+    logMessage("VideoDisplayWidget destroyed", Qgis::MessageLevel::Success);
 }
 
 void VideoDisplayWidget::setupUI() {
@@ -95,8 +220,8 @@ void VideoDisplayWidget::setupVideoArea() {
     mpVideoGroup = new QGroupBox("video", this);
     QVBoxLayout *videoLayout = new QVBoxLayout(mpVideoGroup);
     
-    // 视频显示标签
-    mpVideoLabel = new QLabel(mpVideoGroup);
+  
+    mpVideoLabel = new ClickableVideoLabel(mpVideoGroup);
     mpVideoLabel->setMinimumSize(240, 120);
     mpVideoLabel->setMaximumSize(320, 240);
     mpVideoLabel->setScaledContents(true);
@@ -104,7 +229,10 @@ void VideoDisplayWidget::setupVideoArea() {
     mpVideoLabel->setAlignment(Qt::AlignCenter);
     mpVideoLabel->setText("wait video...");
     
-    // 状态信息
+    
+    connect(mpVideoLabel, &ClickableVideoLabel::doubleClicked, 
+            this, &VideoDisplayWidget::onVideoLabelDoubleClicked);
+    
     mpVideoStatusLabel = new QLabel("video is not connected", mpVideoGroup);
     mpVideoProgressBar = new QProgressBar(mpVideoGroup);
     mpVideoProgressBar->setVisible(false);
@@ -119,17 +247,20 @@ void VideoDisplayWidget::setupVideoArea() {
 void VideoDisplayWidget::setVideoWidget(QWidget *videoWidget) {
     if (!videoWidget) return;
     
-    // 替换视频标签为真正的视频控件
+  
+    mpCurrentVideoWidget = videoWidget;
+    
     QVBoxLayout *videoLayout = qobject_cast<QVBoxLayout*>(mpVideoGroup->layout());
     if (videoLayout) {
-        // 移除旧的视频标签
         videoLayout->removeWidget(mpVideoLabel);
         mpVideoLabel->hide();
         
-        // 添加视频控件
         videoWidget->setMinimumSize(240, 120);
         videoWidget->setMaximumSize(320, 240);
         videoLayout->insertWidget(0, videoWidget);
+        
+       
+        videoWidget->installEventFilter(this);
         
         logMessage("Video widget set successfully", Qgis::MessageLevel::Success);
     }
@@ -143,11 +274,50 @@ void VideoDisplayWidget::updateVideoFrame(const QPixmap &frame) {
     }
 }
 
+void VideoDisplayWidget::onVideoLabelDoubleClicked() {
+    if (mpVideoLabel->pixmap()) {
+        mpFullScreenViewer->setVideoContent(*mpVideoLabel->pixmap());
+        mpFullScreenViewer->exec(); // 使用exec()而不是show()以确保模态显示
+    } else if (mpCurrentVideoWidget) {
+        QWidget *parent = mpCurrentVideoWidget->parentWidget();
+        
+   
+        QSizePolicy originalPolicy = mpCurrentVideoWidget->sizePolicy();
+        QSize originalMinSize = mpCurrentVideoWidget->minimumSize();
+        QSize originalMaxSize = mpCurrentVideoWidget->maximumSize();
+        
+        mpFullScreenViewer->setVideoWidget(mpCurrentVideoWidget);
+        mpFullScreenViewer->exec();
+        
+      
+        if (parent) {
+            QVBoxLayout *videoLayout = qobject_cast<QVBoxLayout*>(mpVideoGroup->layout());
+            if (videoLayout) {
+                videoLayout->insertWidget(0, mpCurrentVideoWidget);
+                
+             
+                mpCurrentVideoWidget->setSizePolicy(originalPolicy);
+                mpCurrentVideoWidget->setMinimumSize(originalMinSize);
+                mpCurrentVideoWidget->setMaximumSize(originalMaxSize);
+            }
+        }
+    }
+}
+
+
+bool VideoDisplayWidget::eventFilter(QObject *obj, QEvent *event) {
+    if (obj == mpCurrentVideoWidget && event->type() == QEvent::MouseButtonDblClick) {
+        onVideoLabelDoubleClicked();
+        return true;
+    }
+    return QWidget::eventFilter(obj, event);
+}
+
 void VideoDisplayWidget::setupControlArea() {
     mpControlGroup = new QGroupBox("video control", this);
     QVBoxLayout *controlLayout = new QVBoxLayout(mpControlGroup);
     
-    // 按钮区域
+
     QHBoxLayout *buttonLayout = new QHBoxLayout();
     mpStartStopBtn = new QPushButton("start", mpControlGroup);
     mpClearBtn = new QPushButton("erase", mpControlGroup);
@@ -161,7 +331,7 @@ void VideoDisplayWidget::setupControlArea() {
     buttonLayout->addWidget(mpClearBtn);
     buttonLayout->addWidget(mpSaveBtn);
     
-    // 信息显示区域
+ 
     QHBoxLayout *infoLayout = new QHBoxLayout();
     mpFpsLabel = new QLabel("FPS: 0", mpControlGroup);
     mpResolutionLabel = new QLabel("分辨率: 1920x1080", mpControlGroup);
@@ -173,7 +343,7 @@ void VideoDisplayWidget::setupControlArea() {
     controlLayout->addLayout(buttonLayout);
     controlLayout->addLayout(infoLayout);
     
-    // 连接信号槽
+ 
     connect(mpStartStopBtn, &QPushButton::clicked, this, [this]() {
         bool start = !mIsVideoPlaying;
         emit videoControlClicked(start);
@@ -189,7 +359,7 @@ void VideoDisplayWidget::setupResultsArea() {
     QVBoxLayout *resultsLayout = new QVBoxLayout(mpResultsGroup);
     
     mpResultsList = new QListWidget(mpResultsGroup);
-    mpResultsList->setMaximumHeight(100);
+    mpResultsList->setMaximumHeight(30);
     
     resultsLayout->addWidget(mpResultsList);
     mpMainLayout->addWidget(mpResultsGroup);
@@ -199,11 +369,11 @@ void VideoDisplayWidget::setupRiskArea() {
     mpRiskGroup = new QGroupBox("risk ring", this);
     QVBoxLayout *riskLayout = new QVBoxLayout(mpRiskGroup);
     
-    // 状态显示
+
     mpRiskStatusLabel = new QLabel("risk is mormal", mpRiskGroup);
     mpRiskStatusLabel->setStyleSheet("color: #4CAF50; font-weight: bold;");
     
-    // 统计信息
+
     QHBoxLayout *statsLayout = new QHBoxLayout();
     mpPersonCountLabel = new QLabel("person: 0", mpRiskGroup);
     mpVehicleCountLabel = new QLabel("electricScooter: 0", mpRiskGroup);
@@ -216,7 +386,7 @@ void VideoDisplayWidget::setupRiskArea() {
     statsLayout->addWidget(mpRiskCountLabel);
     statsLayout->addStretch();
     
-    // 风险详情
+
     mpRiskDetails = new QTextEdit(mpRiskGroup);
     mpRiskDetails->setMaximumHeight(50);
     mpRiskDetails->setPlainText("not exist risk");
@@ -274,18 +444,18 @@ void VideoDisplayWidget::addDetectionToResults(const DetectionResult &result) {
     
     mpResultsList->addItem(itemText);
     
-    // 限制列表项数量
+ 
     if (mpResultsList->count() > 100) {
         delete mpResultsList->takeItem(0);
     }
     
-    // 自动滚动到最新项
+
     mpResultsList->scrollToBottom();
     
-    // 更新统计计数
+
     mTotalDetections++;
     
-    // 根据检测类型更新计数
+
     switch (result.type) {
         case DetectionType::PERSON:
             mPersonCount++;
@@ -297,14 +467,14 @@ void VideoDisplayWidget::addDetectionToResults(const DetectionResult &result) {
             break;
     }
     
-    // 更新风险计数
+
     if (result.isRisk) {
         mRiskCount++;
     }
 }
 
 void VideoDisplayWidget::updateRiskStatistics() {
-    // 更新统计标签
+
     mpPersonCountLabel->setText(QString("person: %1").arg(mPersonCount));
     mpVehicleCountLabel->setText(QString("electricScooter: %1").arg(mVehicleCount));
     mpRiskCountLabel->setText(QString("risk: %1").arg(mRiskCount));
@@ -376,7 +546,7 @@ void VideoDisplayWidget::updateVideoInfo() {
     }
 }
 
-// DetectionResultItem implementation
+
 DetectionResultItem::DetectionResultItem(const DetectionResult &result, QWidget *parent)
     : QWidget(parent) {
     setupUI(result);
@@ -386,7 +556,7 @@ void DetectionResultItem::setupUI(const DetectionResult &result) {
     mpLayout = new QHBoxLayout(this);
     mpLayout->setContentsMargins(5, 2, 5, 2);
     
-    // 类型标签
+
     mpTypeLabel = new QLabel(this);
     switch (result.type) {
         case DetectionType::PERSON:
@@ -406,13 +576,13 @@ void DetectionResultItem::setupUI(const DetectionResult &result) {
             break;
     }
     
-    // 置信度标签
+
     mpConfidenceLabel = new QLabel(formatConfidence(result.confidence), this);
     
-    // 位置标签
+
     mpPositionLabel = new QLabel(QString("(%1,%2)").arg(result.x).arg(result.y), this);
     
-    // 风险标签
+
     mpRiskLabel = new QLabel(this);
     if (result.isRisk) {
         mpRiskLabel->setText("⚠️");
@@ -422,7 +592,7 @@ void DetectionResultItem::setupUI(const DetectionResult &result) {
         mpRiskLabel->setStyleSheet("color: #4CAF50;");
     }
     
-    // 时间标签
+
     mpTimeLabel = new QLabel(result.timestamp, this);
     mpTimeLabel->setStyleSheet("color: #888888; font-size: 10px;");
     
