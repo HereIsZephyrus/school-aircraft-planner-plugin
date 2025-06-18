@@ -1,0 +1,17 @@
+{
+  "host": "localhost",
+  "port": 8888,
+  "model_path": "",
+  "video_source": "simulation",
+  "log_level": "INFO",
+  "detection_settings": {
+    "confidence_threshold": 0.5,
+    "nms_threshold": 0.4,
+    "max_detections": 100
+  },
+  "risk_settings": {
+    "person_max_count": 5,
+    "risk_areas": [],
+    "auto_alert": true
+  }
+}

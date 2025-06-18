@@ -6,6 +6,7 @@
 /.vscode
 /python/detection_results/
 /python/.idea/
+*.log
 *.d
 *.mp4
 *.wmv
