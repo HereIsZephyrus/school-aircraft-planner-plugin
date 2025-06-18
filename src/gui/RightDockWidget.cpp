@@ -66,12 +66,9 @@ RightDockWidget::RightDockWidget(QWidget *parent) : QDockWidget(parent) {
   mpMainLayout->addWidget(mpFileTreeWidget);
   mpToolTreeWidget = new ToolTreeWidget(mpMainContainer);
   mpMainLayout->addWidget(mpToolTreeWidget);
-<<<<<<< Updated upstream
   mpMainLayout->addWidget(LayerTreeWidget::getInstance());
-=======
   mpVideoDisplayWidget = new VideoDisplayWidget(mpMainContainer);
   mpMainLayout->addWidget(mpVideoDisplayWidget);
->>>>>>> Stashed changes
   mJoystickWidget = new JoyDockWidget(mpMainContainer);
   mpMainLayout->addWidget(mJoystickWidget);
 

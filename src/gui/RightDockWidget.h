@@ -40,16 +40,10 @@ class RightDockWidget : public QDockWidget {
 public:
   RightDockWidget(QWidget *parent = nullptr);
   ~RightDockWidget();
-<<<<<<< Updated upstream
-  ToolTreeWidget *getToolTreeWidget() const { return mpToolTreeWidget; }
-  FileTreeWidget *getFileTreeWidget() const { return mpFileTreeWidget; }
-  JoyDockWidget *getJoystickWidget() const { return mJoystickWidget; }
-=======
   ToolTreeWidget* getToolTreeWidget() const { return mpToolTreeWidget; }
   FileTreeWidget* getFileTreeWidget() const { return mpFileTreeWidget; }
   JoyDockWidget* getJoystickWidget() const { return mJoystickWidget; }
   VideoDisplayWidget* getVideoDisplayWidget() const { return mpVideoDisplayWidget; }
->>>>>>> Stashed changes
 
 private:
   QWidget *mpMainContainer;
