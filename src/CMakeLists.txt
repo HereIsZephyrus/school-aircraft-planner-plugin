@@ -36,6 +36,8 @@ set(CORE_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/core/SharedContextManager.h
     ${CMAKE_CURRENT_SOURCE_DIR}/core/Model.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/core/Model.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/core/VideoManager.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/core/VideoManager.h
 )
 
 set(GUI_SOURCES
@@ -51,8 +53,13 @@ set(GUI_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/gui/OpenGLCanvas.h
     ${CMAKE_CURRENT_SOURCE_DIR}/gui/StyleManager.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/gui/StyleManager.h
+<<<<<<< Updated upstream
     ${CMAKE_CURRENT_SOURCE_DIR}/gui/LayerTreeWidget.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/gui/LayerTreeWidget.h
+=======
+    ${CMAKE_CURRENT_SOURCE_DIR}/gui/VideoDisplayWidget.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/gui/VideoDisplayWidget.h
+>>>>>>> Stashed changes
 )
 
 set(LOG_SOURCES

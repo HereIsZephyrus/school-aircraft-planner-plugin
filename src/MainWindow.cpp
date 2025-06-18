@@ -1,5 +1,6 @@
 #include "MainWindow.h"
 #include "core/WorkspaceState.h"
+#include "core/VideoManager.h"
 #include "gui/Canvas.h"
 #include "gui/LeftDockWidget.h"
 #include "gui/StyleManager.h"
@@ -7,6 +8,7 @@
 #include <QAction>
 #include <QApplication>
 #include <QDialog>
+#include <QDir>
 #include <QFile>
 #include <QScreen>
 #include <QTextEdit>
@@ -53,6 +55,25 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent) {
   }
 
   createSlots();
+  
+  // 初始化视频管理器
+  VideoManager::getInstance().initialize();
+  VideoManager::getInstance().setVideoDisplayWidget(mpRightDockWidget->getVideoDisplayWidget());
+  
+
+  QString appDir = QApplication::applicationDirPath();
+  qDebug() << "MainWindow appDir:" << appDir;
+  
+
+  QDir projectDir(appDir);
+  projectDir.cdUp(); 
+  projectDir.cdUp(); 
+  projectDir.cdUp(); 
+  
+  QString videoPath = projectDir.filePath("resources/video/VID_20250617094821.wmv");
+  qDebug() << "MainWindow videoPath:" << videoPath;
+  VideoManager::getInstance().setVideoSource(VideoSourceType::FILE, videoPath);
+  
   logMessage("create main window", Qgis::MessageLevel::Success);
 }
 
@@ -86,6 +107,10 @@ void MainWindow::createSlots() {
           &FlightSimGroup::simulationStart, &AnimationManager::getInstance(),
           &AnimationManager::startSimulation);
   connect(mpLeftDockWidget->getFlightSimGroup(),
+          &FlightSimGroup::simulationStart, this, [this](){
+      VideoManager::getInstance().startVideoStream();
+  });
+  connect(mpLeftDockWidget->getFlightSimGroup(),
           &FlightSimGroup::simulationPause, &AnimationManager::getInstance(),
           &AnimationManager::pauseSimulation);
   connect(mpLeftDockWidget->getFlightSimGroup(),
@@ -97,6 +122,10 @@ void MainWindow::createSlots() {
   connect(mpLeftDockWidget->getFlightSimGroup(),
           &FlightSimGroup::simulationStop, &AnimationManager::getInstance(),
           &AnimationManager::stopSimulation);
+  connect(mpLeftDockWidget->getFlightSimGroup(),
+          &FlightSimGroup::simulationStop, this, [this](){
+      VideoManager::getInstance().stopVideoStream();
+  });
   connect(mpLeftDockWidget->getEnvQueryGroup(), &EnvQueryGroup::queryEnvParams,
           &EnvManager::getInstance(), &EnvManager::generateRandomWeather);
   connect(mpRightDockWidget->getToolTreeWidget(), &ToolTreeWidget::createRoute,

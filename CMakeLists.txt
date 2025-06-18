@@ -30,8 +30,8 @@ message(STATUS "Build type: ${CMAKE_BUILD_TYPE}")
 
 find_package(QGIS REQUIRED)
 find_package(OpenGL REQUIRED)
-find_package(QT NAMES Qt6 Qt5 REQUIRED COMPONENTS Core Widgets Xml Gui OpenGL REQUIRED)
-find_package(Qt${QT_VERSION_MAJOR} REQUIRED COMPONENTS Core Widgets Xml Gui OpenGL REQUIRED)
+find_package(QT NAMES Qt6 Qt5 REQUIRED COMPONENTS Core Widgets Xml Gui OpenGL Network Multimedia MultimediaWidgets REQUIRED)
+find_package(Qt${QT_VERSION_MAJOR} REQUIRED COMPONENTS Core Widgets Xml Gui OpenGL Network Multimedia MultimediaWidgets REQUIRED)
 message(STATUS "Qt5Core_DIR: ${Qt5Core_DIR}")
 message(STATUS "Qt5Core_LIBRARIES: ${Qt5Core_LIBRARIES}")
 
@@ -50,6 +50,9 @@ set(LIBS
   Qt5::Xml
   Qt5::Widgets
   Qt5::OpenGL
+  Qt5::Network
+  Qt5::Multimedia
+  Qt5::MultimediaWidgets
   ${GL_LIBS}
 )
 
@@ -68,6 +71,9 @@ include_directories(
   ${Qt5Gui_INCLUDE_DIRS}
   ${Qt5Xml_INCLUDE_DIRS}
   ${Qt5Widgets_INCLUDE_DIRS}
+  ${Qt5Network_INCLUDE_DIRS}
+  ${Qt5Multimedia_INCLUDE_DIRS}
+  ${Qt5MultimediaWidgets_INCLUDE_DIRS}
   ${INCLUDES}
 )
 
