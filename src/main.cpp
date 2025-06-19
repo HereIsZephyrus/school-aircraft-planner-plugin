@@ -2,6 +2,10 @@
 #include "opengl/Camera.h"
 #include "qgsapplication.h"
 #include "log/QgisDebug.h"
+// Added By inmida
+#include "qgsproviderregistry.h"
+#include "qgsprocessingregistry.h"
+#include "qgsnativealgorithms.h"
 #ifdef Q_OS_WIN
 #define QGIS_PATH "D:/OSGEO4~1/apps/qgis"
 #elif defined(Q_OS_MACOS)
@@ -21,6 +25,10 @@ int main(int argc, char *argv[]) {
   
   QgsApplication::initQgis();
   logMessage("QGIS initialized", Qgis::MessageLevel::Info);
+
+  // added by inmida
+  QgsApplication::processingRegistry() -> addProvider(
+      new QgsNativeAlgorithms(QgsApplication::processingRegistry()));
 
   MainWindow& w = MainWindow::getInstance();
   logMessage("MainWindow instance created", Qgis::MessageLevel::Info);

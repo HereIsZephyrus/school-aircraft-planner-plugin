@@ -36,6 +36,8 @@ set(CORE_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/core/SharedContextManager.h
     ${CMAKE_CURRENT_SOURCE_DIR}/core/Model.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/core/Model.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/core/RescueRoutePlanner.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/core/RescueRoutePlanner.h
 )
 
 set(GUI_SOURCES

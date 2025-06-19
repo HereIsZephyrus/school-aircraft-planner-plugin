@@ -7,6 +7,9 @@
 #include <QTimer>
 #include <cstdlib>
 
+// added by inmida
+#include "../core/RescueRoutePlanner.h"
+
 static QString GetHomeDirectory() {
 #ifdef _WIN32
   return QString(getenv("USERPROFILE"));
@@ -20,6 +23,7 @@ QObject *wsp::WindowManager::pDefaultObject = nullptr;
 
 void wsp::initializeWorkspaceState() {
   PathManager::getInstance();
+  QgsProcessingManager::getInstance();
   logMessage("WorkspaceState initialized", Qgis::MessageLevel::Success);
 }
 

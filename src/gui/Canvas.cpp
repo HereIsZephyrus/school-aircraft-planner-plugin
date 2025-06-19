@@ -5,6 +5,8 @@
 #include <QStandardPaths>
 #include "qgsmaptoolpan.h"
 
+#include "../core/RescueRoutePlanner.h"
+
 Canvas::Canvas(QWidget *parent) : QStackedWidget(parent) {
   init2DWidget();
   init3DWidget();
@@ -62,6 +64,11 @@ void Canvas::init2DWidget() {
   } else {
       logMessage("Failed to load project from: " + realPath, Qgis::MessageLevel::Critical);
   }
+  // 测试用
+  // 路径规划依赖于默认的project加载之后
+  RescueRoutePlanner::getInstance();
+  // QgsPoint point(12758522.631864,3562789.700182);
+  // RescueRoutePlanner::getInstance()->generateResueRoutePlan(point);
   addWidget(mpMapCanvas);
 }
 
