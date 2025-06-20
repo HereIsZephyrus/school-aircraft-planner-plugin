@@ -38,6 +38,16 @@ set(CORE_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/core/Model.h
     ${CMAKE_CURRENT_SOURCE_DIR}/core/VideoManager.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/core/VideoManager.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/core/RiskEventPlanner.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/core/RiskEventPlanner.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/core/ShapefileHandler.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/core/ShapefileHandler.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/core/TriangulationHandler.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/core/TriangulationHandler.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/core/PathOptimizer.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/core/PathOptimizer.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/core/GridPathPlanner.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/core/GridPathPlanner.h
 )
 
 set(GUI_SOURCES
@@ -57,6 +67,12 @@ set(GUI_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/gui/LayerTreeWidget.h
     ${CMAKE_CURRENT_SOURCE_DIR}/gui/VideoDisplayWidget.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/gui/VideoDisplayWidget.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/gui/RiskEventPlannerDialog.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/gui/RiskEventPlannerDialog.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/gui/RouteVisualization.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/gui/RouteVisualization.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/gui/GridPathPlannerDialog.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/gui/GridPathPlannerDialog.h
 )
 
 set(LOG_SOURCES

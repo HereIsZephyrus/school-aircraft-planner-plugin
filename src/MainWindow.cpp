@@ -54,6 +54,14 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent) {
     return;
   }
 
+  // 初始化风险事件路径规划对话框
+  mpRiskEventPlannerDialog = nullptr; // 延迟创建
+  mpGridPathPlannerDialog = nullptr; // 延迟创建
+  
+  // 初始化路径可视化
+  mpRouteVisualization = new RouteVisualization(this);
+  logMessage("create route visualization", Qgis::MessageLevel::Info);
+
   createSlots();
   
   // 初始化视频管理器
@@ -83,6 +91,9 @@ void MainWindow::release() {
   delete mpLeftDockWidget;
   delete mpRightDockWidget;
   delete mpMenuBar;
+  delete mpRiskEventPlannerDialog;
+  delete mpGridPathPlannerDialog;
+  delete mpRouteVisualization;
   logMessage("MainWindow released", Qgis::MessageLevel::Success);
 }
 
@@ -189,6 +200,14 @@ void MainWindow::createSlots() {
   connect(mpCanvas->getOpenGLWidget(), &OpenGLCanvas::setLayerContext,
           &RoutePlanner::getInstance(), &RoutePlanner::setContext);
   //connect(mpRightDockWidget->getJoystickWidget(), &JoyDockWidget::joystickConnected, mpCanvas->getOpenGLWidget(),&OpenGLCanvas::onJoystickConnected);
+  
+  // 连接风险事件路径规划信号
+  connect(mpMenuBar, &MenuBar::riskEventPlannerDialogTriggered, this,
+          &MainWindow::showRiskEventPlannerDialog);
+  
+  // 连接网格路径规划信号
+  connect(mpMenuBar, &MenuBar::gridPathPlannerDialogTriggered, this,
+          &MainWindow::showGridPathPlannerDialog);
 }
 
 QSize MainWindow::setWindowSize(QRect screenGeometry, int maxWidth,
@@ -260,4 +279,116 @@ void MainWindow::showUserManual() {
 
   manualDialog->exec();
   logMessage("show user manual", Qgis::MessageLevel::Success);
+}
+
+void MainWindow::showRiskEventPlannerDialog() {
+  logMessage("show risk event path planner dialog", Qgis::MessageLevel::Info);
+  
+
+  if (!mpRiskEventPlannerDialog) {
+    mpRiskEventPlannerDialog = new RiskEventPlannerDialog(this);
+    
+
+    connect(mpRiskEventPlannerDialog, &RiskEventPlannerDialog::showResults,
+            this, &MainWindow::onRiskEventPlanningResults);
+  }
+  
+
+  mpRiskEventPlannerDialog->show();
+  mpRiskEventPlannerDialog->raise();
+  mpRiskEventPlannerDialog->activateWindow();
+}
+
+void MainWindow::onRiskEventPlanningResults(const PlanningResult& result) {
+  logMessage("received risk event path planning results", Qgis::MessageLevel::Info);
+  
+  if (!result.success) {
+    logMessage(QString("planning failed: %1").arg(result.errorMessage), 
+               Qgis::MessageLevel::Critical);
+    return;
+  }
+  
+
+  if (mpRouteVisualization) {
+    mpRouteVisualization->setPlanningResult(result);
+    
+
+    logMessage(QString("path planning results updated - total length: %1 meters, risk points count: %2")
+               .arg(result.totalPathLength, 0, 'f', 2)
+               .arg(result.riskEventCount), 
+               Qgis::MessageLevel::Success);
+  }
+}
+
+void MainWindow::showGridPathPlannerDialog() {
+  logMessage("show grid path planner dialog", Qgis::MessageLevel::Info);
+  
+
+  if (!mpGridPathPlannerDialog) {
+    mpGridPathPlannerDialog = new GridPathPlannerDialog(this);
+    
+
+    connect(mpGridPathPlannerDialog, &GridPathPlannerDialog::showResults,
+            this, &MainWindow::onGridPathPlanningResults);
+    connect(mpGridPathPlannerDialog, &GridPathPlannerDialog::showAreaResults,
+            this, &MainWindow::onAreaPlanningResults);
+  }
+  
+
+  mpGridPathPlannerDialog->show();
+  mpGridPathPlannerDialog->raise();
+  mpGridPathPlannerDialog->activateWindow();
+}
+
+void MainWindow::onGridPathPlanningResults(const GridPlanningResult& result) {
+  logMessage("received grid path planning results", Qgis::MessageLevel::Info);
+  
+  if (!result.success) {
+    logMessage(QString("grid planning failed: %1").arg(result.errorMessage), 
+               Qgis::MessageLevel::Critical);
+    return;
+  }
+  
+
+  logMessage(QString("grid path planning results updated - total length: %1 meters, visited risk points: %2/%3")
+             .arg(result.totalPathLength, 0, 'f', 2)
+             .arg(result.visitedRiskPoints)
+             .arg(result.totalRiskPoints), 
+             Qgis::MessageLevel::Success);
+             
+
+}
+
+void MainWindow::onAreaPlanningResults(const AreaPlanningResult& result) {
+  logMessage("received area path planning results", Qgis::MessageLevel::Info);
+  
+  if (!result.success) {
+    logMessage(QString("area planning failed: %1").arg(result.errorMessage), 
+               Qgis::MessageLevel::Critical);
+    return;
+  }
+  
+
+  logMessage(QString("area path planning results updated - total length: %1 meters, coverage: %2% (%3/%4 nodes)")
+             .arg(result.totalPathLength, 0, 'f', 2)
+             .arg(result.coverageRate * 100.0, 0, 'f', 1)
+             .arg(result.coveredGridCells)
+             .arg(result.totalGridCells), 
+             Qgis::MessageLevel::Success);
+             
+
+  logMessage(QString("area planning grid nodes: %1 total nodes").arg(result.gridNodes.size()), 
+             Qgis::MessageLevel::Info);
+             
+
+  for (int i = 0; i < qMin(5, result.gridNodes.size()); ++i) {
+    const GridNode& node = result.gridNodes[i];
+    logMessage(QString("node %1: position(%2, %3, %4), neighbors: %5")
+               .arg(node.id)
+               .arg(node.position.x(), 0, 'f', 2)
+               .arg(node.position.y(), 0, 'f', 2)
+               .arg(node.position.z(), 0, 'f', 2)
+               .arg(node.neighbors.size()), 
+               Qgis::MessageLevel::Info);
+  }
 }
